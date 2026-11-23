@@ -1,0 +1,478 @@
+/********** Template CSS **********/
+:root {
+    --primary: #F77D0A;
+    --secondary: #2B2E4A;
+    --light: #F4F5F8;
+    --dark: #1C1E32;
+}
+
+h1,
+h2,
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+h3,
+h4,
+.font-weight-semi-bold {
+    font-weight: 600 !important;
+}
+
+h5,
+h6,
+.font-weight-medium {
+    font-weight: 500 !important;
+}
+
+.btn-square {
+    width: 36px;
+    height: 36px;
+}
+
+.btn-sm-square {
+    width: 28px;
+    height: 28px;
+}
+
+.btn-lg-square {
+    width: 46px;
+    height: 46px;
+}
+
+.btn-square,
+.btn-sm-square,
+.btn-lg-square {
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+}
+
+.back-to-top {
+    position: fixed;
+    display: none;
+    right: 30px;
+    bottom: 30px;
+    z-index: 99;
+}
+
+.nav-bar::before {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 50%;
+    top: 0;
+    left: 0;
+    background: var(--dark);
+}
+
+.nav-bar::after {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 50%;
+    bottom: 0;
+    left: 0;
+    background: #ffffff;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    padding: 30px 15px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--light);
+    outline: none;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+    color: var(--primary);
+}
+
+@media (max-width: 991.98px) {
+    .navbar-dark .navbar-nav .nav-link  {
+        padding: 10px 15px;
+    }
+}
+
+.carousel-caption {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(28, 30, 50, .80) 0%, rgba(28, 30, 50, .70) 100%);
+    z-index: 1;
+}
+
+/* ================= HERO CAROUSEL PROPORCIONADO Y ELEGANTE ================= */
+#header-carousel {
+    max-height: 520px;
+    overflow: hidden;
+}
+
+#header-carousel .carousel-item {
+    height: 520px;
+    background-color: #1c1e32;
+}
+
+#header-carousel .carousel-item img {
+    height: 520px;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+#header-carousel .carousel-caption h1 {
+    font-size: 2.85rem;
+    font-weight: 800;
+    line-height: 1.25;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+
+#header-carousel .carousel-caption h4 {
+    letter-spacing: 2px;
+    font-weight: 600;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+
+@media (max-width: 991.98px) {
+    #header-carousel,
+    #header-carousel .carousel-item,
+    #header-carousel .carousel-item img {
+        height: 440px;
+    }
+    #header-carousel .carousel-caption h1 {
+        font-size: 2.2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    #header-carousel,
+    #header-carousel .carousel-item,
+    #header-carousel .carousel-item img {
+        height: 380px;
+    }
+    #header-carousel .carousel-caption h4 {
+        font-size: 15px;
+        font-weight: 500 !important;
+        letter-spacing: 1px;
+    }
+
+    #header-carousel .carousel-caption h1 {
+        font-size: 1.65rem;
+        font-weight: 700 !important;
+    }
+}
+
+.page-header {
+    height: 400px;
+    margin-bottom: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(rgba(28, 30, 50, .9), rgba(28, 30, 50, .9)), url(../img/bg-banner.jpg);
+    background-attachment: fixed;
+}
+
+@media (max-width: 991.98px) {
+    .page-header {
+        height: 300px;
+    }
+}
+
+.service-item {
+    height: 320px;
+    background: var(--light);
+    transition: .5s;
+}
+
+.service-item:hover,
+.service-item.active {
+    background: var(--secondary);
+}
+
+.service-item h1,
+.service-item h4 {
+    transition: .5s;
+}
+
+.service-item:hover h1,
+.service-item.active h1 {
+    color: var(--dark) !important;
+}
+
+.service-item:hover h4,
+.service-item.active h4 {
+    color: var(--light);
+}
+
+.rent-item {
+    padding: 30px;
+    text-align: center;
+    background: var(--light);
+    transition: .5s;
+}
+
+.rent-item:hover,
+.rent-item.active {
+    background: var(--secondary);
+}
+
+.rent-item h4 {
+    transition: .5s;
+}
+
+.rent-item:hover h4,
+.rent-item.active h4 {
+    color: var(--light);
+}
+
+.team-item {
+    padding: 30px 30px 0 30px;
+    text-align: center;
+    background: var(--light);
+    transition: .5s;
+}
+
+.team-item:hover,
+.owl-item.center .team-item {
+    background: var(--secondary);
+}
+
+.team-item h4 {
+    transition: .5s;
+}
+
+.owl-item.center .team-item h4,
+.owl-item.center .rent-item h4 {
+    color: var(--light);
+}
+
+.team-item .team-social {
+    display: none !important;
+}
+
+.team-carousel .owl-nav,
+.related-carousel .owl-nav {
+    position: absolute;
+    width: 100%;
+    height: 60px;
+    top: calc(50% - 30px);
+    left: 0;
+    display: flex;
+    justify-content: space-between;
+    z-index: 1;
+}
+
+.team-carousel .owl-nav .owl-prev,
+.team-carousel .owl-nav .owl-next,
+.related-carousel .owl-nav .owl-prev,
+.related-carousel .owl-nav .owl-next {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    background: var(--primary);
+    font-size: 22px;
+    transition: .5s;
+}
+
+.team-carousel .owl-nav .owl-prev:hover,
+.team-carousel .owl-nav .owl-next:hover,
+.related-carousel .owl-nav .owl-prev:hover,
+.related-carousel .owl-nav .owl-next:hover {
+    background: var(--secondary);
+}
+
+.vendor-carousel .owl-dots,
+.testimonial-carousel .owl-dots {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vendor-carousel .owl-dot,
+.testimonial-carousel .owl-dot {
+    position: relative;
+    display: inline-block;
+    margin: 0 5px;
+    width: 20px;
+    height: 20px;
+    background: var(--secondary);
+    transition: .5s;
+}
+
+.vendor-carousel .owl-dot.active,
+.testimonial-carousel .owl-dot.active {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+}
+
+.testimonial-carousel .owl-item img {
+    width: 80px;
+    height: 80px;
+}
+
+.testimonial-carousel .owl-item .testimonial-item {
+    height: 350px;
+    transition: .5s;
+    background: var(--light);
+}
+
+.testimonial-carousel .owl-item.center .testimonial-item {
+    background: var(--secondary);
+}
+
+.testimonial-carousel .owl-item .testimonial-item h1,
+.testimonial-carousel .owl-item .testimonial-item h4 {
+    transition: .5s;
+}
+
+.testimonial-carousel .owl-item.center .testimonial-item h1 {
+    color: var(--dark) !important;
+}
+
+.testimonial-carousel .owl-item.center .testimonial-item h4 {
+    color: var(--light);
+}
+
+.bg-banner {
+    background: linear-gradient(rgba(28, 30, 50, .9), rgba(28, 30, 50, .9)), url(../img/bg-banner.jpg);
+    background-attachment: fixed;
+}
+
+/* ================= CALENDARIO EN ESPAÑOL Y PALETA CORPORATIVA ================= */
+.bootstrap-datetimepicker-widget {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 14px 35px rgba(28, 30, 50, 0.22) !important;
+    padding: 16px 18px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    z-index: 9999 !important;
+}
+
+.bootstrap-datetimepicker-widget.dropdown-menu {
+    width: 290px !important;
+}
+
+.bootstrap-datetimepicker-widget table thead th.picker-switch {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1C1E32 !important;
+    text-transform: capitalize !important;
+}
+
+.bootstrap-datetimepicker-widget table thead th.picker-switch:hover {
+    background: #FFF7ED !important;
+    color: var(--primary) !important;
+    border-radius: 6px !important;
+}
+
+.bootstrap-datetimepicker-widget table thead th.prev,
+.bootstrap-datetimepicker-widget table thead th.next {
+    color: var(--primary) !important;
+    font-size: 15px !important;
+}
+
+.bootstrap-datetimepicker-widget table thead th.prev:hover,
+.bootstrap-datetimepicker-widget table thead th.next:hover {
+    background: #FFF7ED !important;
+    border-radius: 6px !important;
+}
+
+.bootstrap-datetimepicker-widget table thead th.dow {
+    color: #64748B !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    padding-bottom: 8px !important;
+}
+
+.bootstrap-datetimepicker-widget table td.day {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    color: #1E293B !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    transition: all 0.2s ease !important;
+}
+
+.bootstrap-datetimepicker-widget table td.day:hover {
+    background: #FFEDD5 !important;
+    color: var(--primary) !important;
+}
+
+.bootstrap-datetimepicker-widget table td.day.active,
+.bootstrap-datetimepicker-widget table td.day.active:hover {
+    background: var(--primary) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 10px rgba(247, 125, 10, 0.45) !important;
+}
+
+.bootstrap-datetimepicker-widget table td.day.today:before {
+    border-bottom-color: var(--primary) !important;
+}
+
+.bootstrap-datetimepicker-widget table td.day.old,
+.bootstrap-datetimepicker-widget table td.day.new {
+    color: #94A3B8 !important;
+}
+
+/* Selector de Horas */
+.bootstrap-datetimepicker-widget .timepicker-picker table td a span {
+    color: var(--primary) !important;
+}
+.bootstrap-datetimepicker-widget .timepicker-picker table td a:hover {
+    background: #FFEDD5 !important;
+}
+
+/* ================= TARJETAS DINÁMICAS DE MARCAS REGISTRADAS ================= */
+.brand-vendor-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+}
+
+.brand-vendor-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(247, 125, 10, 0.15);
+}
+
+.brand-vendor-card i {
+    font-size: 32px;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.brand-vendor-card .brand-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1E293B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.brand-vendor-card .car-count {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+}

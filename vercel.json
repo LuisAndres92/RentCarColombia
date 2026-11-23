@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "name": "rent-car-colombia",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
+    {
+      "src": "/login",
+      "dest": "/LOGIN.html"
+    },
+    {
+      "src": "/registro",
+      "dest": "/LOGIN.html?action=register"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
+    },
+    {
+      "src": "/propietario",
+      "dest": "/dashboard-propietario.html"
+    },
+    {
+      "src": "/catalogo",
+      "dest": "/car.html"
+    },
+    {
+      "src": "/reserva",
+      "dest": "/booking.html"
+    },
+    {
+      "src": "/nosotros",
+      "dest": "/about.html"
+    },
+    {
+      "src": "/servicios",
+      "dest": "/service.html"
+    },
+    {
+      "src": "/contacto",
+      "dest": "/contact.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}

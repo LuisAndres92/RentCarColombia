@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Contacto y Atención al Cliente</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Contacto Rent Car Colombia, atención al cliente alquiler de autos, WhatsApp soporte" name="keywords">
+    <meta content="Ponte en contacto con el equipo de Rent Car Colombia. Soporte a propietarios y arrendatarios en todo el país." name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-3 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body pr-3 site-phone" href="tel:+573162357871"><i class="fa fa-phone-alt mr-2 text-primary"></i>+57 316 235 7871</a>
+                    <span class="text-body">|</span>
+                    <a class="text-body px-3 site-email" href="mailto:contacto@rentcarcolombia.com"><i class="fa fa-envelope mr-2 text-primary"></i>contacto@rentcarcolombia.com</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body px-3 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="text-body px-3 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="text-body px-3 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="text-body px-3 site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link">Inicio</a>
+                        <a href="about.html" class="nav-item nav-link">Nosotros</a>
+                        <a href="service.html" class="nav-item nav-link">Servicios</a>
+                        <a href="car.html" class="nav-item nav-link">Explorar Autos</a>
+                        <a href="contact.html" class="nav-item nav-link active">Contacto</a>
+                        <a href="LOGIN.html" class="nav-item nav-link">Iniciar Sesión</a>
+                        <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary ml-lg-3 py-2 px-3 my-2 my-lg-0 text-white font-weight-semi-bold">
+                            <i class="fa fa-plus-circle mr-1"></i> Publicar mi Auto
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Page Header Start -->
+    <div class="container-fluid page-header mb-5" style="background: linear-gradient(rgba(28, 30, 50, .85), rgba(28, 30, 50, .85)), url(img/carousel-1.jpg) center center no-repeat; background-size: cover; padding: 70px 0;">
+        <div class="container text-center">
+            <h1 class="display-4 text-uppercase text-white mb-2">Canales de Contacto</h1>
+            <p class="text-light mb-0">Estamos disponibles para asistirte antes, durante y después de tu viaje</p>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Contact Start -->
+    <div class="container-fluid py-4">
+        <div class="container pb-5">
+            <div class="row">
+                <!-- Columna Izquierda: Formulario de Contacto -->
+                <div class="col-lg-7 mb-4">
+                    <div class="bg-white p-4 p-md-5 rounded-lg shadow-sm border">
+                        <h4 class="font-weight-bold text-dark mb-1">Envíanos un Mensaje Directo</h4>
+                        <p class="small text-muted mb-4">Déjanos tus inquietudes sobre alquiler, registro de autos o alianzas y te responderemos en el menor tiempo posible.</p>
+                        
+                        <form id="contact-form">
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold text-dark">Tu Nombre *</label>
+                                    <input type="text" id="contact-name" class="form-control" placeholder="Ej. Juan Pérez" required style="height: 48px;">
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold text-dark">Correo Electrónico *</label>
+                                    <input type="email" id="contact-email" class="form-control" placeholder="correo@ejemplo.com" required style="height: 48px;">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold text-dark">Teléfono / WhatsApp *</label>
+                                    <input type="tel" id="contact-phone" class="form-control" placeholder="+57 300 000 0000" required style="height: 48px;">
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold text-dark">Motivo de Contacto</label>
+                                    <select id="contact-subject" class="custom-select" style="height: 48px;">
+                                        <option value="Quiero alquilar un vehículo">Quiero alquilar un vehículo</option>
+                                        <option value="Quiero publicar mi auto (Propietario)">Quiero publicar mi auto (Propietario)</option>
+                                        <option value="Soporte sobre una reserva activa">Soporte sobre una reserva activa</option>
+                                        <option value="Alianzas comerciales o PQRs">Alianzas comerciales o PQRs</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-dark">Mensaje *</label>
+                                <textarea id="contact-message" class="form-control p-3" rows="4" placeholder="Escribe aquí tu consulta detallada..." required></textarea>
+                            </div>
+                            
+                            <div id="contact-alert" class="alert alert-success d-none mb-3 p-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa fa-check-circle fa-2x text-success mr-3"></i>
+                                    <div>
+                                        <strong class="d-block text-dark">¡Mensaje Enviado con Éxito!</strong>
+                                        <span class="small text-muted">Hemos recibido tus datos y te responderemos a la brevedad.</span>
+                                    </div>
+                                </div>
+                                <div class="mt-3" id="contact-wa-action"></div>
+                            </div>
+
+                            <div>
+                                <button id="btn-contact-submit" class="btn btn-primary btn-lg font-weight-bold px-5 shadow-sm" type="submit">
+                                    <i class="fa fa-paper-plane mr-2"></i> Enviar Mensaje
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Tarjetas de Información de Contacto -->
+                <div class="col-lg-5 mb-4">
+                    <div class="bg-secondary p-4 p-md-5 rounded-lg text-white shadow h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <h4 class="text-white font-weight-bold mb-4 border-bottom border-secondary pb-3">Información Corporativa</h4>
+                            
+                            <!-- Sede Base -->
+                            <div class="d-flex mb-4">
+                                <i class="fa fa-2x fa-map-marker-alt text-primary flex-shrink-0 mr-3"></i>
+                                <div>
+                                    <h6 class="text-light mb-1 font-weight-bold">Sede Base y Operativa</h6>
+                                    <p class="mb-0 text-light small site-city">Valledupar, Cesar &bull; Colombia</p>
+                                    <small class="text-muted d-block site-address">Plataforma 100% Digital con Cobertura Nacional</small>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono y WhatsApp -->
+                            <div class="d-flex mb-4">
+                                <i class="fa fa-2x fa-phone-alt text-primary flex-shrink-0 mr-3"></i>
+                                <div>
+                                    <h6 class="text-light mb-1 font-weight-bold">Línea de Atención & WhatsApp</h6>
+                                    <p class="mb-0 text-light small"><a href="tel:+573162357871" class="text-white site-phone font-weight-bold">+57 316 235 7871</a></p>
+                                    <small class="text-muted">Atención ágil para reservas y consultas</small>
+                                </div>
+                            </div>
+
+                            <!-- Correos -->
+                            <div class="d-flex mb-4">
+                                <i class="fa fa-2x fa-envelope-open text-primary flex-shrink-0 mr-3"></i>
+                                <div>
+                                    <h6 class="text-light mb-1 font-weight-bold">Correos Electrónicos</h6>
+                                    <p class="mb-0 text-light small"><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+                                    <p class="mb-0 text-light small"><a href="mailto:soporte@rentcarcolombia.com" class="text-muted site-email-support">soporte@rentcarcolombia.com</a></p>
+                                </div>
+                            </div>
+
+                            <!-- Horarios -->
+                            <div class="d-flex mb-2">
+                                <i class="fa fa-2x fa-clock text-primary flex-shrink-0 mr-3"></i>
+                                <div>
+                                    <h6 class="text-light mb-1 font-weight-bold">Horario de Servicio</h6>
+                                    <p class="mb-0 text-light small site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Sáb: 8:00 AM - 1:00 PM</p>
+                                    <small class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i> Asistencia en carretera 24/7</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botón WhatsApp Directo -->
+                        <div class="pt-4 border-top border-secondary">
+                            <a href="#" class="btn btn-success btn-block py-3 font-weight-bold site-whatsapp-link shadow-sm">
+                                <i class="fab fa-whatsapp mr-2" style="font-size: 18px;"></i> Chatear por WhatsApp Ahora
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Contact End -->
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-secondary py-5 px-sm-3 px-md-5">
+        <div class="row pt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3 site-brand-name">Rent Car Colombia</h4>
+                <p class="text-body site-slogan">La plataforma líder de alquiler de autos entre personas en Colombia.</p>
+                <p class="mb-2 text-white"><i class="fa fa-map-marker-alt mr-2 text-primary"></i><span class="site-address">Valledupar, Cesar &bull; Cobertura Nacional</span></p>
+                <p class="mb-2 text-white"><i class="fa fa-phone-alt mr-2 text-primary"></i><a href="tel:+573162357871" class="text-white site-phone">+57 316 235 7871</a></p>
+                <p class="text-white"><i class="fa fa-envelope mr-2 text-primary"></i><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Navegación</h4>
+                <div class="d-flex flex-column justify-content-start">
+                    <a class="text-body mb-2" href="index.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Inicio</a>
+                    <a class="text-body mb-2" href="about.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Nosotros</a>
+                    <a class="text-body mb-2" href="service.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Servicios</a>
+                    <a class="text-body mb-2" href="car.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Explorar Catálogo</a>
+                    <a class="text-body mb-2" href="contact.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Contacto</a>
+
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Redes y Atención</h4>
+                <p class="text-body site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Soporte 24/7</p>
+                <div class="d-flex justify-content-start mt-3">
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark py-3 px-sm-3 px-md-5 text-center">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Todos los derechos reservados.</p>
+    </div>
+    <!-- Footer End -->
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const contactForm = document.getElementById('contact-form');
+            const alertBox = document.getElementById('contact-alert');
+            const waAction = document.getElementById('contact-wa-action');
+
+            if (contactForm) {
+                contactForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const name = document.getElementById('contact-name').value.trim();
+                    const email = document.getElementById('contact-email').value.trim();
+                    const phone = document.getElementById('contact-phone').value.trim();
+                    const subject = document.getElementById('contact-subject').value;
+                    const message = document.getElementById('contact-message').value.trim();
+
+                    if (!name || !email || !phone || !message) {
+                        alert('Por favor completa todos los campos requeridos.');
+                        return;
+                    }
+
+                    // Guardar en localStorage para auditoría y visualización del admin
+                    let inquiries = [];
+                    try {
+                        inquiries = JSON.parse(localStorage.getItem('renteasy_inquiries')) || [];
+                    } catch (err) {
+                        inquiries = [];
+                    }
+
+                    const newInquiry = {
+                        id: 'INQ_' + Date.now(),
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        subject: subject,
+                        message: message,
+                        createdAt: new Date().toISOString(),
+                        status: 'Pendiente'
+                    };
+
+                    inquiries.unshift(newInquiry);
+                    localStorage.setItem('renteasy_inquiries', JSON.stringify(inquiries));
+
+                    // Preparar enlace a WhatsApp con asesor
+                    const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
+                    const phoneRaw = cfg.phoneRaw || '573162357871';
+                    const waText = encodeURIComponent(`Hola Rent Car Colombia, mi nombre es ${name}.\nMotivo: ${subject}\nTeléfono: ${phone}\nCorreo: ${email}\nConsulta: ${message}`);
+                    const waUrl = `https://wa.me/${phoneRaw}?text=${waText}`;
+
+                    waAction.innerHTML = `
+                        <a href="${waUrl}" target="_blank" class="btn btn-success btn-sm font-weight-bold px-3 py-2 shadow-sm">
+                            <i class="fab fa-whatsapp mr-1"></i> Abrir WhatsApp y enviar esta consulta a un asesor ahora
+                        </a>
+                    `;
+
+                    alertBox.classList.remove('d-none');
+                    contactForm.reset();
+
+                    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/login"
+  to = "/LOGIN.html"
+  status = 200
+
+[[redirects]]
+  from = "/registro"
+  to = "/LOGIN.html?action=register"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/propietario"
+  to = "/dashboard-propietario.html"
+  status = 200
+
+[[redirects]]
+  from = "/catalogo"
+  to = "/car.html"
+  status = 200
+
+[[redirects]]
+  from = "/reserva"
+  to = "/booking.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"

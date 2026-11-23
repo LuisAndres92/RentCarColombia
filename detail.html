@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Ficha y Reserva del Vehículo</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Alquiler de autos particulares, especificaciones del vehículo, renta P2P, Valledupar" name="keywords">
+    <meta content="Detalles, equipamiento y reserva directa de autos en Rent Car Colombia." name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-3 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body pr-3 site-phone" href="tel:+573162357871"><i class="fa fa-phone-alt mr-2 text-primary"></i>+57 316 235 7871</a>
+                    <span class="text-body">|</span>
+                    <a class="text-body px-3 site-email" href="mailto:contacto@rentcarcolombia.com"><i class="fa fa-envelope mr-2 text-primary"></i>contacto@rentcarcolombia.com</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body px-3 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="text-body px-3 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="text-body px-3 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="text-body px-3 site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link">Inicio</a>
+                        <a href="about.html" class="nav-item nav-link">Nosotros</a>
+                        <a href="service.html" class="nav-item nav-link">Servicios</a>
+                        <a href="car.html" class="nav-item nav-link active">Explorar Autos</a>
+                        <a href="contact.html" class="nav-item nav-link">Contacto</a>
+                        <a href="LOGIN.html" class="nav-item nav-link">Iniciar Sesión</a>
+                        <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary ml-lg-3 py-2 px-3 my-2 my-lg-0 text-white font-weight-semi-bold">
+                            <i class="fa fa-plus-circle mr-1"></i> Publicar mi Auto
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Breadcrumb Header -->
+    <div class="container-fluid bg-light py-3 border-bottom">
+        <div class="container">
+            <span class="small text-muted"><a href="index.html" class="text-dark">Inicio</a> / <a href="car.html" class="text-dark">Autos</a> / Ficha del Vehículo</span>
+        </div>
+    </div>
+
+    <!-- Main Detail Section Start -->
+    <div class="container-fluid py-5" id="car-detail-container">
+        <div class="container">
+            <div class="row">
+                <!-- Columna Izquierda: Imagen y Ficha Técnica -->
+                <div class="col-lg-8 mb-5">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="display-5 font-weight-bold text-dark text-uppercase mb-1" id="detail-title">Cargando auto...</h2>
+                            <p class="text-muted mb-0">
+                                <i class="fa fa-map-marker-alt text-primary mr-1"></i> <span id="detail-city">Ciudad</span> &bull; 
+                                <span class="badge badge-secondary ml-1" id="detail-category">Categoría</span> &bull; 
+                                Modelo <span id="detail-year" class="font-weight-bold">Año</span>
+                            </p>
+                        </div>
+                        <div class="text-right mt-2 mt-md-0">
+                            <span class="badge badge-success px-3 py-2 font-weight-bold" style="font-size: 13px;">
+                                <i class="fa fa-shield-alt mr-1"></i> Auto Verificado
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Foto Principal -->
+                    <div class="mb-4 rounded-lg overflow-hidden border shadow-sm bg-white" style="max-height: 440px;">
+                        <img id="detail-main-img" class="img-fluid w-100" src="img/car-rent-1.png" alt="Auto en renta" style="object-fit: cover; max-height: 440px;">
+                    </div>
+
+                    <!-- Ficha Rápida de Especificaciones -->
+                    <div class="row text-center mb-4 mx-0 bg-white p-3 rounded-lg border shadow-sm">
+                        <div class="col-md-3 col-6 py-2 border-right">
+                            <i class="fa fa-cogs text-primary mb-2" style="font-size: 24px;"></i>
+                            <div class="small text-muted">Transmisión</div>
+                            <strong class="text-dark" id="detail-trans">Automático</strong>
+                        </div>
+                        <div class="col-md-3 col-6 py-2 border-right">
+                            <i class="fa fa-gas-pump text-primary mb-2" style="font-size: 24px;"></i>
+                            <div class="small text-muted">Combustible</div>
+                            <strong class="text-dark" id="detail-fuel">Gasolina</strong>
+                        </div>
+                        <div class="col-md-3 col-6 py-2 border-right">
+                            <i class="fa fa-users text-primary mb-2" style="font-size: 24px;"></i>
+                            <div class="small text-muted">Capacidad</div>
+                            <strong class="text-dark" id="detail-seats">5 Pasajeros</strong>
+                        </div>
+                        <div class="col-md-3 col-6 py-2">
+                            <i class="fa fa-road text-primary mb-2" style="font-size: 24px;"></i>
+                            <div class="small text-muted">Kilometraje</div>
+                            <strong class="text-dark" id="detail-mileage">200 km/día</strong>
+                        </div>
+                    </div>
+
+                    <!-- Descripción del Auto -->
+                    <div class="bg-white p-4 rounded-lg border shadow-sm mb-4">
+                        <h5 class="font-weight-bold text-dark mb-3"><i class="fa fa-align-left text-primary mr-2"></i>Descripción del Vehículo</h5>
+                        <p class="text-muted" id="detail-description">
+                            Vehículo en perfecto estado de funcionamiento, limpio y desinfectado antes de cada viaje.
+                        </p>
+                    </div>
+
+                    <!-- Perfil del Anfitrión / Propietario -->
+                    <div class="bg-white p-4 rounded-lg border shadow-sm">
+                        <h5 class="font-weight-bold text-dark mb-3"><i class="fa fa-user-circle text-primary mr-2"></i>Conoce a tu Anfitrión</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center font-weight-bold" style="width: 55px; height: 55px; font-size: 22px;">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="font-weight-bold mb-1 text-dark" id="detail-owner-name">Propietario Verificado</h6>
+                                <p class="small text-muted mb-0">
+                                    <span class="text-warning mr-2"><i class="fa fa-star"></i> 4.9 (18 reseñas)</span> &bull; 
+                                    <span class="text-success ml-1"><i class="fa fa-check-circle"></i> Identidad y Documentos Validados</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Widget de Cotización y Reserva -->
+                <div class="col-lg-4 mb-5">
+                    <div class="bg-white p-4 rounded-lg border shadow-sm sticky-top" style="top: 20px;">
+                        <div class="border-bottom pb-3 mb-3">
+                            <span class="text-muted small">Tarifa diaria:</span>
+                            <h3 class="text-primary font-weight-bold mb-0" id="detail-price-day">$0 COP</h3>
+                        </div>
+
+                        <h6 class="font-weight-bold text-dark mb-3"><i class="fa fa-calculator text-primary mr-1"></i> Cotiza tus fechas</h6>
+                        
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-muted">Fecha de Recogida</label>
+                            <input type="date" id="calc-start-date" class="form-control" style="height: 45px;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-muted">Fecha de Devolución</label>
+                            <input type="date" id="calc-end-date" class="form-control" style="height: 45px;">
+                        </div>
+
+                        <div class="bg-light p-3 rounded mb-3 small border">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Días calculados:</span>
+                                <strong id="calc-days-label">3 días</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Subtotal alquiler:</span>
+                                <strong id="calc-subtotal">$0 COP</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tarifa servicio y seguro (15%):</span>
+                                <strong class="text-success" id="calc-fee">$0 COP</strong>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between font-weight-bold" style="font-size: 15px;">
+                                <span class="text-dark">Total estimado:</span>
+                                <span class="text-primary" id="calc-total">$0 COP</span>
+                            </div>
+                        </div>
+
+                        <a href="booking.html" id="btn-go-booking" class="btn btn-primary btn-block btn-lg font-weight-bold shadow-sm">
+                            <i class="fa fa-calendar-check mr-2"></i> Solicitar Reserva
+                        </a>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted"><i class="fa fa-lock mr-1"></i> No se cobrará nada hasta que el dueño acepte.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Main Detail Section End -->
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-secondary py-5 px-sm-3 px-md-5">
+        <div class="row pt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3 site-brand-name">Rent Car Colombia</h4>
+                <p class="text-body site-slogan">La plataforma líder de alquiler de autos entre personas en Colombia.</p>
+                <p class="mb-2 text-white"><i class="fa fa-map-marker-alt mr-2 text-primary"></i><span class="site-address">Valledupar, Cesar &bull; Cobertura Nacional</span></p>
+                <p class="mb-2 text-white"><i class="fa fa-phone-alt mr-2 text-primary"></i><a href="tel:+573162357871" class="text-white site-phone">+57 316 235 7871</a></p>
+                <p class="text-white"><i class="fa fa-envelope mr-2 text-primary"></i><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Navegación</h4>
+                <div class="d-flex flex-column justify-content-start">
+                    <a class="text-body mb-2" href="index.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Inicio</a>
+                    <a class="text-body mb-2" href="about.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Nosotros</a>
+                    <a class="text-body mb-2" href="service.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Servicios</a>
+                    <a class="text-body mb-2" href="car.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Explorar Catálogo</a>
+                    <a class="text-body mb-2" href="contact.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Contacto</a>
+
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Redes y Atención</h4>
+                <p class="text-body site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Soporte 24/7</p>
+                <div class="d-flex justify-content-start mt-3">
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark py-3 px-sm-3 px-md-5 text-center">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Todos los derechos reservados.</p>
+    </div>
+    <!-- Footer End -->
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Template Javascript, Config & Marketplace Logic -->
+    <script src="js/main.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/marketplace.js"></script>
+</body>
+
+</html>

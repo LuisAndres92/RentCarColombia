@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Catálogo de Autos Disponibles</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Alquiler de autos en Colombia, renta de vehículos particulares, P2P car rental, Valledupar" name="keywords">
+    <meta content="Encuentra vehículos particulares para alquilar directamente a propietarios verificados en Rent Car Colombia." name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-3 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body pr-3 site-phone" href="tel:+573162357871"><i class="fa fa-phone-alt mr-2 text-primary"></i>+57 316 235 7871</a>
+                    <span class="text-body">|</span>
+                    <a class="text-body px-3 site-email" href="mailto:contacto@rentcarcolombia.com"><i class="fa fa-envelope mr-2 text-primary"></i>contacto@rentcarcolombia.com</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body px-3 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="text-body px-3 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="text-body px-3 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="text-body px-3 site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link">Inicio</a>
+                        <a href="about.html" class="nav-item nav-link">Nosotros</a>
+                        <a href="service.html" class="nav-item nav-link">Servicios</a>
+                        <a href="car.html" class="nav-item nav-link active">Explorar Autos</a>
+                        <a href="contact.html" class="nav-item nav-link">Contacto</a>
+                        <a href="LOGIN.html" class="nav-item nav-link">Iniciar Sesión</a>
+                        <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary ml-lg-3 py-2 px-3 my-2 my-lg-0 text-white font-weight-semi-bold">
+                            <i class="fa fa-plus-circle mr-1"></i> Publicar mi Auto
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Page Header Start -->
+    <div class="container-fluid page-header mb-4" style="background: linear-gradient(rgba(28, 30, 50, .8), rgba(28, 30, 50, .8)), url(img/carousel-1.jpg) center center no-repeat; background-size: cover; padding: 60px 0;">
+        <div class="container text-center">
+            <h1 class="display-4 text-uppercase text-white mb-2">Vehículos Disponibles</h1>
+            <p class="text-light mb-0">Renta autos directamente a propietarios particulares verificados con la mejor tarifa garantizada.</p>
+        </div>
+    </div>
+    <!-- Page Header End -->
+
+    <!-- Marketplace Filter Bar Start -->
+    <div class="container mb-5">
+        <div class="bg-white p-4 rounded-lg shadow-sm border">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                    <label class="font-weight-bold text-dark small text-uppercase"><i class="fa fa-map-marker-alt text-primary mr-1"></i> Ciudad</label>
+                    <select id="filter-city" class="custom-select" style="height: 48px;">
+                        <option value="all">Todas las ciudades</option>
+                        <option value="Bogotá">Bogotá D.C.</option>
+                        <option value="Medellín">Medellín</option>
+                        <option value="Cali">Cali</option>
+                        <option value="Barranquilla">Barranquilla</option>
+                        <option value="Cartagena">Cartagena</option>
+                        <option value="Bucaramanga">Bucaramanga</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                    <label class="font-weight-bold text-dark small text-uppercase"><i class="fa fa-car text-primary mr-1"></i> Tipo de Vehículo</label>
+                    <select id="filter-category" class="custom-select" style="height: 48px;">
+                        <option value="all">Todas las categorías</option>
+                        <option value="SUV">SUV / Camionetas</option>
+                        <option value="Sedán">Sedanes</option>
+                        <option value="Compacto">Compactos / Hatchback</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                    <label class="font-weight-bold text-dark small text-uppercase"><i class="fa fa-cog text-primary mr-1"></i> Transmisión</label>
+                    <select id="filter-transmission" class="custom-select" style="height: 48px;">
+                        <option value="all">Cualquier transmisión</option>
+                        <option value="Automático">Automático</option>
+                        <option value="Mecánico">Mecánico</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <button class="btn btn-primary btn-block font-weight-bold" id="btn-apply-filters" style="height: 48px;">
+                        <i class="fa fa-filter mr-1"></i> Filtrar Catálogo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Marketplace Filter Bar End -->
+
+    <!-- Vehicle Catalog Listing Start -->
+    <div class="container pb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="text-uppercase font-weight-bold text-dark mb-0">Autos para Alquilar</h3>
+                <small class="text-muted" id="catalog-results-count">Cargando inventario...</small>
+            </div>
+            <a href="LOGIN.html?action=register&role=propietario" class="btn btn-sm btn-outline-primary d-none d-md-inline-block">
+                <i class="fa fa-hand-holding-usd mr-1"></i> ¿Tienes un auto? Monetízalo aquí
+            </a>
+        </div>
+
+        <!-- Contenedor dinámico inyectado por marketplace.js -->
+        <div class="row" id="cars-catalog-container">
+            <!-- Los autos se cargan dinámicamente desde renteasy_cars en localStorage -->
+        </div>
+    </div>
+    <!-- Vehicle Catalog Listing End -->
+
+    <!-- Banner Call to Action para Propietarios -->
+    <div class="container mb-5">
+        <div class="bg-secondary p-5 rounded-lg text-white d-flex flex-wrap align-items-center justify-content-between shadow">
+            <div class="mb-3 mb-md-0" style="max-width: 650px;">
+                <h3 class="text-white font-weight-bold">¿Tienes un auto estacionado sin usar?</h3>
+                <p class="text-light mb-0">Conviértelo en una fuente de ingresos extra. Publica gratis en Rent Car Colombia, elige a tus conductores y recibe el 85% neto de cada alquiler con seguro incluido.</p>
+            </div>
+            <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary btn-lg px-4 py-3 font-weight-bold">
+                <i class="fa fa-car mr-2"></i> Publicar mi Auto Gratis
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-secondary py-5 px-sm-3 px-md-5">
+        <div class="row pt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3 site-brand-name">Rent Car Colombia</h4>
+                <p class="text-body site-slogan">La plataforma líder de alquiler de autos entre personas en Colombia.</p>
+                <p class="mb-2 text-white"><i class="fa fa-map-marker-alt mr-2 text-primary"></i><span class="site-address">Valledupar, Cesar &bull; Cobertura Nacional</span></p>
+                <p class="mb-2 text-white"><i class="fa fa-phone-alt mr-2 text-primary"></i><a href="tel:+573162357871" class="text-white site-phone">+57 316 235 7871</a></p>
+                <p class="text-white"><i class="fa fa-envelope mr-2 text-primary"></i><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Navegación</h4>
+                <div class="d-flex flex-column justify-content-start">
+                    <a class="text-body mb-2" href="index.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Inicio</a>
+                    <a class="text-body mb-2" href="about.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Nosotros</a>
+                    <a class="text-body mb-2" href="service.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Servicios</a>
+                    <a class="text-body mb-2" href="car.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Explorar Catálogo</a>
+                    <a class="text-body mb-2" href="contact.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Contacto</a>
+
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Redes y Atención</h4>
+                <p class="text-body site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Soporte 24/7</p>
+                <div class="d-flex justify-content-start mt-3">
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark py-3 px-sm-3 px-md-5 text-center">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Todos los derechos reservados.</p>
+    </div>
+    <!-- Footer End -->
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Template Javascript, Marketplace Logic & Config -->
+    <script src="js/main.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/marketplace.js"></script>
+</body>
+
+</html>

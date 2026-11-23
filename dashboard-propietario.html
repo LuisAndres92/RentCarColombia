@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Panel del Propietario</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Panel de gestión de vehículos, reservas y comisiones en Colombia" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #1C1E32 0%, #2B2E4A 100%);
+            color: white;
+            padding: 30px 0;
+            border-bottom: 3px solid var(--primary);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-left: 5px solid var(--primary);
+            transition: transform 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: rgba(247, 125, 10, 0.12);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .nav-pills-custom .nav-link {
+            color: #2B2E4A;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-right: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .nav-pills-custom .nav-link.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .car-manage-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #edf2f7;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        .car-manage-img {
+            height: 180px;
+            object-fit: cover;
+            width: 100%;
+            background: #f1f5f9;
+        }
+        .badge-status {
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-review { background: #fef9c3; color: #854d0e; }
+        .badge-rented { background: #e0f2fe; color: #0369a1; }
+        .preview-img-box {
+            width: 100%;
+            height: 160px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body style="background-color: #F4F5F8;">
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-2 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-body small">
+                <i class="fa fa-info-circle text-primary mr-1"></i> Panel de Control del Anfitrión / Propietario
+            </div>
+            <div class="col-md-6 text-right">
+                <a href="car.html" class="text-white small mr-3"><i class="fa fa-eye mr-1"></i> Ver Catálogo Público</a>
+                <span class="text-body">|</span>
+                <a href="contact.html" class="text-white small ml-3"><i class="fa fa-headset mr-1"></i> Soporte al Propietario</a>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link">Inicio</a>
+                        <a href="car.html" class="nav-item nav-link">Autos Disponibles</a>
+
+                        <div class="dropdown ml-lg-3 my-2 my-lg-0">
+                            <button class="btn btn-outline-light dropdown-toggle py-2 px-3" type="button" id="userMenuBtn" data-toggle="dropdown">
+                                <i class="fa fa-user-circle mr-1 text-primary"></i> <span id="nav-user-name">Carlos Mendoza</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item active" href="dashboard-propietario.html"><i class="fa fa-tachometer-alt mr-2 text-primary"></i> Mi Panel</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#" id="btn-logout"><i class="fa fa-sign-out-alt mr-2"></i> Cerrar Sesión</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-white font-weight-bold mb-1">Panel de Propietario</h2>
+                    <p class="text-light mb-0">Gestiona tus vehículos, aprueba solicitudes y monitorea tus ingresos con Rent Car Colombia.</p>
+                </div>
+                <div class="mt-3 mt-md-0">
+                    <button class="btn btn-primary px-4 py-2 font-weight-semi-bold shadow" onclick="$('#tab-publish-btn').tab('show');">
+                        <i class="fa fa-plus-circle mr-2"></i> Publicar Nuevo Vehículo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container py-5">
+        <!-- KPI Cards -->
+        <div class="row mb-5">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small text-uppercase font-weight-bold">Vehículos Registrados</div>
+                        <div class="h3 font-weight-bold mb-0 text-dark" id="stat-total-cars">0</div>
+                    </div>
+                    <div class="stat-icon"><i class="fa fa-car"></i></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small text-uppercase font-weight-bold">Reservas Activas</div>
+                        <div class="h3 font-weight-bold mb-0 text-dark" id="stat-active-rentals">0</div>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                        <i class="fa fa-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small text-uppercase font-weight-bold">Ganancia Neta (85%)</div>
+                        <div class="h3 font-weight-bold mb-0 text-dark" id="stat-earnings">$0</div>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+                        <i class="fa fa-wallet"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small text-uppercase font-weight-bold">Comisión Rent Car Colombia</div>
+                        <div class="h3 font-weight-bold mb-0 text-dark">15%</div>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                        <i class="fa fa-percent"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Navigation Pills -->
+        <ul class="nav nav-pills nav-pills-custom mb-4" id="ownerTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab-cars-btn" data-toggle="pill" href="#tab-cars" role="tab">
+                    <i class="fa fa-car mr-2"></i> Mis Vehículos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-requests-btn" data-toggle="pill" href="#tab-requests" role="tab">
+                    <i class="fa fa-envelope-open-text mr-2"></i> Solicitudes de Reserva <span class="badge badge-danger ml-1" id="badge-pending-count">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-wallet-btn" data-toggle="pill" href="#tab-wallet" role="tab">
+                    <i class="fa fa-wallet mr-2"></i> Billetera y Liquidaciones
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-publish-btn" data-toggle="pill" href="#tab-publish" role="tab">
+                    <i class="fa fa-plus-circle mr-2"></i> Publicar Vehículo
+                </a>
+            </li>
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content" id="ownerTabsContent">
+            <!-- TAB 1: MIS VEHÍCULOS -->
+            <div class="tab-pane fade show active" id="tab-cars" role="tabpanel">
+                <div id="cars-grid" class="row">
+                    <!-- Se renderiza dinámicamente con JavaScript -->
+                </div>
+            </div>
+
+            <!-- TAB 2: SOLICITUDES DE RESERVA -->
+            <div class="tab-pane fade" id="tab-requests" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-lg overflow-hidden">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 font-weight-bold text-dark"><i class="fa fa-calendar-alt text-primary mr-2"></i>Solicitudes de Alquiler Recibidas</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="requests-table">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Conductor</th>
+                                        <th>Vehículo Solicitado</th>
+                                        <th>Fechas</th>
+                                        <th>Total & Pago</th>
+                                        <th>Tu Ganancia (85%)</th>
+                                        <th>Estado Alquiler</th>
+                                        <th class="text-right">Acción / Flujo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="requests-tbody">
+                                    <!-- Dinámico con JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: BILLETERA Y LIQUIDACIONES -->
+            <div class="tab-pane fade" id="tab-wallet" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <div class="card border-0 shadow-sm rounded-lg p-4 bg-white h-100">
+                            <h6 class="text-muted text-uppercase font-weight-bold small mb-2">Saldo Disponible para Retiro</h6>
+                            <h2 class="text-success font-weight-bold mb-3" id="wallet-available-balance">$0 COP</h2>
+                            <p class="small text-muted mb-4">
+                                Fondos acumulados por alquileres completados con acta de entrega y devolución conforme.
+                            </p>
+                            <button type="button" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm" data-toggle="modal" data-target="#modalWithdrawal">
+                                <i class="fa fa-hand-holding-usd mr-1"></i> Solicitar Retiro a mi Cuenta
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-8 mb-4">
+                        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100">
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 font-weight-bold text-dark"><i class="fa fa-history text-primary mr-2"></i>Historial de Liquidaciones y Retiros</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="bg-light small">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Referencia</th>
+                                                <th>Monto (COP)</th>
+                                                <th>Destino / Cuenta</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="wallet-payouts-tbody" class="small">
+                                            <!-- Dinámico con JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: FORMULARIO DE PUBLICACIÓN DE VEHÍCULO -->
+            <div class="tab-pane fade" id="tab-publish" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-lg">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-1 font-weight-bold text-dark"><i class="fa fa-file-alt text-primary mr-2"></i>Publica tu Vehículo en el Marketplace</h5>
+                        <p class="small text-muted mb-0">Llena la ficha técnica y fotos de tu auto. Una vez enviado, estará visible para miles de conductores en Rent Car Colombia.</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="form-publish-car">
+                            <h6 class="font-weight-bold text-primary text-uppercase mb-3"><i class="fa fa-info-circle mr-1"></i> 1. Información General del Auto</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Marca *</label>
+                                    <input type="text" id="car-brand" class="form-control" placeholder="Ej. Toyota, Mazda, Chevrolet" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Modelo / Línea *</label>
+                                    <input type="text" id="car-model" class="form-control" placeholder="Ej. Corolla, CX-30, Onix" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Año de Fabricación *</label>
+                                    <input type="number" id="car-year" class="form-control" min="2010" max="2027" value="2023" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="font-weight-semi-bold">Categoría *</label>
+                                    <select id="car-category" class="custom-select" required>
+                                        <option value="Sedán">Sedán</option>
+                                        <option value="SUV / Camioneta">SUV / Camioneta</option>
+                                        <option value="Compacto">Compacto / Hatchback</option>
+                                        <option value="Pickup">Pickup 4x4</option>
+                                        <option value="Deportivo / Lujo">Deportivo / Lujo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="font-weight-semi-bold">Transmisión *</label>
+                                    <select id="car-transmission" class="custom-select" required>
+                                        <option value="Automático">Automático</option>
+                                        <option value="Mecánico">Mecánico (Manual)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="font-weight-semi-bold">Combustible *</label>
+                                    <select id="car-fuel" class="custom-select" required>
+                                        <option value="Gasolina">Gasolina</option>
+                                        <option value="Diésel">Diésel</option>
+                                        <option value="Híbrido">Híbrido</option>
+                                        <option value="Eléctrico">Eléctrico</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="font-weight-semi-bold">Capacidad (Pasajeros) *</label>
+                                    <input type="number" id="car-seats" class="form-control" value="5" min="2" max="10" required>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h6 class="font-weight-bold text-primary text-uppercase mb-3"><i class="fa fa-tags mr-1"></i> 2. Tarifas y Ubicación</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Precio por Día (COP) *</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text">$</span></div>
+                                        <input type="number" id="car-price" class="form-control" placeholder="Ej. 180000" min="50000" step="5000" required>
+                                    </div>
+                                    <small class="text-muted">Tú recibes el 85% neto de esta tarifa.</small>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Ciudad de Entrega *</label>
+                                    <select id="car-city" class="custom-select" required>
+                                        <option value="Bogotá">Bogotá D.C.</option>
+                                        <option value="Medellín">Medellín</option>
+                                        <option value="Cali">Cali</option>
+                                        <option value="Barranquilla">Barranquilla</option>
+                                        <option value="Cartagena">Cartagena</option>
+                                        <option value="Bucaramanga">Bucaramanga</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Kilometraje Diario Incluido</label>
+                                    <input type="text" id="car-mileage" class="form-control" value="200 km/día (Ilimitado negociable)" required>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <h6 class="font-weight-bold text-primary text-uppercase mb-3"><i class="fa fa-camera mr-1"></i> 3. Fotografía Principal del Vehículo</h6>
+                            <div class="row align-items-center">
+                                <div class="col-md-4 mb-3">
+                                    <div class="preview-img-box" id="preview-container">
+                                        <img id="car-img-preview" src="img/car-rent-1.png" alt="Vista previa">
+                                    </div>
+                                </div>
+                                <div class="col-md-8 mb-3">
+                                    <label class="font-weight-semi-bold d-block"><i class="fa fa-upload text-primary mr-1"></i> Subir Foto Real desde tu Dispositivo</label>
+                                    <div class="custom-file mb-2">
+                                        <input type="file" class="custom-file-input" id="car-photo-file" accept="image/*">
+                                        <label class="custom-file-label small" for="car-photo-file" id="car-photo-label">Elegir foto de tu vehículo...</label>
+                                    </div>
+                                    <small class="text-muted d-block mb-3">Sube una foto real desde tu teléfono o computador (JPG, PNG o WebP).</small>
+
+                                    <label class="font-weight-semi-bold small text-muted">O seleccionar imagen de muestra o enlace URL:</label>
+                                    <div class="input-group mb-2">
+                                        <select id="car-template-img" class="custom-select">
+                                            <option value="img/car-rent-1.png">Auto Sedán Deportivo (img/car-rent-1.png)</option>
+                                            <option value="img/car-rent-2.png">Sedán Ejecutivo Negro (img/car-rent-2.png)</option>
+                                            <option value="img/car-rent-3.png">Sedán Blanco Moderno (img/car-rent-3.png)</option>
+                                            <option value="img/car-rent-4.png">Camioneta SUV Gris (img/car-rent-4.png)</option>
+                                            <option value="img/car-rent-5.png">SUV Negra Familiar (img/car-rent-5.png)</option>
+                                            <option value="img/car-rent-6.png">Camioneta Compacta (img/car-rent-6.png)</option>
+                                        </select>
+                                    </div>
+                                    <input type="url" id="car-custom-url" class="form-control" placeholder="O pega el enlace URL de la foto (opcional)">
+                                    <input type="hidden" id="car-real-photo-data" value="">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="font-weight-semi-bold">Descripción del Auto y Reglas de Uso</label>
+                                <textarea id="car-description" class="form-control" rows="3" placeholder="Ej. Auto en excelente estado mecánico, full aire acondicionado, se entrega limpio con tanque lleno. No se permite fumar en el interior."></textarea>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fa fa-shield-alt mr-2"></i> <strong>Requisito de seguridad:</strong> Cada vehículo publicado pasa por una validación de póliza SOAT antes de su primer viaje para proteger tu patrimonio.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg px-5 font-weight-bold shadow">
+                                <i class="fa fa-check-circle mr-2"></i> Publicar Vehículo Ahora
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Ver Comprobante de Pago -->
+    <div class="modal fade" id="modalViewReceipt" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white py-3">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-receipt text-primary mr-2"></i> Comprobante de Transferencia</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body text-center p-3">
+                    <div id="view-receipt-container" class="mb-3">
+                        <img id="view-receipt-img" src="" alt="Comprobante" class="img-fluid rounded border shadow-sm" style="max-height: 450px;">
+                    </div>
+                    <div id="view-receipt-details" class="small text-muted bg-light p-2 rounded border"></div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Acta Digital de Entrega (Check-in) -->
+    <div class="modal fade" id="modalCheckIn" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white py-3">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-clipboard-check text-primary mr-2"></i> Acta Digital de Entrega (Check-in)</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <form id="form-checkin">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="checkin-booking-id">
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="fa fa-info-circle mr-1"></i> Diligencia los datos exactos del auto al momento de entregar las llaves al conductor. Esto respaldará el cuidado del auto y la fianza.
+                        </div>
+
+                        <div id="checkin-header-info" class="p-3 bg-light rounded border mb-3"></div>
+
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-dark">Kilometraje Inicial del Odómetro (Km) *</label>
+                                <div class="input-group">
+                                    <input type="number" id="checkin-mileage" class="form-control" placeholder="Ej. 45200" required>
+                                    <div class="input-group-append"><span class="input-group-text">km</span></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-dark">Nivel de Combustible al Entregar *</label>
+                                <select id="checkin-fuel" class="custom-select" required>
+                                    <option value="Tanque Lleno (1/1)">Tanque Lleno (1/1)</option>
+                                    <option value="3/4 Tanque">3/4 Tanque</option>
+                                    <option value="1/2 Tanque">1/2 Tanque</option>
+                                    <option value="1/4 Tanque">1/4 Tanque</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Observaciones Previas / Rayones o Novedades</label>
+                            <textarea id="checkin-notes" class="form-control" rows="2" placeholder="Ej. Vehículo recién lavado, llantas con buena banda, kit de carretera y llanta de repuesto a bordo. Pequeño rayón en puerta derecha."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark d-block">
+                                <i class="fa fa-camera text-primary mr-1"></i> Foto del Odómetro / Estado del Vehículo (Opcional)
+                            </label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="checkin-photo-file" accept="image/*">
+                                <label class="custom-file-label small" id="checkin-photo-label" for="checkin-photo-file">Subir foto del odómetro / tablero...</label>
+                            </div>
+                            <input type="hidden" id="checkin-photo-data">
+                        </div>
+
+                        <div class="custom-control custom-checkbox my-2">
+                            <input type="checkbox" class="custom-control-input" id="checkin-verify-driver" required checked>
+                            <label class="custom-control-label small font-weight-bold text-dark" for="checkin-verify-driver">
+                                Confirmo que verifiqué en físico la cédula de ciudadanía y la licencia de conducción original del arrendatario.
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary font-weight-bold btn-sm">
+                            <i class="fa fa-key mr-1"></i> Confirmar Entrega y Activar Viaje
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Acta Digital de Devolución (Check-out) -->
+    <div class="modal fade" id="modalCheckOut" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white py-3">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-flag-checkered text-success mr-2"></i> Acta Digital de Devolución (Check-out) y Fianza</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <form id="form-checkout">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="checkout-booking-id">
+                        
+                        <div id="checkout-initial-compare" class="p-3 bg-light rounded border mb-3 small"></div>
+
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-dark">Kilometraje Final del Odómetro (Km) *</label>
+                                <div class="input-group">
+                                    <input type="number" id="checkout-mileage" class="form-control" placeholder="Ej. 45650" required>
+                                    <div class="input-group-append"><span class="input-group-text">km</span></div>
+                                </div>
+                                <small class="text-muted d-block mt-1" id="checkout-km-diff"></small>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="small font-weight-bold text-dark">Nivel de Combustible al Recibir *</label>
+                                <select id="checkout-fuel" class="custom-select" required>
+                                    <option value="Tanque Lleno (1/1)">Tanque Lleno (1/1)</option>
+                                    <option value="3/4 Tanque">3/4 Tanque</option>
+                                    <option value="1/2 Tanque">1/2 Tanque</option>
+                                    <option value="1/4 Tanque">1/4 Tanque</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Estado de Devolución y Novedades</label>
+                            <textarea id="checkout-notes" class="form-control" rows="2" placeholder="Ej. Vehículo devuelto limpio, sin novedades mecánicas ni rayones adicionales."></textarea>
+                        </div>
+
+                        <div class="p-3 border rounded bg-white mb-3">
+                            <label class="small font-weight-bold text-dark d-block mb-1">
+                                <i class="fa fa-shield-alt text-warning mr-1"></i> Resolución de la Fianza de Garantía
+                            </label>
+                            <select id="checkout-deposit-action" class="custom-select font-weight-bold">
+                                <option value="liberar">🟢 Liberar 100% de la Fianza al Conductor (Sin novedades)</option>
+                                <option value="retener">🔴 Retener Fianza por daños o combustible faltante</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                Si no hubo ningún siniestro ni infracciones, la fianza se desbloquea de inmediato a favor del conductor.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success font-weight-bold btn-sm">
+                            <i class="fa fa-check-circle mr-1"></i> Cerrar Alquiler y Acreditar Ganancia
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Ver Acta Digital Completa -->
+    <div class="modal fade" id="modalViewActa" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white py-3">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-file-contract text-primary mr-2"></i> Acta Digital de Entrega y Devolución</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body p-4" id="view-acta-content">
+                    <!-- Dinámico con JS -->
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Solicitar Retiro de Fondos -->
+    <div class="modal fade" id="modalWithdrawal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white py-3">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-hand-holding-usd text-primary mr-2"></i> Solicitar Liquidación de Ganancias</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <form id="form-withdrawal">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="fa fa-university mr-1"></i> Las transferencias se procesan directamente a tu cuenta bancaria o billetera digital sin comisiones adicionales.
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Monto a Retirar (COP) *</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text">$</span></div>
+                                <input type="number" id="withdraw-amount" class="form-control" placeholder="Ej. 500000" min="50000" step="10000" required>
+                            </div>
+                            <small class="text-muted" id="withdraw-max-hint">Monto máximo disponible: $0 COP</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Destino de la Transferencia *</label>
+                            <select id="withdraw-destination-type" class="custom-select" required>
+                                <option value="Bancolombia">Bancolombia</option>
+                                <option value="Nequi">Nequi</option>
+                                <option value="Daviplata">Daviplata</option>
+                                <option value="Davivienda">Davivienda</option>
+                                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                <option value="BBVA">BBVA Colombia</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Número de Cuenta o Celular *</label>
+                            <input type="text" id="withdraw-account-number" class="form-control" placeholder="Ej. 316 235 7871 / Cta Ahorros" required>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold text-dark">Nombre del Titular *</label>
+                            <input type="text" id="withdraw-account-holder" class="form-control" placeholder="Ej. Carlos Mendoza" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary font-weight-bold btn-sm">
+                            <i class="fa fa-paper-plane mr-1"></i> Enviar Solicitud de Retiro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="container-fluid bg-secondary py-4 px-sm-3 px-md-5 text-center mt-5">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Panel de Anfitrión.</p>
+    </footer>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/owner-dashboard.js"></script>
+</body>
+
+</html>

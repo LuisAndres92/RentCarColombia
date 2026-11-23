@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Iniciar Sesión y Registro</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Alquiler de autos entre personas, P2P car rental, rentar auto, publicar vehículo, Valledupar" name="keywords">
+    <meta content="Accede a Rent Car Colombia para alquilar o publicar vehículos de forma segura y rentable." name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet & Auth Styles -->
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/estilos-LR.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-3 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body pr-3 site-phone" href="tel:+573162357871"><i class="fa fa-phone-alt mr-2 text-primary"></i>+57 316 235 7871</a>
+                    <span class="text-body">|</span>
+                    <a class="text-body px-3 site-email" href="mailto:contacto@rentcarcolombia.com"><i class="fa fa-envelope mr-2 text-primary"></i>contacto@rentcarcolombia.com</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body px-3 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="text-body px-3 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="text-body px-3 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="text-body px-3 site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link">Inicio</a>
+                        <a href="about.html" class="nav-item nav-link">Nosotros</a>
+                        <a href="service.html" class="nav-item nav-link">Servicios</a>
+                        <a href="car.html" class="nav-item nav-link">Explorar Autos</a>
+                        <a href="contact.html" class="nav-item nav-link">Contacto</a>
+                        <a href="LOGIN.html" class="nav-item nav-link active">Iniciar Sesión</a>
+                        <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary ml-lg-3 py-2 px-3 my-2 my-lg-0 text-white font-weight-semi-bold">
+                            <i class="fa fa-plus-circle mr-1"></i> Publicar mi Auto
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+    <!-- Auth Container Start -->
+    <section class="auth-section">
+        <div class="auth-wrapper">
+            <!-- Columna Informativa Lateral -->
+            <div class="auth-sidebar">
+                <div class="auth-sidebar-content">
+                    <span class="auth-sidebar-badge"><i class="fa fa-shield-alt mr-1"></i> Marketplace Seguro</span>
+                    <h3>Alquila o Monetiza tu Vehículo con Confianza</h3>
+                    <p>Únete a la mayor comunidad de alquiler de vehículos entre personas. Conectamos propietarios con conductores verificados.</p>
+                    
+                    <ul class="auth-feature-list">
+                        <li>
+                            <i class="fa fa-coins"></i>
+                            <span><strong>Gana comisiones:</strong> Dueños rentan sus autos y reciben pagos garantizados.</span>
+                        </li>
+                        <li>
+                            <i class="fa fa-id-card"></i>
+                            <span><strong>Usuarios verificados:</strong> Validamos licencias e identidad para total tranquilidad.</span>
+                        </li>
+                        <li>
+                            <i class="fa fa-car"></i>
+                            <span><strong>Variedad y economía:</strong> Conductores acceden a mejores precios sin intermediarios.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="auth-sidebar-footer">
+                    <i class="fa fa-lock mr-1"></i> Tus datos y transacciones están protegidos con cifrado de grado bancario.
+                </div>
+            </div>
+
+            <!-- Columna de Formularios -->
+            <div class="auth-main">
+                <!-- Pestañas de Cambio Rápido -->
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab-btn active" id="tab-login">
+                        <i class="fa fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                    <button type="button" class="auth-tab-btn" id="tab-register">
+                        <i class="fa fa-user-plus"></i> Crear Cuenta
+                    </button>
+                </div>
+
+                <!-- Contenedor de Alertas Dinámicas -->
+                <div id="auth-alert" class="auth-alert"></div>
+
+                <!-- Formulario 1: Iniciar Sesión -->
+                <form id="form-login" class="auth-form active">
+                    <div class="form-group-custom">
+                        <label for="login-email">Correo Electrónico</label>
+                        <div class="input-icon-group">
+                            <i class="fa fa-envelope"></i>
+                            <input type="email" id="login-email" placeholder="ejemplo@correo.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group-custom">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="login-password" class="mb-0">Contraseña</label>
+                            <a href="#" class="small text-primary">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <div class="input-icon-group">
+                            <i class="fa fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="Tu contraseña" required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center my-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="remember-me" checked>
+                            <label class="custom-control-label small text-muted" for="remember-me">Recordar sesión</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-auth-submit">
+                        Ingresar a Rent Car Colombia <i class="fa fa-arrow-right"></i>
+                    </button>
+
+                    <!-- Acceso Demo para Pruebas Rápidas -->
+                    <div class="p-3 bg-light rounded mt-3 text-center border" style="font-size: 11px; color: #64748b;">
+                        <span class="font-weight-bold text-dark d-block mb-1"><i class="fa fa-key mr-1"></i> Cuentas demo pre-configuradas:</span>
+                        <div class="d-flex flex-wrap justify-content-around">
+                            <span class="mr-2"><strong>Admin:</strong> admin@rentcarcolombia.com / admin</span>
+                            <span class="mr-2"><strong>Dueño:</strong> propietario@ejemplo.com / 123456</span>
+                            <span><strong>Cliente:</strong> conductor@ejemplo.com / 123456</span>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Formulario 2: Registro con Selección de Roles -->
+                <form id="form-register" class="auth-form">
+                    <!-- Selector de Rol Visual -->
+                    <div class="role-selection-wrapper">
+                        <label>¿Cómo deseas usar Rent Car Colombia?</label>
+                        <input type="hidden" id="reg-role" value="conductor">
+                        
+                        <div class="role-cards-container">
+                            <!-- Opción Conductor -->
+                            <div class="role-card active" data-role="conductor">
+                                <i class="fa fa-check-circle role-badge-check"></i>
+                                <div class="role-icon"><i class="fa fa-car-side"></i></div>
+                                <div class="role-title">Quiero Rentar</div>
+                                <div class="role-desc">Buscaré autos para viajes y escapadas</div>
+                            </div>
+
+                            <!-- Opción Propietario -->
+                            <div class="role-card" data-role="propietario">
+                                <i class="fa fa-check-circle role-badge-check"></i>
+                                <div class="role-icon"><i class="fa fa-money-bill-wave"></i></div>
+                                <div class="role-title">Quiero Publicar</div>
+                                <div class="role-desc">Pondré mi vehículo a ganar dinero</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje informativo según el rol -->
+                    <div id="role-notice" class="role-info-banner">
+                        <i class="fa fa-info-circle"></i>
+                        <span><strong>Modo Arrendatario:</strong> Podrás explorar vehículos, solicitar reservas y viajar con total seguridad.</span>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group-custom">
+                            <label for="reg-name">Nombre Completo</label>
+                            <div class="input-icon-group">
+                                <i class="fa fa-user"></i>
+                                <input type="text" id="reg-name" placeholder="Ej. Juan Pérez" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label for="reg-phone">Teléfono / WhatsApp</label>
+                            <div class="input-icon-group">
+                                <i class="fa fa-phone"></i>
+                                <input type="tel" id="reg-phone" placeholder="+57 300 000 0000" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-custom">
+                        <label for="reg-email">Correo Electrónico</label>
+                        <div class="input-icon-group">
+                            <i class="fa fa-envelope"></i>
+                            <input type="email" id="reg-email" placeholder="correo@ejemplo.com" required>
+                        </div>
+                    </div>
+
+                    <!-- Campo exclusivo para propietarios -->
+                    <div class="form-group-custom owner-only-field" style="display: none;">
+                        <label for="reg-city">Ciudad Principal de tus Vehículos</label>
+                        <div class="input-icon-group">
+                            <i class="fa fa-map-marker-alt"></i>
+                            <select id="reg-city">
+                                <option value="Bogotá">Bogotá D.C.</option>
+                                <option value="Medellín">Medellín</option>
+                                <option value="Cali">Cali</option>
+                                <option value="Barranquilla">Barranquilla</option>
+                                <option value="Cartagena">Cartagena</option>
+                                <option value="Bucaramanga">Bucaramanga</option>
+                                <option value="Otra">Otra Ciudad</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group-custom">
+                            <label for="reg-password">Contraseña</label>
+                            <div class="input-icon-group">
+                                <i class="fa fa-lock"></i>
+                                <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label for="reg-confirm-password">Confirmar</label>
+                            <div class="input-icon-group">
+                                <i class="fa fa-shield-alt"></i>
+                                <input type="password" id="reg-confirm-password" placeholder="Repite contraseña" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Apartado de Cupón de Descuento Promocional con Verificación de Vigencia -->
+                    <div class="form-group-custom">
+                        <label for="reg-coupon"><i class="fa fa-tag text-warning mr-1"></i> Cupón de Descuento (Opcional)</label>
+                        <div class="input-icon-group" style="position: relative;">
+                            <i class="fa fa-ticket-alt"></i>
+                            <input type="text" id="reg-coupon" placeholder="Ej. VALLEDUPAR2026" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; padding-right: 85px;">
+                            <button type="button" id="btn-verify-coupon" class="btn btn-sm btn-primary" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; font-weight: bold; border-radius: 4px; padding: 4px 10px; z-index: 5;">
+                                Verificar
+                            </button>
+                        </div>
+                        <div id="coupon-feedback" style="display: none; margin-top: 6px;"></div>
+                    </div>
+
+                    <div class="custom-control custom-checkbox my-2">
+                        <input type="checkbox" class="custom-control-input" id="terms-agree" required checked>
+                        <label class="custom-control-label small text-muted" for="terms-agree">
+                            Acepto los <a href="#" class="text-primary">Términos y Condiciones</a> y la política de privacidad.
+                        </label>
+                    </div>
+
+                    <button type="submit" id="btn-register-submit" class="btn-auth-submit">
+                        Crear Cuenta de Conductor <i class="fa fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="auth-footer-links">
+                    <span>Rent Car Colombia &copy; 2026. Todos los derechos reservados.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Auth Container End -->
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-secondary py-5 px-sm-3 px-md-5">
+        <div class="row pt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3 site-brand-name">Rent Car Colombia</h4>
+                <p class="text-body site-slogan">La plataforma líder de alquiler de autos entre personas en Colombia.</p>
+                <p class="mb-2 text-white"><i class="fa fa-map-marker-alt mr-2 text-primary"></i><span class="site-address">Valledupar, Cesar &bull; Cobertura Nacional</span></p>
+                <p class="mb-2 text-white"><i class="fa fa-phone-alt mr-2 text-primary"></i><a href="tel:+573162357871" class="text-white site-phone">+57 316 235 7871</a></p>
+                <p class="text-white"><i class="fa fa-envelope mr-2 text-primary"></i><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Navegación</h4>
+                <div class="d-flex flex-column justify-content-start">
+                    <a class="text-body mb-2" href="index.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Inicio</a>
+                    <a class="text-body mb-2" href="about.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Nosotros</a>
+                    <a class="text-body mb-2" href="service.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Servicios</a>
+                    <a class="text-body mb-2" href="car.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Explorar Catálogo</a>
+                    <a class="text-body mb-2" href="contact.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Contacto</a>
+
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Redes y Atención</h4>
+                <p class="text-body site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Soporte 24/7</p>
+                <div class="d-flex justify-content-start mt-3">
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark py-3 px-sm-3 px-md-5 text-center">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Todos los derechos reservados.</p>
+    </div>
+    <!-- Footer End -->
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="lib/tempusdominus/js/moment.min.js"></script>
+    <script src="lib/tempusdominus/js/moment-timezone.min.js"></script>
+    <script src="lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Template Javascript, Custom Scripts & Config -->
+    <script src="js/main.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/scripts.js"></script>
+
+    <!-- Script para detectar parámetros URL y validar cupones en tiempo real -->
+    <script>
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+            const role = urlParams.get('role');
+            const coupon = urlParams.get('coupon');
+
+            if (action === 'register' || coupon) {
+                $('#tab-register').trigger('click');
+            }
+            if (role === 'propietario') {
+                $('.role-card[data-role="propietario"]').trigger('click');
+            }
+
+            function validateAndDisplayCoupon(code) {
+                const feedback = $('#coupon-feedback');
+                const input = $('#reg-coupon');
+
+                if (!code || !code.trim()) {
+                    feedback.hide().empty();
+                    input.css('border-color', '');
+                    return { valid: false, empty: true };
+                }
+
+                if (typeof checkCouponStatus !== 'function') return { valid: true };
+                const res = checkCouponStatus(code);
+                feedback.show();
+
+                if (res.valid) {
+                    input.css('border-color', '#28a745');
+                    feedback.html(`
+                        <div class="alert alert-success py-1 px-2 mb-0 small rounded">
+                            <i class="fa fa-check-circle mr-1"></i> <strong>¡Cupón Válido!</strong> 50% de descuento aplicado${res.formattedExpiry ? ' (Vigente hasta el ' + res.formattedExpiry + ')' : ''}.
+                        </div>
+                    `);
+                } else if (res.status === 'expired') {
+                    input.css('border-color', '#dc3545');
+                    feedback.html(`
+                        <div class="alert alert-danger py-1 px-2 mb-0 small rounded">
+                            <i class="fa fa-clock mr-1"></i> <strong>Cupón Expirado:</strong> El código "${res.code}" venció el ${res.formattedExpiry || 'su fecha límite'} y ya no tiene vigencia.
+                        </div>
+                    `);
+                } else if (res.status === 'disabled') {
+                    input.css('border-color', '#ffc107');
+                    feedback.html(`
+                        <div class="alert alert-warning py-1 px-2 mb-0 small rounded">
+                            <i class="fa fa-pause-circle mr-1"></i> <strong>Cupón Inactivo:</strong> Este cupón promocional ha sido pausado temporalmente.
+                        </div>
+                    `);
+                } else {
+                    input.css('border-color', '#dc3545');
+                    feedback.html(`
+                        <div class="alert alert-danger py-1 px-2 mb-0 small rounded">
+                            <i class="fa fa-times-circle mr-1"></i> <strong>Cupón No Válido:</strong> El código "${res.code || code}" no existe o es incorrecto.
+                        </div>
+                    `);
+                }
+                return res;
+            }
+
+            // Si vino código por URL
+            if (coupon) {
+                $('#reg-coupon').val(coupon.toUpperCase());
+                validateAndDisplayCoupon(coupon);
+            }
+
+            // Al hacer clic en botón verificar
+            $('#btn-verify-coupon').on('click', function() {
+                validateAndDisplayCoupon($('#reg-coupon').val());
+            });
+
+            // Al escribir en el campo
+            $('#reg-coupon').on('input blur', function() {
+                const val = $(this).val();
+                if (val.trim()) {
+                    validateAndDisplayCoupon(val);
+                } else {
+                    $('#coupon-feedback').hide().empty();
+                    $(this).css('border-color', '');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Rent Car Colombia | Alquiler de Autos entre Personas</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Alquiler de autos en Colombia, renta de vehículos particulares, P2P car rental, Valledupar" name="keywords">
+    <meta content="Rent Car Colombia conecta propietarios y conductores a nivel nacional. Alquila fácil, seguro y sin intermediarios tradicionales." name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik&display=swap" rel="stylesheet"> 
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Topbar Start -->
+    <div class="container-fluid bg-dark py-3 px-lg-5 d-none d-lg-block">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-lg-left mb-2 mb-lg-0">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body pr-3 site-phone" href="tel:+573162357871"><i class="fa fa-phone-alt mr-2 text-primary"></i>+57 316 235 7871</a>
+                    <span class="text-body">|</span>
+                    <a class="text-body px-3 site-email" href="mailto:contacto@rentcarcolombia.com"><i class="fa fa-envelope mr-2 text-primary"></i>contacto@rentcarcolombia.com</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-lg-right">
+                <div class="d-inline-flex align-items-center">
+                    <a class="text-body px-3 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="text-body px-3 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="text-body px-3 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="text-body px-3 site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Topbar End -->
+
+
+    <!-- Navbar Start -->
+    <div class="container-fluid position-relative nav-bar p-0">
+        <div class="position-relative px-lg-5" style="z-index: 9;">
+            <nav class="navbar navbar-expand-lg bg-secondary navbar-dark py-3 py-lg-0 pl-3 pl-lg-5">
+                <a href="index.html" class="navbar-brand">
+                    <h1 class="text-uppercase text-primary mb-1 site-brand-name">Rent Car Colombia</h1>
+                </a>
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between px-3" id="navbarCollapse">
+                    <div class="navbar-nav ml-auto py-0 align-items-center">
+                        <a href="index.html" class="nav-item nav-link active">Inicio</a>
+                        <a href="about.html" class="nav-item nav-link">Nosotros</a>
+                        <a href="service.html" class="nav-item nav-link">Servicios</a>
+                        <a href="car.html" class="nav-item nav-link">Explorar Autos</a>
+                        <a href="contact.html" class="nav-item nav-link">Contacto</a>
+                        <a href="LOGIN.html" class="nav-item nav-link">Iniciar Sesión</a>
+                        <a href="LOGIN.html?action=register&role=propietario" class="btn btn-primary ml-lg-3 py-2 px-3 my-2 my-lg-0 text-white font-weight-semi-bold">
+                            <i class="fa fa-plus-circle mr-1"></i> Publicar mi Auto
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <!-- Navbar End -->
+
+
+    <!-- Search Start -->
+    <div class="container-fluid bg-white pt-3 px-lg-5">
+        <div class="row mx-n2">
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <select id="search-filter-brand" class="custom-select px-4 mb-3" style="height: 50px;">
+                    <option value="" selected>Todas las Marcas</option>
+                    <!-- Poblado dinámicamente según autos registrados -->
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <select id="search-filter-model" class="custom-select px-4 mb-3" style="height: 50px;">
+                    <option value="" selected>Todos los Modelos</option>
+                    <!-- Poblado dinámicamente según autos registrados -->
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <div class="date mb-3" id="date" data-target-input="nearest">
+                    <input type="text" id="search-date-input" class="form-control p-4 datetimepicker-input" placeholder="Fecha de recogida"
+                        data-target="#date" data-toggle="datetimepicker" />
+                </div>
+            </div>
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <div class="time mb-3" id="time" data-target-input="nearest">
+                    <input type="text" id="search-time-input" class="form-control p-4 datetimepicker-input" placeholder="Hora de recogida"
+                        data-target="#time" data-toggle="datetimepicker" />
+                </div>
+            </div>
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <select id="search-filter-category" class="custom-select px-4 mb-3" style="height: 50px;">
+                    <option value="" selected>Tipo de Auto</option>
+                    <!-- Poblado dinámicamente según tipos registrados -->
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-4 col-md-6 px-2">
+                <button id="btn-search-cars" class="btn btn-primary btn-block mb-3 font-weight-bold" type="button" style="height: 50px;">
+                    <i class="fa fa-search mr-1"></i> Buscar Autos
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Search End -->
+
+
+    <!-- Carousel Start -->
+    <div class="container-fluid p-0" style="margin-bottom: 50px;">
+        <div id="header-carousel" class="carousel slide" data-ride="carousel">
+            <div class="carousel-inner" id="header-carousel-inner">
+                <!-- Renderizado dinámicamente según las diapositivas configuradas en el panel de control -->
+                <div class="carousel-item active">
+                    <img class="w-100 site-hero-img-1" src="img/carousel-1.jpg" alt="Renta de autos en Colombia">
+                    <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                        <div class="p-3" style="max-width: 900px;">
+                            <h4 class="text-white text-uppercase mb-md-3 site-hero-subtitle site-hero-subtitle-1">Renta de autos particulares directamente con sus dueños en Colombia</h4>
+                            <h1 class="display-4 font-weight-bold text-white mb-md-4 site-hero-title site-hero-title-1">Alquila el mejor coche al mejor precio</h1>
+                            <a href="car.html" class="btn btn-primary py-md-3 px-md-5 mt-2 site-hero-btn1-1 font-weight-bold">Explorar Autos Disponibles</a>
+                            <a href="LOGIN.html?action=register&role=propietario" class="btn btn-outline-light py-md-3 px-md-4 mt-2 ml-2 site-hero-btn1-2 font-weight-bold">Publicar mi Auto</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#header-carousel" data-slide="prev">
+                <div class="btn btn-dark" style="width: 45px; height: 45px;">
+                    <span class="carousel-control-prev-icon mb-n2"></span>
+                </div>
+            </a>
+            <a class="carousel-control-next" href="#header-carousel" data-slide="next">
+                <div class="btn btn-dark" style="width: 45px; height: 45px;">
+                    <span class="carousel-control-next-icon mb-n2"></span>
+                </div>
+            </a>
+        </div>
+    </div>
+    <!-- Carousel End -->
+
+
+    <!-- About Start -->
+    <div class="container-fluid py-5">
+        <div class="container pt-5 pb-3">
+            <h1 class="display-1 text-primary text-center">01</h1>
+            <h1 class="display-4 text-uppercase text-center mb-4">Bienvenido a <span class="text-primary site-brand-name">Rent Car Colombia</span></h1>
+            <div class="row justify-content-center">
+                <div class="col-lg-10 text-center">
+                    <img class="w-75 mb-4" src="img/about.png" alt="Rent Car Colombia">
+                    <p class="text-muted site-about-text" style="font-size: 16px; line-height: 1.8;">
+                        Nacemos desde <strong>Valledupar, Cesar</strong> como la primera plataforma 100% digital de economía colaborativa automotriz con cobertura en toda Colombia. Conectamos directamente a propietarios de vehículos con conductores verificados, eliminando sobrecostos de agencias intermediarias y garantizando contratos digitales y acompañamiento en cada viaje.
+                    </p>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-lg-4 mb-2">
+                    <div class="d-flex align-items-center bg-light p-4 mb-4 rounded shadow-sm" style="height: 130px;">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary ml-n4 mr-4 rounded" style="width: 80px; height: 80px;">
+                            <i class="fa fa-2x fa-headset text-white"></i>
+                        </div>
+                        <h5 class="text-uppercase m-0 font-weight-bold text-dark">Soporte Continuo 24/7</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <div class="d-flex align-items-center bg-secondary p-4 mb-4 rounded shadow-sm text-white" style="height: 130px;">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary ml-n4 mr-4 rounded" style="width: 80px; height: 80px;">
+                            <i class="fa fa-2x fa-shield-alt text-white"></i>
+                        </div>
+                        <h5 class="text-light text-uppercase m-0 font-weight-bold">Usuarios Verificados</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <div class="d-flex align-items-center bg-light p-4 mb-4 rounded shadow-sm" style="height: 130px;">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 bg-primary ml-n4 mr-4 rounded" style="width: 80px; height: 80px;">
+                            <i class="fa fa-2x fa-map-marked-alt text-white"></i>
+                        </div>
+                        <h5 class="text-uppercase m-0 font-weight-bold text-dark">Cobertura Nacional</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- About End -->
+    
+
+    <!-- Services Start -->
+    <div class="container-fluid py-5 site-services-section">
+        <div class="container pt-5 pb-3">
+            <h1 class="display-1 text-primary text-center">02</h1>
+            <h1 class="display-4 text-uppercase text-center mb-5">Servicios de la Plataforma</h1>
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-car text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">01</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Alquiler Particular</h5>
+                        <p class="m-0 small text-muted">Autos verificados por días o semanas a precios directos sin comisiones ocultas.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item active d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-hand-holding-usd text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">02</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Gana como Propietario</h5>
+                        <p class="m-0 small text-muted">Publica gratis y recibe el 85% neto del alquiler de tu auto con liquidación directa.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-id-card text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">03</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Validación 100% Segura</h5>
+                        <p class="m-0 small text-muted">Revisión de identidad, licencia de conducción y antecedentes para total tranquilidad.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-lock text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">04</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Garantías Protegidas</h5>
+                        <p class="m-0 small text-muted">Retención en custodia del depósito de garantía y pasarelas de pago seguras.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-ambulance text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">05</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Asistencia 24/7</h5>
+                        <p class="m-0 small text-muted">Servicio de grúa, soporte mecánico y auxilio vial en las vías de Colombia.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="service-item d-flex flex-column justify-content-center px-4 py-4 mb-4 bg-white rounded shadow-sm border h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center justify-content-center bg-primary rounded" style="width: 65px; height: 65px;">
+                                <i class="fa fa-file-contract text-white" style="font-size: 24px;"></i>
+                            </div>
+                            <h2 class="display-4 text-muted font-weight-bold opacity-25 m-0" style="color: #cbd5e1;">06</h2>
+                        </div>
+                        <h5 class="text-uppercase font-weight-bold text-dark mb-2">Contratos Digitales</h5>
+                        <p class="m-0 small text-muted">Generación automática de contratos de arrendamiento con valor legal.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Services End -->
+
+
+    <!-- Banner Start -->
+    <div class="container-fluid py-5 site-promo-banner-section site-discount-banner">
+        <div class="container py-5">
+            <div class="bg-banner py-5 px-4 text-center rounded shadow-sm">
+                <div class="py-5">
+                    <h1 class="display-1 text-uppercase text-primary mb-4 site-promo-title">50% DE DESCUENTO</h1>
+                    <h1 class="text-uppercase text-light mb-4 site-promo-subtitle">Oferta especial para nuevos miembros</h1>
+                    <p class="mb-4 text-light site-promo-validity" style="font-size: 1.15rem;">Válido del 1 al 31 de Diciembre de 2026 para nuevos usuarios</p>
+                    <a class="btn btn-primary mt-2 py-3 px-5 site-promo-link font-weight-bold" href="LOGIN.html?action=register&role=conductor&coupon=VALLEDUPAR2026">
+                        <i class="fa fa-ticket-alt mr-2"></i> Regístrate ahora con tu Cupón
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Banner End -->
+
+
+    <!-- Rent A Car Start -->
+    <div class="container-fluid py-5">
+        <div class="container pt-5 pb-3">
+            <h1 class="display-1 text-primary text-center">03</h1>
+            <h1 class="display-4 text-uppercase text-center mb-5">Encuentra tu auto</h1>    
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-1.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item active mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-2.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-3.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-4.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-5.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-2">
+                    <div class="rent-item mb-4">
+                        <img class="img-fluid mb-4" src="img/car-rent-6.png" alt="">
+                        <h4 class="text-uppercase mb-4">Mercedes Benz R3</h4>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="px-2">
+                                <i class="fa fa-car text-primary mr-1"></i>
+                                <span>2015</span>
+                            </div>
+                            <div class="px-2 border-left border-right">
+                                <i class="fa fa-cogs text-primary mr-1"></i>
+                                <span>AUTO</span>
+                            </div>
+                            <div class="px-2">
+                                <i class="fa fa-road text-primary mr-1"></i>
+                                <span>25K</span>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary px-3" href="">$250.000/Día</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rent A Car End -->
+
+
+    <!-- Team Start -->
+    <div class="container-fluid py-5 site-team-section">
+        <div class="container py-5">
+            <h1 class="display-1 text-primary text-center">04</h1>
+            <h1 class="display-4 text-uppercase text-center mb-5 site-team-title">Conozca a nuestro equipo</h1>
+            <div class="owl-carousel team-carousel position-relative site-team-carousel" style="padding: 0 45px;">
+                <!-- Se renderiza dinámicamente con flechas de navegación según lo configurado en el panel de control -->
+            </div>
+        </div>
+    </div>
+    <!-- Team End -->
+
+
+    <!-- Banner Start -->
+    <div class="container-fluid py-5 site-dual-cta-section">
+        <div class="container py-5">
+            <div class="row mx-0">
+                <div class="col-lg-6 px-0">
+                    <div class="px-5 bg-secondary d-flex align-items-center justify-content-between" style="height: 350px;">
+                        <img class="img-fluid flex-shrink-0 ml-n5 w-50 mr-4" src="img/banner-left.png" alt="Propietario">
+                        <div class="text-right">
+                            <h3 class="text-uppercase text-light mb-3">¿Tienes un vehículo detenido?</h3>
+                            <p class="mb-4 text-light">Monetiza tu auto de forma 100% segura. Gana hasta el 85% neto de cada alquiler con fianza y póliza de respaldo.</p>
+                            <a class="btn btn-primary py-2 px-4 font-weight-bold" href="LOGIN.html?action=register&role=propietario">Publicar mi Auto</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 px-0">
+                    <div class="px-5 bg-dark d-flex align-items-center justify-content-between" style="height: 350px;">
+                        <div class="text-left">
+                            <h3 class="text-uppercase text-light mb-3">¿Necesitas un vehículo?</h3>
+                            <p class="mb-4 text-light site-promo-text">50% DE DESCUENTO en tu primer viaje de fin de semana con autos verificados en toda Colombia.</p>
+                            <a class="btn btn-primary py-2 px-4 font-weight-bold" href="car.html">Explorar Vehículos</a>
+                        </div>
+                        <img class="img-fluid flex-shrink-0 mr-n5 w-50 ml-4" src="img/banner-right.png" alt="Conductor">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Banner End -->
+
+
+    <!-- Testimonial Start -->
+    <div class="container-fluid py-5 site-testimonials-section">
+        <div class="container py-5">
+            <h1 class="display-1 text-primary text-center">05</h1>
+            <h1 class="display-4 text-uppercase text-center mb-5">La Opinión de Nuestra Comunidad</h1>
+            <div class="owl-carousel testimonial-carousel">
+                <div class="testimonial-item d-flex flex-column justify-content-center px-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <img class="img-fluid ml-n4 rounded-circle" src="img/testimonial-1.jpg" alt="Carlos M." style="width: 70px; height: 70px; object-fit: cover;">
+                        <h1 class="display-2 text-white m-0 fa fa-quote-right"></h1>
+                    </div>
+                    <h4 class="text-uppercase mb-1">Carlos Mendoza</h4>
+                    <i class="mb-2 text-primary font-weight-semi-bold">Propietario en Valledupar</i>
+                    <p class="m-0 text-muted">"Tener mi camioneta trabajando con Rent Car Colombia ha sido una bendición. Recibo mis ganancias puntual y la fianza me da total tranquilidad."</p>
+                </div>
+                <div class="testimonial-item d-flex flex-column justify-content-center px-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <img class="img-fluid ml-n4 rounded-circle" src="img/testimonial-2.jpg" alt="Laura G." style="width: 70px; height: 70px; object-fit: cover;">
+                        <h1 class="display-2 text-white m-0 fa fa-quote-right"></h1>
+                    </div>
+                    <h4 class="text-uppercase mb-1">Laura Gómez</h4>
+                    <i class="mb-2 text-primary font-weight-semi-bold">Conductora Turista</i>
+                    <p class="m-0 text-muted">"Alquilé un auto para recorrer el Cesar y La Guajira durante el Festival Vallenato. Trato directo, auto impecable y mucho más económico."</p>
+                </div>
+                <div class="testimonial-item d-flex flex-column justify-content-center px-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <img class="img-fluid ml-n4 rounded-circle" src="img/testimonial-3.jpg" alt="Andrés R." style="width: 70px; height: 70px; object-fit: cover;">
+                        <h1 class="display-2 text-white m-0 fa fa-quote-right"></h1>
+                    </div>
+                    <h4 class="text-uppercase mb-1">Andrés Restrepo</h4>
+                    <i class="mb-2 text-primary font-weight-semi-bold">Empresario / Propietario</i>
+                    <p class="m-0 text-muted">"Tengo dos autos publicados. El proceso de aprobación y verificación de clientes es muy estricto y profesional. Recomiendo 100% esta plataforma."</p>
+                </div>
+                <div class="testimonial-item d-flex flex-column justify-content-center px-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <img class="img-fluid ml-n4 rounded-circle" src="img/testimonial-4.jpg" alt="Diana P." style="width: 70px; height: 70px; object-fit: cover;">
+                        <h1 class="display-2 text-white m-0 fa fa-quote-right"></h1>
+                    </div>
+                    <h4 class="text-uppercase mb-1">Diana Paternina</h4>
+                    <i class="mb-2 text-primary font-weight-semi-bold">Conductora Frecuente</i>
+                    <p class="m-0 text-muted">"Excelente atención al cliente por WhatsApp. Reservé un sedán para un viaje de negocios y todo estuvo listo a mi llegada. La mejor opción en Colombia."</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Testimonial End -->
+
+
+    <!-- Contact Start -->
+    <div class="container-fluid py-5">
+        <div class="container pt-5 pb-3">
+            <h1 class="display-1 text-primary text-center">06</h1>
+            <h1 class="display-4 text-uppercase text-center mb-5">Contacta con nosotros</h1>
+            <div class="row">
+                <div class="col-lg-7 mb-2">
+                    <div class="contact-form bg-light mb-4" style="padding: 30px;">
+                        <form>
+                            <div class="row">
+                                <div class="col-6 form-group">
+                                    <input type="text" class="form-control p-4" placeholder="Su Nombre" required="required">
+                                </div>
+                                <div class="col-6 form-group">
+                                    <input type="email" class="form-control p-4" placeholder="Su Correo" required="required">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" class="form-control p-4" placeholder="Asunto" required="required">
+                            </div>
+                            <div class="form-group">
+                                <textarea class="form-control py-3 px-4" rows="5" placeholder="Mensaje" required="required"></textarea>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary py-3 px-5" type="submit">Enviar mensaje</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-5 mb-2">
+                    <div class="bg-secondary d-flex flex-column justify-content-center px-5 mb-4" style="height: 435px;">
+                        <div class="d-flex mb-3">
+                            <i class="fa fa-2x fa-map-marker-alt text-primary flex-shrink-0 mr-3"></i>
+                            <div class="mt-n1">
+                                <h5 class="text-light">Oficina central</h5>
+                                <p>Calle 18, Valledupar, Cesár</p>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-3">
+                            <i class="fa fa-2x fa-map-marker-alt text-primary flex-shrink-0 mr-3"></i>
+                            <div class="mt-n1">
+                                <h5 class="text-light">Sucursal</h5>
+                                <p>Cra 9, Valledupar, Cesár</p>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-3">
+                            <i class="fa fa-2x fa-envelope-open text-primary flex-shrink-0 mr-3"></i>
+                            <div class="mt-n1">
+                                <h5 class="text-light">Servicio al Cliente</h5>
+                                <p>customer-renteasy@example.com</p>
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <i class="fa fa-2x fa-envelope-open text-primary flex-shrink-0 mr-3"></i>
+                            <div class="mt-n1">
+                                <h5 class="text-light">Reembolsos</h5>
+                                <p class="m-0">reembolso-renteasy@example.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Contact End -->
+
+
+    <!-- Vendor Start (Marcas de Autos Registradas en la Plataforma) -->
+    <div class="container-fluid py-5 site-vendors-section">
+        <div class="container py-5">
+            <div class="text-center mb-4">
+                <span class="badge badge-primary px-3 py-2 text-uppercase font-weight-bold mb-2">Flota Comunitaria Verificada</span>
+                <h2 class="display-4 text-uppercase font-weight-bold text-dark">Marcas Disponibles en Colombia</h2>
+                <p class="text-muted" style="max-width: 650px; margin: auto;">Encuentra vehículos de tus marcas preferidas registrados por propietarios en todo el país.</p>
+            </div>
+            <div class="owl-carousel vendor-carousel site-vendor-carousel">
+                <!-- Se renderiza dinámicamente con las marcas reales registradas -->
+            </div>
+        </div>
+    </div>
+    <!-- Vendor End -->
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-secondary py-5 px-sm-3 px-md-5">
+        <div class="row pt-4">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3 site-brand-name">Rent Car Colombia</h4>
+                <p class="text-body site-slogan">La plataforma líder de alquiler de autos entre personas en Colombia.</p>
+                <p class="mb-2 text-white"><i class="fa fa-map-marker-alt mr-2 text-primary"></i><span class="site-address">Valledupar, Cesar &bull; Cobertura Nacional</span></p>
+                <p class="mb-2 text-white"><i class="fa fa-phone-alt mr-2 text-primary"></i><a href="tel:+573162357871" class="text-white site-phone">+57 316 235 7871</a></p>
+                <p class="text-white"><i class="fa fa-envelope mr-2 text-primary"></i><a href="mailto:contacto@rentcarcolombia.com" class="text-white site-email">contacto@rentcarcolombia.com</a></p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Navegación</h4>
+                <div class="d-flex flex-column justify-content-start">
+                    <a class="text-body mb-2" href="index.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Inicio</a>
+                    <a class="text-body mb-2" href="about.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Nosotros</a>
+                    <a class="text-body mb-2" href="service.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Servicios</a>
+                    <a class="text-body mb-2" href="car.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Explorar Catálogo</a>
+                    <a class="text-body mb-2" href="contact.html"><i class="fa fa-angle-right mr-2 text-primary"></i>Contacto</a>
+
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h4 class="text-uppercase text-light mb-3">Redes y Atención</h4>
+                <p class="text-body site-schedule">Lun - Vie: 8:00 AM - 6:00 PM | Soporte 24/7</p>
+                <div class="d-flex justify-content-start mt-3">
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-whatsapp-link" href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-instagram" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square mr-2 site-social-facebook" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-lg btn-dark btn-lg-square site-social-tiktok" href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid bg-dark py-3 px-sm-3 px-md-5 text-center">
+        <p class="m-0 text-body">&copy; <a class="text-primary font-weight-bold site-brand-name" href="#">Rent Car Colombia</a>. Todos los derechos reservados.</p>
+    </div>
+    <!-- Footer End -->
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="lib/tempusdominus/js/moment.min.js"></script>
+    <script src="lib/tempusdominus/js/moment-timezone.min.js"></script>
+    <script src="lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Template Javascript & Config -->
+    <script src="js/main.js"></script>
+    <script src="js/scripts.js"></script>
+    <script src="js/config.js"></script>
+</body>
+
+</html>
