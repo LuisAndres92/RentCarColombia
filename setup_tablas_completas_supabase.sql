@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS public.perfiles (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Asegurar columna avatar_url si la tabla ya existía
+-- Asegurar columna avatar_url y eliminar restricción foránea estricta a auth.users
+ALTER TABLE public.perfiles DROP CONSTRAINT IF EXISTS perfiles_id_fkey;
 ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT 'img/team-1.jpg';
 ALTER TABLE public.perfiles ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
