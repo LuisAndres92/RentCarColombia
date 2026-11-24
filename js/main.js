@@ -160,8 +160,9 @@
     /**
      * =========================================================================
      * NAVBAR DE USUARIO: PERFIL, FOTO, CONFIGURACIÓN Y CERRAR SESIÓN
-     * Detecta si hay una sesión activa y renderiza dinámicamente el botón de usuario
-     * con avatar, nombre, rol, modal de ajustes de perfil y cerrar sesión.
+     * Detecta si hay una sesión activa (localStorage o Supabase Auth) y renderiza
+     * dinámicamente el botón de usuario con avatar, nombre, rol, modal de perfil
+     * y redirige 'Publicar mi Auto' directamente a la gestión de propietarios.
      * =========================================================================
      */
     function initUserNavbar() {
@@ -172,66 +173,123 @@
             user = null;
         }
 
-        const loginLinks = document.querySelectorAll('.navbar-nav a[href*="LOGIN.html"], .navbar-nav a[href*="login.html"]');
-        if (loginLinks.length === 0) return;
+        function renderUser(u) {
+            if (!u || !u.email) return;
 
-        // Si no hay usuario logueado, mantener el botón original de Iniciar Sesión
-        if (!user || !user.email) {
-            return;
+            // 1. Si el usuario está autenticado, el botón "Publicar mi Auto" lo lleva a su panel de propietario
+            document.querySelectorAll('.navbar-nav a[href*="role=propietario"], .navbar-nav a.btn-primary').forEach(btn => {
+                if (btn.textContent.trim().toLowerCase().includes('publicar')) {
+                    btn.href = 'dashboard-propietario.html';
+                    btn.addEventListener('click', function(e) {
+                        // Promover automáticamente el rol a propietario si estaba como conductor
+                        if (u.role !== 'admin' && u.role !== 'propietario') {
+                            u.role = 'propietario';
+                            localStorage.setItem('renteasy_current_user', JSON.stringify(u));
+                            localStorage.setItem('renteasy_pending_role', 'propietario');
+                            if (typeof getSupabaseClient === 'function') {
+                                const client = getSupabaseClient();
+                                if (client) {
+                                    client.from('perfiles').update({ rol: 'propietario' }).eq('id', u.id).catch(() => {});
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 2. Buscar enlace de login en el navbar (excluyendo botones de publicar)
+            const loginLink = document.querySelector('.navbar-nav a.nav-link[href*="LOGIN.html"], .navbar-nav a.nav-link[href*="login.html"]');
+            
+            // Si ya existe el dropdown renderizado, solo actualizar textos e imagen
+            const existingDropdown = document.querySelector('.user-profile-nav-item');
+            if (existingDropdown) {
+                existingDropdown.querySelectorAll('.user-current-avatar').forEach(img => img.src = u.avatar || 'img/team-1.jpg');
+                existingDropdown.querySelectorAll('.user-current-name').forEach(span => span.textContent = (u.name || u.email.split('@')[0]).split(' ')[0]);
+                existingDropdown.querySelectorAll('.user-full-name').forEach(div => div.textContent = u.name || u.email);
+                return;
+            }
+
+            if (!loginLink) return;
+
+            const userPhoto = u.avatar || 'img/team-1.jpg';
+            const rawName = u.name || u.email.split('@')[0];
+            const firstName = rawName.split(' ')[0];
+            const roleBadge = u.role === 'admin' 
+                ? '<span class="badge badge-warning text-dark font-weight-bold ml-1 px-1" style="font-size:10px;">Admin</span>' 
+                : u.role === 'propietario'
+                ? '<span class="badge badge-success text-white font-weight-bold ml-1 px-1" style="font-size:10px;">Anfitrión</span>'
+                : '<span class="badge badge-primary text-white font-weight-bold ml-1 px-1" style="font-size:10px;">Conductor</span>';
+
+            let panelLinkHtml = '';
+            if (u.role === 'admin') {
+                panelLinkHtml = `<a class="dropdown-item py-2" href="admin.html"><i class="fa fa-tachometer-alt text-primary mr-2"></i> Panel de Administración</a>`;
+            } else if (u.role === 'propietario') {
+                panelLinkHtml = `<a class="dropdown-item py-2" href="dashboard-propietario.html"><i class="fa fa-car text-primary mr-2"></i> Mis Autos y Ganancias</a>`;
+            } else {
+                panelLinkHtml = `<a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-primary mr-2"></i> Catálogo de Autos</a>`;
+            }
+
+            const userDropdown = document.createElement('div');
+            userDropdown.className = 'nav-item dropdown user-profile-nav-item d-inline-block';
+            userDropdown.innerHTML = `
+                <a href="#" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                    <img src="${userPhoto}" alt="${u.name}" class="rounded-circle border mr-2 user-current-avatar" style="width: 34px; height: 34px; object-fit: cover; border-color: rgba(255,255,255,0.4) !important;" onerror="this.src='img/team-1.jpg'">
+                    <span class="user-current-name text-truncate" style="max-width: 120px;">${firstName}</span>
+                    ${roleBadge}
+                </a>
+                <div class="dropdown-menu dropdown-menu-right rounded shadow-lg border-0 py-2 mt-1" style="min-width: 250px; z-index: 1050;">
+                    <div class="px-3 py-2 border-bottom bg-light">
+                        <div class="font-weight-bold text-dark text-truncate user-full-name">${u.name || rawName}</div>
+                        <div class="small text-muted text-truncate">${u.email}</div>
+                    </div>
+                    ${panelLinkHtml}
+                    <a class="dropdown-item py-2 btn-open-profile-modal" href="javascript:void(0)">
+                        <i class="fa fa-user-cog text-secondary mr-2"></i> Configurar mi Perfil
+                    </a>
+                    <div class="dropdown-divider my-1"></div>
+                    <a class="dropdown-item py-2 text-danger btn-logout-user font-weight-bold" href="javascript:void(0)">
+                        <i class="fa fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            `;
+
+            loginLink.replaceWith(userDropdown);
+            injectProfileModal();
         }
 
-        // Si hay usuario logueado, reemplazar el enlace de "Iniciar Sesión"
-        loginLinks.forEach(link => {
-            const linkText = link.textContent.trim().toLowerCase();
-            if (linkText.includes('iniciar sesión') || linkText.includes('login')) {
-                const userPhoto = user.avatar || 'img/team-1.jpg';
-                const displayName = (user.name || user.email.split('@')[0]).split(' ')[0];
-                const roleBadge = user.role === 'admin' 
-                    ? '<span class="badge badge-warning text-dark font-weight-bold ml-1 px-1" style="font-size:10px;">Admin</span>' 
-                    : user.role === 'propietario'
-                    ? '<span class="badge badge-success text-white font-weight-bold ml-1 px-1" style="font-size:10px;">Anfitrión</span>'
-                    : '<span class="badge badge-primary text-white font-weight-bold ml-1 px-1" style="font-size:10px;">Conductor</span>';
+        // Si ya hay usuario en localStorage, renderizar de inmediato
+        if (user && user.email) {
+            renderUser(user);
+        }
 
-                let panelLinkHtml = '';
-                if (user.role === 'admin') {
-                    panelLinkHtml = `<a class="dropdown-item py-2" href="admin.html"><i class="fa fa-tachometer-alt text-primary mr-2"></i> Panel de Administración</a>`;
-                } else if (user.role === 'propietario') {
-                    panelLinkHtml = `<a class="dropdown-item py-2" href="dashboard-propietario.html"><i class="fa fa-car text-primary mr-2"></i> Mis Autos y Ganancias</a>`;
-                } else {
-                    panelLinkHtml = `<a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-primary mr-2"></i> Catálogo de Autos</a>`;
-                }
-
-                const userDropdown = document.createElement('div');
-                userDropdown.className = 'nav-item dropdown user-profile-nav-item d-inline-block';
-                userDropdown.innerHTML = `
-                    <a href="#" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
-                        <img src="${userPhoto}" alt="${user.name}" class="rounded-circle border mr-2 user-current-avatar" style="width: 34px; height: 34px; object-fit: cover; border-color: rgba(255,255,255,0.4) !important;" onerror="this.src='img/team-1.jpg'">
-                        <span class="user-current-name text-truncate" style="max-width: 120px;">${displayName}</span>
-                        ${roleBadge}
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right rounded shadow-lg border-0 py-2 mt-1" style="min-width: 250px; z-index: 1050;">
-                        <div class="px-3 py-2 border-bottom bg-light">
-                            <div class="font-weight-bold text-dark text-truncate user-full-name">${user.name || displayName}</div>
-                            <div class="small text-muted text-truncate">${user.email}</div>
-                        </div>
-                        ${panelLinkHtml}
-                        <a class="dropdown-item py-2 btn-open-profile-modal" href="javascript:void(0)">
-                            <i class="fa fa-user-cog text-secondary mr-2"></i> Configurar mi Perfil
-                        </a>
-                        <div class="dropdown-divider my-1"></div>
-                        <a class="dropdown-item py-2 text-danger btn-logout-user font-weight-bold" href="javascript:void(0)">
-                            <i class="fa fa-sign-out-alt mr-2"></i> Cerrar Sesión
-                        </a>
-                    </div>
-                `;
-
-                link.replaceWith(userDropdown);
+        // Sincronizar también directamente con la sesión de Supabase Auth
+        if (typeof getSupabaseClient === 'function') {
+            const client = getSupabaseClient();
+            if (client && client.auth) {
+                client.auth.getSession().then(({ data: { session } }) => {
+                    if (session && session.user) {
+                        const sbUser = session.user;
+                        const meta = sbUser.user_metadata || {};
+                        const currentRole = (user && user.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
+                        const syncedUser = {
+                            id: sbUser.id,
+                            name: meta.full_name || meta.name || (user && user.name) || sbUser.email.split('@')[0],
+                            email: sbUser.email,
+                            role: currentRole,
+                            avatar: meta.avatar_url || meta.picture || (user && user.avatar) || 'img/team-1.jpg',
+                            phone: meta.phone || (user && user.phone) || '',
+                            city: meta.city || (user && user.city) || 'Valledupar',
+                            provider: sbUser.app_metadata?.provider || 'google',
+                            loggedAt: (user && user.loggedAt) || new Date().toISOString()
+                        };
+                        localStorage.setItem('renteasy_current_user', JSON.stringify(syncedUser));
+                        renderUser(syncedUser);
+                    }
+                }).catch(() => {});
             }
-        });
-
-        // Inyectar el Modal de Perfil de Usuario en el body si no existe
-        injectProfileModal();
+        }
     }
+    window.initUserNavbar = initUserNavbar;
 
     function injectProfileModal() {
         if (document.getElementById('modalUserProfile')) return;

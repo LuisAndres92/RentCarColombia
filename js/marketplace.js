@@ -91,18 +91,18 @@ function initCarCatalog() {
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="rent-item mb-4 shadow-sm border rounded-lg overflow-hidden bg-white" style="transition: transform 0.25s ease;">
                     <div class="position-relative">
-                        <img class="img-fluid w-100" src="${car.image}" alt="${car.fullName}" style="height: 220px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
+                        <img class="img-fluid w-100" src="${car.image}" alt="${car.fullName || car.name}" style="height: 220px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
                         <span class="badge badge-primary position-absolute px-3 py-2" style="top: 12px; left: 12px; font-size: 13px; border-radius: 20px;">
-                            <i class="fa fa-map-marker-alt mr-1"></i> ${car.city}
+                            <i class="fa fa-map-marker-alt mr-1"></i> ${car.city || 'Colombia'}
                         </span>
                         <span class="badge badge-dark position-absolute px-2 py-1" style="top: 12px; right: 12px; font-size: 11px;">
-                            ${car.category}
+                            ${car.category || car.type || 'Sedán'}
                         </span>
                     </div>
 
                     <div class="p-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${car.fullName}</h5>
+                            <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${car.fullName || car.name}</h5>
                             <span class="badge badge-light border text-primary font-weight-bold">${car.year}</span>
                         </div>
 

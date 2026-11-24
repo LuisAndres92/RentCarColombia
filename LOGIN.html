@@ -527,9 +527,22 @@
                     </div>
                 `).show();
             } else {
-                // Si el usuario ya tiene sesión iniciada, ofrecerle ir a su cuenta o cerrar sesión
+                // Si el usuario ya tiene sesión iniciada
                 const activeUser = JSON.parse(localStorage.getItem('renteasy_current_user') || 'null');
-                if (activeUser && activeUser.email && !action) {
+                if (activeUser && activeUser.email) {
+                    // Si viene a publicar su auto, promoverlo a propietario y enviarlo directo a su panel
+                    if (role === 'propietario') {
+                        activeUser.role = 'propietario';
+                        localStorage.setItem('renteasy_current_user', JSON.stringify(activeUser));
+                        localStorage.setItem('renteasy_pending_role', 'propietario');
+                        if (typeof getSupabaseClient === 'function') {
+                            const c = getSupabaseClient();
+                            if (c) c.from('perfiles').update({ rol: 'propietario' }).eq('id', activeUser.id).catch(() => {});
+                        }
+                        window.location.href = 'dashboard-propietario.html';
+                        return;
+                    }
+
                     const targetLink = activeUser.role === 'admin' ? 'admin.html' : activeUser.role === 'propietario' ? 'dashboard-propietario.html' : 'car.html';
                     $('#auth-alert').html(`
                         <div class="alert alert-info py-2 px-3 mb-3 small rounded shadow-sm border-info">
@@ -699,13 +712,17 @@
                             const meta = user.user_metadata || {};
                             const googlePhoto = meta.avatar_url || meta.picture || 'img/team-1.jpg';
                             const fullName = meta.full_name || meta.name || user.email.split('@')[0];
-                            const pendingRole = localStorage.getItem('renteasy_pending_role') || 'conductor';
+                            // Determinar el rol: si vino con role=propietario o estaba pendiente
+                            let targetRole = localStorage.getItem('renteasy_pending_role') || 'conductor';
+                            if (role === 'propietario') {
+                                targetRole = 'propietario';
+                            }
 
                             const loggedUser = {
                                 id: user.id,
                                 name: fullName,
                                 email: user.email,
-                                role: pendingRole,
+                                role: targetRole,
                                 avatar: googlePhoto,
                                 phone: meta.phone || '',
                                 city: 'Valledupar',
@@ -716,13 +733,18 @@
                             localStorage.setItem('renteasy_current_user', JSON.stringify(loggedUser));
                             localStorage.setItem('renteasy_last_activity', Date.now().toString());
 
+                            // Actualizar navbar inmediatamente en LOGIN.html
+                            if (typeof window.initUserNavbar === 'function') {
+                                window.initUserNavbar();
+                            }
+
                             // Sincronizar / Actualizar en public.perfiles
                             try {
                                 await client.from('perfiles').upsert({
                                     id: user.id,
                                     email: user.email,
                                     nombre_completo: fullName,
-                                    rol: pendingRole,
+                                    rol: targetRole,
                                     avatar_url: googlePhoto
                                 });
                             } catch (e) {
@@ -742,10 +764,10 @@
                             `).show();
 
                             setTimeout(() => {
-                                if (pendingRole === 'admin') window.location.href = 'admin.html';
-                                else if (pendingRole === 'propietario') window.location.href = 'dashboard-propietario.html';
+                                if (targetRole === 'admin') window.location.href = 'admin.html';
+                                else if (targetRole === 'propietario') window.location.href = 'dashboard-propietario.html';
                                 else window.location.href = 'car.html';
-                            }, 800);
+                            }, 600);
                         }
                     });
                 }
