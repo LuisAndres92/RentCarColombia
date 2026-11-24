@@ -166,6 +166,9 @@
      * =========================================================================
      */
     function initUserNavbar() {
+        // Asegurar que el modal de perfil exista siempre en cualquier página
+        injectProfileModal();
+
         let user = null;
         try {
             user = JSON.parse(localStorage.getItem('renteasy_current_user'));
@@ -207,6 +210,12 @@
                     });
                 }
             });
+
+            // En dashboard-propietario.html, actualizar nombre en la barra si existe
+            const ownerNavName = document.getElementById('nav-user-name');
+            if (ownerNavName) {
+                ownerNavName.innerText = u.name || u.email.split('@')[0];
+            }
 
             // 2. Buscar enlace de login en el navbar (excluyendo botones de publicar)
             const loginLink = document.querySelector('.navbar-nav a.nav-link[href*="LOGIN.html"], .navbar-nav a.nav-link[href*="login.html"]');
@@ -317,7 +326,7 @@
         if (document.getElementById('modalUserProfile')) return;
 
         const modalHtml = `
-            <div class="modal fade" id="modalUserProfile" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal fade" id="modalUserProfile" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1060;">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
                         <div class="modal-header bg-secondary text-white py-3">
@@ -453,8 +462,12 @@
 
             // Actualizar vista en el navbar
             document.querySelectorAll('.user-current-avatar').forEach(img => img.src = user.avatar);
-            document.querySelectorAll('.user-current-name').forEach(span => span.textContent = user.name.split(' ')[0]);
-            document.querySelectorAll('.user-full-name').forEach(div => div.textContent = user.name);
+            document.querySelectorAll('.user-current-name').forEach(span => span.textContent = (user.name || '').split(' ')[0]);
+            document.querySelectorAll('.user-full-name').forEach(div => div.textContent = user.name || '');
+            const ownerNavName = document.getElementById('nav-user-name');
+            if (ownerNavName) {
+                ownerNavName.innerText = user.name || user.email.split('@')[0];
+            }
 
             alertBox.className = 'alert alert-success small p-2 rounded';
             alertBox.innerHTML = '<i class="fa fa-check-circle mr-1"></i> ¡Perfil actualizado con éxito!';
@@ -471,14 +484,30 @@
     }
 
     // Delegación de eventos para Abrir Modal y Cerrar Sesión
-    $(document).on('click', '.btn-open-profile-modal', function() {
-        const user = JSON.parse(localStorage.getItem('renteasy_current_user')) || {};
-        document.getElementById('mp-name').value = user.name || '';
-        document.getElementById('mp-email').value = user.email || '';
-        document.getElementById('mp-phone').value = user.phone || '';
-        document.getElementById('mp-city').value = user.city || 'Valledupar';
-        document.getElementById('mp-avatar-preview').src = user.avatar || 'img/team-1.jpg';
-        document.getElementById('mp-role-text').textContent = user.role || 'Conductor';
+    $(document).on('click', '.btn-open-profile-modal', function(e) {
+        if (e) e.preventDefault();
+        injectProfileModal();
+        let user = {};
+        try {
+            user = JSON.parse(localStorage.getItem('renteasy_current_user')) || {};
+        } catch (err) {
+            user = {};
+        }
+
+        const elName = document.getElementById('mp-name');
+        const elEmail = document.getElementById('mp-email');
+        const elPhone = document.getElementById('mp-phone');
+        const elCity = document.getElementById('mp-city');
+        const elAvatar = document.getElementById('mp-avatar-preview');
+        const elRole = document.getElementById('mp-role-text');
+
+        if (elName) elName.value = user.name || '';
+        if (elEmail) elEmail.value = user.email || '';
+        if (elPhone) elPhone.value = user.phone || '';
+        if (elCity) elCity.value = user.city || 'Valledupar';
+        if (elAvatar) elAvatar.src = user.avatar || 'img/team-1.jpg';
+        if (elRole) elRole.textContent = user.role || 'Conductor';
+
         $('#modalUserProfile').modal('show');
     });
 
@@ -498,8 +527,11 @@
         }
     });
 
+    window.injectProfileModal = injectProfileModal;
+
     // Ejecutar al cargar la página
     $(document).ready(function() {
+        injectProfileModal();
         initUserNavbar();
     });
 
