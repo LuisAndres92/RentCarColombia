@@ -526,6 +526,25 @@
                         <i class="fa fa-shield-alt text-warning mr-2"></i> <strong>Sesión finalizada por inactividad:</strong> Para proteger la seguridad de tu cuenta, tu sesión se cerró automáticamente tras un período prolongado sin actividad (30 min). Por favor ingresa nuevamente.
                     </div>
                 `).show();
+            } else {
+                // Si el usuario ya tiene sesión iniciada, ofrecerle ir a su cuenta o cerrar sesión
+                const activeUser = JSON.parse(localStorage.getItem('renteasy_current_user') || 'null');
+                if (activeUser && activeUser.email && !action) {
+                    const targetLink = activeUser.role === 'admin' ? 'admin.html' : activeUser.role === 'propietario' ? 'dashboard-propietario.html' : 'car.html';
+                    $('#auth-alert').html(`
+                        <div class="alert alert-info py-2 px-3 mb-3 small rounded shadow-sm border-info">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                                <div class="my-1">
+                                    <i class="fa fa-user-check text-primary mr-1"></i> Sesión activa: <strong>${activeUser.name || activeUser.email}</strong> <span class="badge badge-primary text-capitalize ml-1">${activeUser.role || 'Conductor'}</span>
+                                </div>
+                                <div class="my-1">
+                                    <a href="${targetLink}" class="btn btn-xs btn-primary font-weight-bold py-1 px-2 mr-1">Ir a mi Panel</a>
+                                    <button type="button" class="btn btn-xs btn-outline-danger font-weight-bold py-1 px-2 btn-logout-user">Cerrar Sesión</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).show();
+                }
             }
 
             if (action === 'register' || coupon) {
