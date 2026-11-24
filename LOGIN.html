@@ -517,6 +517,16 @@
             const action = urlParams.get('action');
             const role = urlParams.get('role');
             const coupon = urlParams.get('coupon');
+            const reason = urlParams.get('reason');
+
+            // Notificación de cierre de sesión por inactividad
+            if (reason === 'timeout') {
+                $('#auth-alert').html(`
+                    <div class="alert alert-warning py-3 px-3 mb-3 small rounded shadow-sm border-warning">
+                        <i class="fa fa-shield-alt text-warning mr-2"></i> <strong>Sesión finalizada por inactividad:</strong> Para proteger la seguridad de tu cuenta, tu sesión se cerró automáticamente tras un período prolongado sin actividad (30 min). Por favor ingresa nuevamente.
+                    </div>
+                `).show();
+            }
 
             if (action === 'register' || coupon) {
                 $('#tab-register').trigger('click');
@@ -652,12 +662,20 @@
                 }
             });
 
-            // Detectar si el usuario regresa de autenticarse con Google OAuth
+            // ---------------- ESCUCHA OFICIAL DE AUTENTICACIÓN GOOGLE / SUPABASE ----------------
             if (typeof getSupabaseClient === 'function') {
                 const client = getSupabaseClient();
                 if (client && client.auth) {
-                    client.auth.getSession().then(async ({ data: { session } }) => {
-                        if (session && session.user && window.location.hash.includes('access_token=') && !window.location.hash.includes('type=recovery')) {
+                    client.auth.onAuthStateChange(async (event, session) => {
+                        const currentHash = window.location.hash || '';
+
+                        // Si es flujo de recuperación de contraseña, NO procesar como login normal
+                        if (currentHash.includes('type=recovery') || action === 'reset-password') {
+                            return;
+                        }
+
+                        // Si es inicio de sesión o registro exitoso
+                        if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session && session.user) {
                             const user = session.user;
                             const meta = user.user_metadata || {};
                             const googlePhoto = meta.avatar_url || meta.picture || 'img/team-1.jpg';
@@ -672,12 +690,14 @@
                                 avatar: googlePhoto,
                                 phone: meta.phone || '',
                                 city: 'Valledupar',
-                                provider: 'google',
+                                provider: user.app_metadata?.provider || 'google',
                                 loggedAt: new Date().toISOString()
                             };
-                            localStorage.setItem('renteasy_current_user', JSON.stringify(loggedUser));
 
-                            // Registrar / Actualizar en public.perfiles
+                            localStorage.setItem('renteasy_current_user', JSON.stringify(loggedUser));
+                            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+
+                            // Sincronizar / Actualizar en public.perfiles
                             try {
                                 await client.from('perfiles').upsert({
                                     id: user.id,
@@ -690,10 +710,23 @@
                                 console.warn("Supabase upsert Google user:", e);
                             }
 
-                            // Redirigir según el rol asignado
-                            if (pendingRole === 'admin') window.location.href = 'admin.html';
-                            else if (pendingRole === 'propietario') window.location.href = 'dashboard-propietario.html';
-                            else window.location.href = 'car.html';
+                            // Limpiar hash de la barra de direcciones sin recargar la página
+                            if (window.history && window.history.replaceState) {
+                                window.history.replaceState(null, '', window.location.pathname);
+                            }
+
+                            // Mensaje visual de bienvenida
+                            $('#auth-alert').html(`
+                                <div class="alert alert-success py-2 px-3 mb-3 small rounded shadow-sm">
+                                    <i class="fa fa-check-circle mr-1"></i> ¡Bienvenido(a), <strong>${fullName}</strong>! Ingresaste con tu cuenta de Google. Redirigiendo a tu cuenta...
+                                </div>
+                            `).show();
+
+                            setTimeout(() => {
+                                if (pendingRole === 'admin') window.location.href = 'admin.html';
+                                else if (pendingRole === 'propietario') window.location.href = 'dashboard-propietario.html';
+                                else window.location.href = 'car.html';
+                            }, 800);
                         }
                     });
                 }
@@ -751,10 +784,10 @@
             }
 
             // ---------------- DETECTAR ENLACE DE RESTABLECER CONTRASEÑA ----------------
-            const hash = window.location.hash;
-            const hasRecoveryToken = hash && (hash.includes('access_token=') || hash.includes('type=recovery'));
+            const hash = window.location.hash || '';
+            const isRecoveryFlow = action === 'reset-password' || hash.includes('type=recovery');
             
-            if (action === 'reset-password' || hasRecoveryToken) {
+            if (isRecoveryFlow) {
                 // Mostrar exclusivamente el formulario para fijar la nueva contraseña
                 $('#form-login').hide();
                 $('#form-register').hide();

@@ -156,6 +156,65 @@
             }
         });
     }
+
+    /**
+     * =========================================================================
+     * SEGURIDAD: CIERRE AUTOMÁTICO DE SESIÓN POR INACTIVIDAD PROLONGADA
+     * Si el usuario deja la plataforma desatendida por 30 minutos sin mover
+     * el cursor ni escribir, se cierra la sesión de forma segura.
+     * =========================================================================
+     */
+    (function setupInactivityTimeout() {
+        const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
+        const CHECK_INTERVAL_MS = 15 * 1000;        // Verificar cada 15 segundos
+        let lastActivity = Date.now();
+
+        function registerActivity() {
+            const now = Date.now();
+            if (now - lastActivity > 4000) {
+                lastActivity = now;
+                try {
+                    localStorage.setItem('renteasy_last_activity', now.toString());
+                } catch (e) {}
+            }
+        }
+
+        const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+        events.forEach(evt => {
+            window.addEventListener(evt, registerActivity, { passive: true });
+        });
+
+        // Verificador periódico
+        setInterval(function() {
+            const currentUser = localStorage.getItem('renteasy_current_user');
+            if (!currentUser) return;
+
+            const storedLast = parseInt(localStorage.getItem('renteasy_last_activity')) || lastActivity;
+            const idleTime = Date.now() - storedLast;
+
+            if (idleTime >= INACTIVITY_LIMIT_MS) {
+                console.warn("Seguridad Rent Car Colombia: Sesión expirada por inactividad prolongada (" + Math.round(idleTime / 60000) + " min).");
+
+                // Cerrar sesión en Supabase si está activo
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) {
+                        client.auth.signOut().catch(() => {});
+                    }
+                }
+
+                // Limpiar almacenamiento de sesión
+                localStorage.removeItem('renteasy_current_user');
+                localStorage.removeItem('renteasy_last_activity');
+
+                // Redirigir a login con aviso de seguridad si no está ya en el login
+                const currentPath = window.location.pathname.toLowerCase();
+                if (!currentPath.includes('login.html')) {
+                    window.location.href = 'LOGIN.html?reason=timeout';
+                }
+            }
+        }, CHECK_INTERVAL_MS);
+    })();
     
 })(jQuery);
 
