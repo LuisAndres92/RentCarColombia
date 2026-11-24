@@ -391,6 +391,11 @@ document.addEventListener('DOMContentLoaded', function () {
             bookings.unshift(newBooking);
             localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
 
+            // Sincronizar en tiempo real con Supabase en la nube
+            if (typeof dbSaveReserva === 'function') {
+                dbSaveReserva(newBooking).catch(err => console.warn("Sincronización Supabase:", err));
+            }
+
             // Mostrar modal de confirmación con voucher
             showSuccessModal(newBooking);
         });

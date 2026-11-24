@@ -3,7 +3,16 @@
  * Conecta los vehículos guardados en el almacenamiento local / base de datos
  */
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    // Sincronizar catálogo con Supabase en la nube si está disponible
+    if (typeof dbGetVehiculos === 'function') {
+        try {
+            await dbGetVehiculos();
+        } catch (e) {
+            console.warn("Sincronización inicial Supabase:", e);
+        }
+    }
+
     // Inicializar carros demo si no existen
     initDefaultCars();
 
