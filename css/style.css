@@ -55,6 +55,26 @@ h6,
     z-index: 99;
 }
 
+.nav-bar {
+    position: relative;
+    z-index: 1030 !important;
+}
+
+.nav-bar .position-relative {
+    z-index: 1030 !important;
+}
+
+.navbar {
+    position: relative;
+    z-index: 1030 !important;
+}
+
+.navbar .dropdown-menu,
+.navbar-nav .dropdown-menu,
+.user-profile-nav-item .dropdown-menu {
+    z-index: 1045 !important;
+}
+
 .nav-bar::before {
     position: absolute;
     content: "";
