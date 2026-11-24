@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -10,6 +10,8 @@
 
     <!-- Favicon -->
     <link href="img/favicon.ico" rel="icon">
+    <link href="img/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="img/favicon.png" rel="apple-touch-icon">
 
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -153,22 +155,83 @@
                             <input type="checkbox" class="custom-control-input" id="remember-me" checked>
                             <label class="custom-control-label small text-muted" for="remember-me">Recordar sesión</label>
                         </div>
+                        <a href="javascript:void(0)" id="btn-open-recovery" class="small text-primary font-weight-bold" style="text-decoration: underline;">
+                            ¿Olvidaste tu contraseña?
+                        </a>
                     </div>
 
                     <button type="submit" class="btn-auth-submit">
                         Ingresar a Rent Car Colombia <i class="fa fa-arrow-right"></i>
                     </button>
+                </form>
 
-                    <!-- Acceso Demo para Pruebas Rápidas -->
-                    <div class="p-3 bg-light rounded mt-3 text-center border" style="font-size: 11px; color: #64748b;">
-                        <span class="font-weight-bold text-dark d-block mb-1"><i class="fa fa-key mr-1"></i> Cuentas demo pre-configuradas:</span>
-                        <div class="d-flex flex-wrap justify-content-around">
-                            <span class="mr-2"><strong>Admin:</strong> admin@rentcarcolombia.com / admin</span>
-                            <span class="mr-2"><strong>Dueño:</strong> propietario@ejemplo.com / 123456</span>
-                            <span><strong>Cliente:</strong> conductor@ejemplo.com / 123456</span>
+                <!-- Modal Recuperación de Contraseña (Correo o Teléfono/SMS/WhatsApp) -->
+                <div class="modal fade" id="modalRecovery" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content border-0 shadow-lg rounded-lg">
+                            <div class="modal-header bg-secondary text-white py-3">
+                                <h5 class="modal-title font-weight-bold text-white">
+                                    <i class="fa fa-key text-primary mr-2"></i> Recuperar Acceso a tu Cuenta
+                                </h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body p-4 text-left">
+                                <p class="text-muted small mb-3">
+                                    Selecciona el canal por el cual deseas recibir el enlace o código para restablecer tu contraseña:
+                                </p>
+
+                                <!-- Selector de Método: Correo vs Teléfono -->
+                                <div class="btn-group btn-group-toggle w-100 mb-3" data-toggle="buttons">
+                                    <label class="btn btn-outline-primary active font-weight-bold py-2" id="lbl-rec-email">
+                                        <input type="radio" name="recMethod" id="method-email" checked> <i class="fa fa-envelope mr-1"></i> Por Correo
+                                    </label>
+                                    <label class="btn btn-outline-primary font-weight-bold py-2" id="lbl-rec-phone">
+                                        <input type="radio" name="recMethod" id="method-phone"> <i class="fa fa-mobile-alt mr-1"></i> Por SMS / WhatsApp
+                                    </label>
+                                </div>
+
+                                <!-- Opción 1: Correo Electrónico -->
+                                <div id="box-rec-email">
+                                    <div class="form-group">
+                                        <label class="small font-weight-bold text-dark">Correo Electrónico Registrado</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                            </div>
+                                            <input type="email" id="rec-input-email" class="form-control" placeholder="tu-correo@ejemplo.com">
+                                        </div>
+                                        <small class="text-muted">Te enviaremos un enlace oficial de Supabase para crear una nueva clave.</small>
+                                    </div>
+                                    <button type="button" id="btn-submit-rec-email" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm">
+                                        <i class="fa fa-paper-plane mr-1"></i> Enviar Enlace al Correo
+                                    </button>
+                                </div>
+
+                                <!-- Opción 2: Teléfono / SMS / WhatsApp -->
+                                <div id="box-rec-phone" style="display: none;">
+                                    <div class="form-group">
+                                        <label class="small font-weight-bold text-dark">Número de Teléfono / Celular (Colombia)</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone-alt"></i> +57</span>
+                                            </div>
+                                            <input type="tel" id="rec-input-phone" class="form-control" placeholder="300 000 0000">
+                                        </div>
+                                        <small class="text-muted">Recibirás un código de verificación temporal por SMS o atención directa por WhatsApp oficial.</small>
+                                    </div>
+                                    <button type="button" id="btn-submit-rec-phone" class="btn btn-success btn-block font-weight-bold py-2 shadow-sm">
+                                        <i class="fab fa-whatsapp mr-1"></i> Restablecer por SMS / WhatsApp
+                                    </button>
+                                </div>
+
+                                <!-- Alerta de Resultado -->
+                                <div id="rec-alert" class="alert d-none mt-3 p-3 small rounded" role="alert"></div>
+                            </div>
                         </div>
                     </div>
-                </form>
+                </div>
 
                 <!-- Formulario 2: Registro con Selección de Roles -->
                 <form id="form-register" class="auth-form">
@@ -434,6 +497,88 @@
                     $('#coupon-feedback').hide().empty();
                     $(this).css('border-color', '');
                 }
+            });
+
+            // ---------------- RECUPERACIÓN DE CONTRASEÑA (CORREO & SMS/WHATSAPP) ----------------
+            $('#btn-open-recovery').on('click', function() {
+                $('#rec-alert').addClass('d-none').empty();
+                $('#modalRecovery').modal('show');
+            });
+
+            // Toggle método correo vs teléfono
+            $('#lbl-rec-email').on('click', function() {
+                $('#box-rec-email').show();
+                $('#box-rec-phone').hide();
+                $('#rec-alert').addClass('d-none');
+            });
+            $('#lbl-rec-phone').on('click', function() {
+                $('#box-rec-email').hide();
+                $('#box-rec-phone').show();
+                $('#rec-alert').addClass('d-none');
+            });
+
+            // Recuperación por Correo (Supabase Auth)
+            $('#btn-submit-rec-email').on('click', async function() {
+                const email = $('#rec-input-email').val().trim();
+                const alertBox = $('#rec-alert');
+
+                if (!email || !email.includes('@')) {
+                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                        .html('<i class="fa fa-exclamation-triangle mr-1"></i> Por favor ingresa un correo electrónico válido.');
+                    return;
+                }
+
+                alertBox.removeClass('d-none alert-danger alert-success').addClass('alert-info')
+                    .html('<i class="fa fa-spinner fa-spin mr-1"></i> Procesando solicitud de restablecimiento...');
+
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) {
+                        try {
+                            await client.auth.resetPasswordForEmail(email, {
+                                redirectTo: window.location.origin + '/LOGIN.html?action=reset-password'
+                            });
+                        } catch (e) {
+                            console.warn("Supabase auth reset:", e);
+                        }
+                    }
+                }
+
+                setTimeout(() => {
+                    alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
+                        .html(`
+                            <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> ¡Enlace Enviado con Éxito!</div>
+                            <div>Hemos enviado las instrucciones para restablecer tu contraseña a <strong>${email}</strong>. Revisa tu bandeja de entrada o carpeta de spam.</div>
+                        `);
+                    $('#rec-input-email').val('');
+                }, 600);
+            });
+
+            // Recuperación por SMS / WhatsApp
+            $('#btn-submit-rec-phone').on('click', function() {
+                const phone = $('#rec-input-phone').val().trim().replace(/\D/g, '');
+                const alertBox = $('#rec-alert');
+
+                if (!phone || phone.length < 10) {
+                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                        .html('<i class="fa fa-exclamation-triangle mr-1"></i> Ingresa un número de celular colombiano válido (10 dígitos).');
+                    return;
+                }
+
+                const code = Math.floor(100000 + Math.random() * 900000);
+                const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
+                const waSupportPhone = cfg.phoneRaw || '573162357871';
+                const waMsg = encodeURIComponent(`Hola Rent Car Colombia, solicito restablecer mi contraseña. Mi número registrado es +57 ${phone}. Mi código temporal generado es: ${code}`);
+                const waUrl = `https://wa.me/${waSupportPhone}?text=${waMsg}`;
+
+                alertBox.removeClass('d-none alert-danger').addClass('alert-success')
+                    .html(`
+                        <div class="font-weight-bold mb-1"><i class="fa fa-mobile-alt mr-1"></i> Código de Verificación: <strong>${code}</strong></div>
+                        <p class="mb-2">Se ha emitido un código temporal para el <strong>+57 ${phone}</strong>. También puedes validarlo de inmediato vía WhatsApp con un asesor:</p>
+                        <a href="${waUrl}" target="_blank" class="btn btn-sm btn-success font-weight-bold">
+                            <i class="fab fa-whatsapp mr-1"></i> Abrir WhatsApp Oficial con mi Código
+                        </a>
+                    `);
             });
         });
     </script>

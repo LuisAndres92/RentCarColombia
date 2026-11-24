@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1C1E32"/>
+      <stop offset="100%" stop-color="#0f111d"/>
+    </linearGradient>
+    <linearGradient id="carGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F77D0A"/>
+      <stop offset="100%" stop-color="#ff9933"/>
+    </linearGradient>
+  </defs>
+  <!-- Fondo Redondeado -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  
+  <!-- Borde Sutil Naranja -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="#F77D0A" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Silueta Automóvil Deportivo Rent Car Colombia -->
+  <path d="M 12 36 C 14 30, 20 24, 28 22 C 34 20, 42 20, 47 24 C 51 27, 53 32, 54 36 C 54 39, 53 41, 50 41 L 14 41 C 12 41, 11 38, 12 36 Z" fill="url(#carGrad)"/>
+  
+  <!-- Ventana / Parabrisas -->
+  <path d="M 28 24 C 33 22, 40 22, 44 25 C 46 27, 47 30, 47 32 L 25 32 C 25 28, 26 25, 28 24 Z" fill="#1C1E32" fill-opacity="0.85"/>
+  <path d="M 36 23 L 36 32" stroke="#F77D0A" stroke-width="1.5" stroke-opacity="0.6"/>
+
+  <!-- Ruedas Delantera y Trasera -->
+  <circle cx="21" cy="41" r="6" fill="#0f111d" stroke="#F77D0A" stroke-width="2"/>
+  <circle cx="21" cy="41" r="2.5" fill="#F77D0A"/>
+
+  <circle cx="45" cy="41" r="6" fill="#0f111d" stroke="#F77D0A" stroke-width="2"/>
+  <circle cx="45" cy="41" r="2.5" fill="#F77D0A"/>
+
+  <!-- Línea de Velocidad / Acento Colombia -->
+  <path d="M 8 46 L 56 46" stroke="#F77D0A" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="10" cy="46" r="1.5" fill="#FFCD00"/>
+  <circle cx="14" cy="46" r="1.5" fill="#003087"/>
+  <circle cx="18" cy="46" r="1.5" fill="#C8102E"/>
+</svg>
