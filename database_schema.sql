@@ -149,3 +149,36 @@ CREATE TABLE public.configuracion_sitio (
     datos JSONB NOT NULL,
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 11. TABLA DE EQUIPO DE TRABAJO (TALENTO HUMANO Y SOPORTE)
+CREATE TABLE public.equipo_trabajo (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre TEXT NOT NULL,
+    cargo TEXT NOT NULL,
+    descripcion TEXT,
+    foto_url TEXT NOT NULL DEFAULT 'img/team-1.jpg',
+    telefono TEXT,
+    whatsapp TEXT,
+    email TEXT,
+    orden INT DEFAULT 1,
+    activo BOOLEAN DEFAULT TRUE,
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 12. TABLA DE TESTIMONIOS Y OPINIONES (TESTIMONIAL.HTML & INDEX.HTML)
+CREATE TABLE public.testimonios (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre_cliente TEXT NOT NULL,
+    rol_o_ciudad TEXT NOT NULL,
+    foto_url TEXT DEFAULT 'img/testimonial-1.jpg',
+    calificacion INT DEFAULT 5 CHECK (calificacion BETWEEN 1 AND 5),
+    comentario TEXT NOT NULL,
+    vehiculo_alquilado TEXT,
+    verificado BOOLEAN DEFAULT TRUE,
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 13. ALMACENAMIENTO DE ARCHIVOS Y FOTOS (SUPABASE STORAGE BUCKETS)
+-- - Bucket 'vehiculos' (Público): Para almacenar fotos en alta resolución de los autos publicados.
+-- - Bucket 'avatars' (Público): Para almacenar fotos de perfil de usuarios y colaboradores.
+-- - Bucket 'documentos' (Privado): Para resguardar licencias de conducir y documentos de identidad.

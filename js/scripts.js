@@ -198,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Crear nuevo usuario
+            const userAvatar = window.selectedCustomAvatar || 'img/team-1.jpg';
             const newUser = {
                 id: 'usr_' + Date.now(),
                 name: name,
@@ -206,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 role: role,
                 city: city,
                 password: password,
+                avatar: userAvatar,
                 appliedCoupon: appliedCoupon,
                 discountPercent: discountPercent,
                 createdAt: new Date().toISOString()
@@ -223,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             email: email,
                             password: password,
                             options: {
-                                data: { name: name, phone: phone, role: role, city: city }
+                                data: { name: name, phone: phone, role: role, city: city, avatar_url: userAvatar }
                             }
                         }).catch(e => console.warn("Supabase signUp:", e));
                     }
@@ -232,7 +234,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         nombre_completo: name,
                         telefono: phone,
                         rol: role,
-                        ciudad: city
+                        ciudad: city,
+                        avatar_url: userAvatar
                     }]).catch(e => console.warn("Supabase insert perfil:", e));
                 }
             }
@@ -243,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
+                city: newUser.city,
+                phone: newUser.phone,
+                avatar: newUser.avatar,
                 city: newUser.city,
                 phone: newUser.phone,
                 appliedCoupon: newUser.appliedCoupon,

@@ -131,6 +131,17 @@
 
                 <!-- Formulario 1: Iniciar Sesión -->
                 <form id="form-login" class="auth-form active">
+                    <!-- Botón Oficial de Inicio con Google / Gmail -->
+                    <button type="button" class="btn btn-outline-dark btn-block font-weight-bold py-2 shadow-sm d-flex align-items-center justify-content-center mb-3 btn-google-auth" style="border-radius: 8px; border-color: #dadce0; background: #fff; color: #3c4043; font-size: 14px; transition: all 0.2s ease;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px; margin-right: 10px;">
+                        <span>Continuar con Google</span>
+                    </button>
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1" style="border-top: 1px solid #e2e8f0;">
+                        <span class="mx-3 text-muted small text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">o con correo electrónico</span>
+                        <hr class="flex-grow-1" style="border-top: 1px solid #e2e8f0;">
+                    </div>
+
                     <div class="form-group-custom">
                         <label for="login-email">Correo Electrónico</label>
                         <div class="input-icon-group">
@@ -285,6 +296,17 @@
 
                 <!-- Formulario 2: Registro con Selección de Roles -->
                 <form id="form-register" class="auth-form">
+                    <!-- Botón Oficial de Registro con Google / Gmail -->
+                    <button type="button" class="btn btn-outline-dark btn-block font-weight-bold py-2 shadow-sm d-flex align-items-center justify-content-center mb-3 btn-google-auth" style="border-radius: 8px; border-color: #dadce0; background: #fff; color: #3c4043; font-size: 14px; transition: all 0.2s ease;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px; margin-right: 10px;">
+                        <span>Registrarse con Google / Gmail</span>
+                    </button>
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1" style="border-top: 1px solid #e2e8f0;">
+                        <span class="mx-3 text-muted small text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">o completar tus datos</span>
+                        <hr class="flex-grow-1" style="border-top: 1px solid #e2e8f0;">
+                    </div>
+
                     <!-- Selector de Rol Visual -->
                     <div class="role-selection-wrapper">
                         <label>¿Cómo deseas usar Rent Car Colombia?</label>
@@ -313,6 +335,28 @@
                     <div id="role-notice" class="role-info-banner">
                         <i class="fa fa-info-circle"></i>
                         <span><strong>Modo Arrendatario:</strong> Podrás explorar vehículos, solicitar reservas y viajar con total seguridad.</span>
+                    </div>
+
+                    <!-- Selector de Foto de Perfil / Avatar (Soporta foto de Google o propia) -->
+                    <div class="form-group-custom bg-light p-3 rounded border mb-3">
+                        <label class="small font-weight-bold text-dark mb-2 d-block">
+                            <i class="fa fa-camera text-primary mr-1"></i> Foto de Perfil (Opcional)
+                        </label>
+                        <div class="d-flex align-items-center">
+                            <div class="position-relative" style="width: 65px; height: 65px; flex-shrink: 0;">
+                                <img id="reg-avatar-preview" src="img/team-1.jpg" alt="Foto de perfil" class="rounded-circle border shadow-sm" style="width: 65px; height: 65px; object-fit: cover;">
+                                <label for="reg-avatar-file" class="btn btn-sm btn-primary rounded-circle position-absolute" style="bottom: -4px; right: -4px; width: 26px; height: 26px; padding: 0; line-height: 26px; text-align: center; cursor: pointer;" title="Cambiar o subir foto">
+                                    <i class="fa fa-edit" style="font-size: 11px;"></i>
+                                </label>
+                                <input type="file" id="reg-avatar-file" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="ml-3">
+                                <span class="small font-weight-bold text-dark d-block" id="reg-avatar-label">Foto de perfil estándar</span>
+                                <small class="text-muted d-block" style="font-size: 11px;">
+                                    Si continúas con Google se usará tu foto de Gmail. También puedes subir una foto desde tu dispositivo o cambiarla cuando quieras.
+                                </small>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-row-2">
@@ -548,6 +592,112 @@
                     $(this).css('border-color', '');
                 }
             });
+
+            // ---------------- PREVISUALIZACIÓN DE FOTO DE PERFIL / AVATAR ----------------
+            window.selectedCustomAvatar = null;
+            $('#reg-avatar-file').on('change', function(e) {
+                const file = e.target.files && e.target.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('La imagen seleccionada supera el límite recomendado de 5MB.');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        $('#reg-avatar-preview').attr('src', evt.target.result);
+                        $('#reg-avatar-label').html('<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i> Foto personalizada cargada</span>');
+                        window.selectedCustomAvatar = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // ---------------- AUTENTICACIÓN OFICIAL CON GOOGLE / GMAIL ----------------
+            $('.btn-google-auth').on('click', async function() {
+                const btn = $(this);
+                const origHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-2"></i> Conectando con Google...');
+
+                // Guardar el rol seleccionado actualmente para aplicarlo al crear la cuenta
+                const currentRole = $('#reg-role').val() || 'conductor';
+                localStorage.setItem('renteasy_pending_role', currentRole);
+
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) {
+                        try {
+                            const redirectUrl = window.location.origin + window.location.pathname;
+                            const { data, error } = await client.auth.signInWithOAuth({
+                                provider: 'google',
+                                options: {
+                                    redirectTo: redirectUrl,
+                                    queryParams: {
+                                        access_type: 'offline',
+                                        prompt: 'consent'
+                                    }
+                                }
+                            });
+                            if (error) {
+                                alert('Aviso de Google OAuth:\n' + error.message + '\n\n(Asegúrate de tener habilitado el proveedor Google en el panel de Supabase: Authentication > Providers > Google)');
+                                btn.prop('disabled', false).html(origHtml);
+                            }
+                        } catch (err) {
+                            alert('Error al conectar con Google: ' + (err.message || err));
+                            btn.prop('disabled', false).html(origHtml);
+                        }
+                    } else {
+                        alert('El cliente de Supabase no está disponible temporalmente.');
+                        btn.prop('disabled', false).html(origHtml);
+                    }
+                }
+            });
+
+            // Detectar si el usuario regresa de autenticarse con Google OAuth
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client && client.auth) {
+                    client.auth.getSession().then(async ({ data: { session } }) => {
+                        if (session && session.user && window.location.hash.includes('access_token=') && !window.location.hash.includes('type=recovery')) {
+                            const user = session.user;
+                            const meta = user.user_metadata || {};
+                            const googlePhoto = meta.avatar_url || meta.picture || 'img/team-1.jpg';
+                            const fullName = meta.full_name || meta.name || user.email.split('@')[0];
+                            const pendingRole = localStorage.getItem('renteasy_pending_role') || 'conductor';
+
+                            const loggedUser = {
+                                id: user.id,
+                                name: fullName,
+                                email: user.email,
+                                role: pendingRole,
+                                avatar: googlePhoto,
+                                phone: meta.phone || '',
+                                city: 'Valledupar',
+                                provider: 'google',
+                                loggedAt: new Date().toISOString()
+                            };
+                            localStorage.setItem('renteasy_current_user', JSON.stringify(loggedUser));
+
+                            // Registrar / Actualizar en public.perfiles
+                            try {
+                                await client.from('perfiles').upsert({
+                                    id: user.id,
+                                    email: user.email,
+                                    nombre_completo: fullName,
+                                    rol: pendingRole,
+                                    avatar_url: googlePhoto
+                                });
+                            } catch (e) {
+                                console.warn("Supabase upsert Google user:", e);
+                            }
+
+                            // Redirigir según el rol asignado
+                            if (pendingRole === 'admin') window.location.href = 'admin.html';
+                            else if (pendingRole === 'propietario') window.location.href = 'dashboard-propietario.html';
+                            else window.location.href = 'car.html';
+                        }
+                    });
+                }
+            }
 
             // ---------------- FUNCIÓN DE VALIDACIÓN ESTRICTA DE USUARIO EN BASE DE DATOS ----------------
             async function verifyUserRegistered(identifier, type) {
