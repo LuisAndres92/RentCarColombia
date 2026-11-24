@@ -340,9 +340,18 @@
         if (typeof getSupabaseClient === 'function') {
             const client = getSupabaseClient();
             if (client && client.auth) {
+                // Si el usuario acaba de cerrar sesión explícitamente, no re-hidratar sesión
+                if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
+                    return;
+                }
+
                 // Escuchar cambios de autenticación
                 if (typeof client.auth.onAuthStateChange === 'function') {
                     client.auth.onAuthStateChange((event, session) => {
+                        if (event === 'SIGNED_OUT' || sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
+                            localStorage.removeItem('renteasy_current_user');
+                            return;
+                        }
                         if (session && session.user) {
                             const sbUser = session.user;
                             const meta = sbUser.user_metadata || {};
@@ -368,6 +377,9 @@
                 }
 
                 client.auth.getSession().then(({ data: { session } }) => {
+                    if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
+                        return;
+                    }
                     if (session && session.user) {
                         const sbUser = session.user;
                         const meta = sbUser.user_metadata || {};
@@ -584,19 +596,46 @@
         $('#modalUserProfile').modal('show');
     });
 
-    $(document).on('click', '.btn-logout-user', function(e) {
-        e.preventDefault();
-        if (confirm('¿Deseas cerrar tu sesión en Rent Car Colombia?')) {
-            // Cerrar sesión en Supabase
+    async function performFullLogout() {
+        try {
+            sessionStorage.setItem('renteasy_explicit_logout', 'true');
+            localStorage.removeItem('renteasy_current_user');
+            localStorage.removeItem('renteasy_last_activity');
+            localStorage.removeItem('renteasy_pending_role');
+
+            // Limpiar tokens de Supabase Auth en localStorage
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('sb-') || k.includes('auth-token') || k.startsWith('renteasy_current_user'))) {
+                    keysToRemove.push(k);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+
             if (typeof getSupabaseClient === 'function') {
                 const client = getSupabaseClient();
                 if (client && client.auth) {
-                    client.auth.signOut().catch(() => {});
+                    await Promise.race([
+                        client.auth.signOut({ scope: 'local' }),
+                        new Promise(resolve => setTimeout(resolve, 600))
+                    ]);
                 }
             }
-            localStorage.removeItem('renteasy_current_user');
-            localStorage.removeItem('renteasy_last_activity');
-            window.location.href = 'LOGIN.html';
+        } catch (e) {
+            console.warn("Logout error:", e);
+        } finally {
+            window.location.href = 'LOGIN.html?action=logged_out';
+        }
+    }
+    window.performFullLogout = performFullLogout;
+
+    $(document).on('click', '.btn-logout-user, #btn-logout, .btn-admin-logout', async function(e) {
+        e.preventDefault();
+        if (confirm('¿Deseas cerrar tu sesión en Rent Car Colombia?')) {
+            const btn = $(this);
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-1"></i> Cerrando...');
+            await performFullLogout();
         }
     });
 

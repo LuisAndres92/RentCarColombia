@@ -548,44 +548,55 @@
             const coupon = urlParams.get('coupon');
             const reason = urlParams.get('reason');
 
-            // Notificación de cierre de sesión por inactividad
+            // Notificación de cierre de sesión por inactividad o cierre voluntario
             if (reason === 'timeout') {
                 $('#auth-alert').html(`
                     <div class="alert alert-warning py-3 px-3 mb-3 small rounded shadow-sm border-warning">
                         <i class="fa fa-shield-alt text-warning mr-2"></i> <strong>Sesión finalizada por inactividad:</strong> Para proteger la seguridad de tu cuenta, tu sesión se cerró automáticamente tras un período prolongado sin actividad (30 min). Por favor ingresa nuevamente.
                     </div>
                 `).show();
-            } else {
-                // Si el usuario ya tiene sesión iniciada
-                const activeUser = JSON.parse(localStorage.getItem('renteasy_current_user') || 'null');
-                if (activeUser && activeUser.email) {
-                    // Si viene a publicar su auto, promoverlo a propietario y enviarlo directo a su panel
-                    if (role === 'propietario') {
-                        activeUser.role = 'propietario';
-                        localStorage.setItem('renteasy_current_user', JSON.stringify(activeUser));
-                        localStorage.setItem('renteasy_pending_role', 'propietario');
-                        if (typeof getSupabaseClient === 'function') {
-                            const c = getSupabaseClient();
-                            if (c) c.from('perfiles').update({ rol: 'propietario' }).eq('id', activeUser.id).catch(() => {});
+            } else if (action === 'logged_out' || sessionStorage.getItem('renteasy_explicit_logout') === 'true') {
+                // Limpieza total y confirmación limpia de cierre de sesión
+                sessionStorage.removeItem('renteasy_explicit_logout');
+                localStorage.removeItem('renteasy_current_user');
+                localStorage.removeItem('renteasy_last_activity');
+                localStorage.removeItem('renteasy_pending_role');
+
+                // Limpiar llaves de supabase en localStorage
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && (k.startsWith('sb-') || k.includes('auth-token'))) {
+                            localStorage.removeItem(k);
                         }
+                    }
+                } catch(e) {}
+
+                if (typeof getSupabaseClient === 'function') {
+                    const c = getSupabaseClient();
+                    if (c && c.auth) c.auth.signOut().catch(() => {});
+                }
+
+                $('#auth-alert').html(`
+                    <div class="alert alert-success py-2 px-3 mb-3 small rounded shadow-sm border-success">
+                        <i class="fa fa-check-circle mr-1"></i> Has cerrado tu sesión correctamente.
+                    </div>
+                `).show();
+            } else {
+                // Si el usuario ya tiene sesión activa y navega directamente a LOGIN.html (sin cerrar sesión),
+                // redirigir directamente a su panel correspondiente en vez de mostrar un formulario redundante
+                const activeUser = JSON.parse(localStorage.getItem('renteasy_current_user') || 'null');
+                if (activeUser && (activeUser.email || activeUser.id)) {
+                    if (role === 'propietario' || activeUser.role === 'propietario') {
                         window.location.href = 'dashboard-propietario.html';
                         return;
                     }
-
-                    const targetLink = activeUser.role === 'admin' ? 'admin.html' : activeUser.role === 'propietario' ? 'dashboard-propietario.html' : 'car.html';
-                    $('#auth-alert').html(`
-                        <div class="alert alert-info py-2 px-3 mb-3 small rounded shadow-sm border-info">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap">
-                                <div class="my-1">
-                                    <i class="fa fa-user-check text-primary mr-1"></i> Sesión activa: <strong>${activeUser.name || activeUser.email}</strong> <span class="badge badge-primary text-capitalize ml-1">${activeUser.role || 'Conductor'}</span>
-                                </div>
-                                <div class="my-1">
-                                    <a href="${targetLink}" class="btn btn-xs btn-primary font-weight-bold py-1 px-2 mr-1">Ir a mi Panel</a>
-                                    <button type="button" class="btn btn-xs btn-outline-danger font-weight-bold py-1 px-2 btn-logout-user">Cerrar Sesión</button>
-                                </div>
-                            </div>
-                        </div>
-                    `).show();
+                    if (activeUser.role === 'admin') {
+                        window.location.href = 'admin.html';
+                        return;
+                    }
+                    window.location.href = 'car.html';
+                    return;
                 }
             }
 
@@ -729,6 +740,12 @@
                 if (client && client.auth) {
                     client.auth.onAuthStateChange(async (event, session) => {
                         const currentHash = window.location.hash || '';
+
+                        // Si el usuario acaba de cerrar sesión, NO re-iniciar sesión automáticamente
+                        if (event === 'SIGNED_OUT' || action === 'logged_out' || sessionStorage.getItem('renteasy_explicit_logout') === 'true') {
+                            localStorage.removeItem('renteasy_current_user');
+                            return;
+                        }
 
                         // Si es flujo de recuperación de contraseña, NO procesar como login normal
                         if (currentHash.includes('type=recovery') || action === 'reset-password') {

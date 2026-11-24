@@ -30,11 +30,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 4. Cerrar Sesión
     document.querySelectorAll('.btn-admin-logout').forEach(btn => {
-        btn.addEventListener('click', function (e) {
+        btn.addEventListener('click', async function (e) {
             e.preventDefault();
             if (confirm('¿Deseas cerrar tu sesión como Administrador?')) {
-                localStorage.removeItem('renteasy_current_user');
-                window.location.href = 'LOGIN.html';
+                if (typeof window.performFullLogout === 'function') {
+                    await window.performFullLogout();
+                } else {
+                    localStorage.removeItem('renteasy_current_user');
+                    window.location.href = 'LOGIN.html?action=logged_out';
+                }
             }
         });
     });
