@@ -87,23 +87,34 @@ function initCarCatalog() {
             return;
         }
 
-        container.innerHTML = filtered.map(car => `
+        container.innerHTML = filtered.map(car => {
+            const displayCategory = (car.category && car.category !== 'undefined' && car.category !== 'null') ? car.category : 
+                                   (car.type && car.type !== 'undefined' && car.type !== 'null' ? car.type : 'SUV / Camioneta');
+            const displayCity = (car.city && car.city !== 'undefined' && car.city !== 'null') ? car.city : 'Valledupar';
+            const displayPrice = car.pricePerDay || car.price || 200000;
+            const displayTransmission = (car.transmission && car.transmission !== 'undefined') ? car.transmission : 'Automático';
+            const displayFuel = (car.fuel && car.fuel !== 'undefined') ? car.fuel : 'Gasolina';
+            const displaySeats = car.seats || 5;
+            const displayYear = car.year || 2023;
+            const displayName = car.fullName || car.name || `${car.brand || ''} ${car.model || ''}`.trim() || 'Vehículo en Renta';
+
+            return `
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="rent-item mb-4 shadow-sm border rounded-lg overflow-hidden bg-white" style="transition: transform 0.25s ease;">
                     <div class="position-relative">
-                        <img class="img-fluid w-100" src="${car.image}" alt="${car.fullName || car.name}" style="height: 220px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
+                        <img class="img-fluid w-100" src="${car.image || 'img/car-rent-1.png'}" alt="${displayName}" style="height: 220px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
                         <span class="badge badge-primary position-absolute px-3 py-2" style="top: 12px; left: 12px; font-size: 13px; border-radius: 20px;">
-                            <i class="fa fa-map-marker-alt mr-1"></i> ${car.city || 'Colombia'}
+                            <i class="fa fa-map-marker-alt mr-1"></i> ${displayCity}
                         </span>
                         <span class="badge badge-dark position-absolute px-2 py-1" style="top: 12px; right: 12px; font-size: 11px;">
-                            ${car.category || car.type || 'Sedán'}
+                            ${displayCategory}
                         </span>
                     </div>
 
                     <div class="p-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${car.fullName || car.name}</h5>
-                            <span class="badge badge-light border text-primary font-weight-bold">${car.year}</span>
+                            <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${displayName}</h5>
+                            <span class="badge badge-light border text-primary font-weight-bold">${displayYear}</span>
                         </div>
 
                         <!-- Badge del Propietario -->
@@ -116,15 +127,15 @@ function initCarCatalog() {
                         <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
                             <div class="px-1">
                                 <i class="fa fa-cog text-primary"></i>
-                                <div class="font-weight-semi-bold">${car.transmission}</div>
+                                <div class="font-weight-semi-bold">${displayTransmission}</div>
                             </div>
                             <div class="px-1 border-left border-right">
                                 <i class="fa fa-gas-pump text-primary"></i>
-                                <div class="font-weight-semi-bold">${car.fuel}</div>
+                                <div class="font-weight-semi-bold">${displayFuel}</div>
                             </div>
                             <div class="px-1">
                                 <i class="fa fa-users text-primary"></i>
-                                <div class="font-weight-semi-bold">${car.seats} Puestos</div>
+                                <div class="font-weight-semi-bold">${displaySeats} Puestos</div>
                             </div>
                         </div>
 
@@ -132,7 +143,7 @@ function initCarCatalog() {
                         <div class="d-flex justify-content-between align-items-center pt-2">
                             <div>
                                 <span class="small text-muted d-block">Tarifa por día</span>
-                                <h5 class="text-primary font-weight-bold mb-0">$${formatPrice(car.pricePerDay)} <small class="text-muted" style="font-size: 11px;">COP</small></h5>
+                                <h5 class="text-primary font-weight-bold mb-0">$${formatPrice(displayPrice)} <small class="text-muted" style="font-size: 11px;">COP</small></h5>
                             </div>
                             <div class="btn-group">
                                 <a class="btn btn-outline-secondary btn-sm px-2" href="detail.html?id=${car.id}">Detalles</a>
@@ -142,7 +153,8 @@ function initCarCatalog() {
                     </div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     if (filterSearchBtn) {

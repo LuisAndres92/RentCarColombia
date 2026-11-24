@@ -37,26 +37,40 @@ async function dbGetVehiculos() {
 
             if (!error && data && data.length > 0) {
                 // Adaptar nombres de campos al modelo del frontend
-                const mapped = data.map(v => ({
-                    id: v.id,
-                    brand: v.marca,
-                    model: v.modelo,
-                    name: v.nombre_completo || `${v.marca} ${v.modelo}`,
-                    fullName: v.nombre_completo || `${v.marca} ${v.modelo}`,
-                    year: v.año,
-                    type: v.categoria || 'Sedán',
-                    category: v.categoria || 'Sedán',
-                    transmission: v.transmision,
-                    fuel: v.combustible,
-                    seats: v.puestos,
-                    price: parseFloat(v.precio_por_dia),
-                    city: v.ciudad,
-                    mileage: v.kilometraje_limite,
-                    desc: v.descripcion,
-                    image: v.imagen_url || 'img/car-rent-1.png',
-                    status: v.estado,
-                    ownerId: v.propietario_id
-                }));
+                const mapped = data.map(v => {
+                    const rawCat = v.categoria || v.category || v.tipo || v.type;
+                    const cleanCat = (rawCat && rawCat !== 'undefined' && rawCat !== 'null') ? rawCat : 'SUV / Camioneta';
+                    const rawPrice = parseFloat(v.precio_por_dia || v.precio || v.pricePerDay || v.price || 200000);
+                    const cleanCity = (v.ciudad && v.ciudad !== 'undefined' && v.ciudad !== 'null') ? v.ciudad : (v.city && v.city !== 'undefined' ? v.city : 'Valledupar');
+                    const cleanTransmission = (v.transmision && v.transmision !== 'undefined') ? v.transmision : (v.transmission || 'Automático');
+                    const cleanFuel = (v.combustible && v.combustible !== 'undefined') ? v.combustible : (v.fuel || 'Gasolina');
+                    const cleanSeats = parseInt(v.puestos || v.seats) || 5;
+                    const cleanYear = parseInt(v.año || v.anio || v.year) || 2023;
+                    const cleanName = v.nombre_completo || v.fullName || `${v.marca || ''} ${v.modelo || ''}`.trim() || 'Auto en Alquiler';
+
+                    return {
+                        id: v.id,
+                        brand: v.marca || v.brand || 'Vehículo',
+                        model: v.modelo || v.model || '',
+                        name: cleanName,
+                        fullName: cleanName,
+                        year: cleanYear,
+                        type: cleanCat,
+                        category: cleanCat,
+                        transmission: cleanTransmission,
+                        fuel: cleanFuel,
+                        seats: cleanSeats,
+                        price: rawPrice,
+                        pricePerDay: rawPrice,
+                        city: cleanCity,
+                        mileage: v.kilometraje_limite || v.mileage || '200 km/día',
+                        desc: v.descripcion || v.description || '',
+                        description: v.descripcion || v.description || '',
+                        image: v.imagen_url || v.image || 'img/car-rent-1.png',
+                        status: v.estado || v.status || 'Activo',
+                        ownerId: v.propietario_id || v.ownerId
+                    };
+                });
                 // Sincronizar copia local
                 localStorage.setItem('renteasy_cars', JSON.stringify(mapped));
                 return mapped;

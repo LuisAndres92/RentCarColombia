@@ -169,6 +169,11 @@
         // Asegurar que el modal de perfil exista siempre en cualquier página
         injectProfileModal();
 
+        // Refrescar timestamp de actividad al iniciar la vista
+        try {
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+        } catch (e) {}
+
         let user = null;
         try {
             user = JSON.parse(localStorage.getItem('renteasy_current_user'));
@@ -176,8 +181,16 @@
             user = null;
         }
 
+        // Si existe un usuario en sesión local, asegurar campos mínimos
+        if (user && (user.email || user.name || user.id)) {
+            user.email = user.email || ((user.name ? user.name.replace(/\s+/g, '_').toLowerCase() : 'usuario') + '@rentcarcolombia.com');
+            user.name = user.name || user.email.split('@')[0];
+            user.avatar = user.avatar || 'img/team-1.jpg';
+            user.role = user.role || 'conductor';
+        }
+
         function renderUser(u) {
-            if (!u || !u.email) {
+            if (!u || (!u.email && !u.name && !u.id)) {
                 // Si NO hay sesión activa, asegurar que los botones de publicar lleven a login/registro
                 document.querySelectorAll('a[href*="role=propietario"], a[href*="dashboard-propietario"], .btn-publish-car').forEach(btn => {
                     const text = (btn.textContent || '').trim().toLowerCase();
@@ -188,13 +201,20 @@
                 return;
             }
 
-            // 1. Si el usuario está autenticado, TODOS los botones de "Publicar mi Auto" en toda la página lo llevan directo a su panel
+            // Normalizar datos del usuario autenticado
+            u.email = u.email || ((u.name ? u.name.replace(/\s+/g, '_').toLowerCase() : 'usuario') + '@rentcarcolombia.com');
+            u.name = u.name || u.email.split('@')[0];
+            const userPhoto = u.avatar || 'img/team-1.jpg';
+            const rawName = u.name;
+            const firstName = (rawName.split(' ')[0] || 'Mi Perfil').replace(/[()]/g, '');
+
+            // 1. Si el usuario está autenticado, TODOS los botones de "Publicar mi Auto" lo llevan directo a su panel
             document.querySelectorAll('a[href*="role=propietario"], a[href*="dashboard-propietario"], a.btn-primary, a.btn-outline-light, .btn-publish-car').forEach(btn => {
                 const text = (btn.textContent || '').trim().toLowerCase();
-                const currentHref = btn.getAttribute('href') || '';
-                if (text.includes('publicar') || currentHref.includes('role=propietario')) {
+                const currentHref = (btn.getAttribute('href') || '').toLowerCase();
+                if (text.includes('publicar') || currentHref.includes('role=propietario') || currentHref.includes('dashboard-propietario')) {
                     btn.href = 'dashboard-propietario.html';
-                    btn.addEventListener('click', function(e) {
+                    btn.onclick = function(e) {
                         // Promover automáticamente el rol a propietario si estaba como conductor
                         if (u.role !== 'admin' && u.role !== 'propietario') {
                             u.role = 'propietario';
@@ -207,33 +227,41 @@
                                 }
                             }
                         }
-                    });
+                    };
                 }
             });
 
-            // En dashboard-propietario.html, actualizar nombre en la barra si existe
+            // En dashboard-propietario.html, actualizar nombre e icono en la barra si existe
             const ownerNavName = document.getElementById('nav-user-name');
             if (ownerNavName) {
-                ownerNavName.innerText = u.name || u.email.split('@')[0];
+                ownerNavName.innerText = u.name;
             }
 
-            // 2. Buscar enlace de login en el navbar (excluyendo botones de publicar)
-            const loginLink = document.querySelector('.navbar-nav a.nav-link[href*="LOGIN.html"], .navbar-nav a.nav-link[href*="login.html"]');
-            
-            // Si ya existe el dropdown renderizado, solo actualizar textos e imagen
+            // 2. Si ya existe el dropdown dinámico renderizado, actualizar datos
             const existingDropdown = document.querySelector('.user-profile-nav-item');
             if (existingDropdown) {
-                existingDropdown.querySelectorAll('.user-current-avatar').forEach(img => img.src = u.avatar || 'img/team-1.jpg');
-                existingDropdown.querySelectorAll('.user-current-name').forEach(span => span.textContent = (u.name || u.email.split('@')[0]).split(' ')[0]);
-                existingDropdown.querySelectorAll('.user-full-name').forEach(div => div.textContent = u.name || u.email);
+                existingDropdown.querySelectorAll('.user-current-avatar').forEach(img => img.src = userPhoto);
+                existingDropdown.querySelectorAll('.user-current-name').forEach(span => span.textContent = firstName);
+                existingDropdown.querySelectorAll('.user-full-name').forEach(div => div.textContent = u.name);
                 return;
             }
 
-            if (!loginLink) return;
+            // 3. Localizar el botón/enlace de inicio de sesión de forma infalible
+            let loginLink = document.getElementById('nav-login-link') || document.querySelector('.nav-auth-link');
+            if (!loginLink) {
+                const navLinks = document.querySelectorAll('.navbar-nav a, nav a');
+                for (let i = 0; i < navLinks.length; i++) {
+                    const a = navLinks[i];
+                    const text = (a.textContent || '').trim().toLowerCase();
+                    const href = (a.getAttribute('href') || '').toLowerCase();
+                    if (text.includes('publicar') || href.includes('role=propietario')) continue;
+                    if (text === 'iniciar sesión' || text === 'iniciar sesion' || text === 'ingresar' || text === 'login' || href.includes('login.html')) {
+                        loginLink = a;
+                        break;
+                    }
+                }
+            }
 
-            const userPhoto = u.avatar || 'img/team-1.jpg';
-            const rawName = u.name || u.email.split('@')[0];
-            const firstName = rawName.split(' ')[0];
             const roleBadge = u.role === 'admin' 
                 ? '<span class="badge badge-warning text-dark font-weight-bold ml-1 px-1" style="font-size:10px;">Admin</span>' 
                 : u.role === 'propietario'
@@ -260,6 +288,7 @@
 
             const userDropdown = document.createElement('div');
             userDropdown.className = 'nav-item dropdown user-profile-nav-item d-inline-block';
+            userDropdown.id = 'nav-user-dropdown';
             userDropdown.innerHTML = `
                 <a href="#" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                     <img src="${userPhoto}" alt="${u.name}" class="rounded-circle border mr-2 user-current-avatar" style="width: 34px; height: 34px; object-fit: cover; border-color: rgba(255,255,255,0.4) !important;" onerror="this.src='img/team-1.jpg'">
@@ -268,7 +297,7 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-right rounded shadow-lg border-0 py-2 mt-1" style="min-width: 250px; z-index: 1050;">
                     <div class="px-3 py-2 border-bottom bg-light">
-                        <div class="font-weight-bold text-dark text-truncate user-full-name">${u.name || rawName}</div>
+                        <div class="font-weight-bold text-dark text-truncate user-full-name">${u.name}</div>
                         <div class="small text-muted text-truncate">${u.email}</div>
                     </div>
                     ${panelLinkHtml}
@@ -282,38 +311,82 @@
                 </div>
             `;
 
-            loginLink.replaceWith(userDropdown);
+            if (loginLink) {
+                loginLink.replaceWith(userDropdown);
+            } else {
+                // Inserción defensiva si no había link de login explícito
+                const navContainer = document.querySelector('.navbar-nav');
+                if (navContainer && !navContainer.querySelector('.user-profile-nav-item')) {
+                    const pubBtn = navContainer.querySelector('a[href*="role=propietario"], a[href*="dashboard-propietario"], .btn-primary');
+                    if (pubBtn) {
+                        navContainer.insertBefore(userDropdown, pubBtn);
+                    } else {
+                        navContainer.appendChild(userDropdown);
+                    }
+                }
+            }
+
             injectProfileModal();
         }
 
-        // Si ya hay usuario en localStorage, renderizar de inmediato
-        if (user && user.email) {
+        // 1. Si ya hay usuario en sesión, renderizar de inmediato
+        if (user && (user.email || user.name || user.id)) {
             renderUser(user);
         } else {
             renderUser(null);
         }
 
-        // Sincronizar también directamente con la sesión de Supabase Auth
+        // 2. Sincronizar también con la sesión de Supabase Auth en segundo plano
         if (typeof getSupabaseClient === 'function') {
             const client = getSupabaseClient();
             if (client && client.auth) {
+                // Escuchar cambios de autenticación
+                if (typeof client.auth.onAuthStateChange === 'function') {
+                    client.auth.onAuthStateChange((event, session) => {
+                        if (session && session.user) {
+                            const sbUser = session.user;
+                            const meta = sbUser.user_metadata || {};
+                            let curUser = null;
+                            try { curUser = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) {}
+                            const currentRole = (curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
+                            const syncedUser = {
+                                id: sbUser.id,
+                                name: meta.full_name || meta.name || (curUser && curUser.name) || sbUser.email.split('@')[0],
+                                email: sbUser.email,
+                                role: currentRole,
+                                avatar: meta.avatar_url || meta.picture || (curUser && curUser.avatar) || 'img/team-1.jpg',
+                                phone: meta.phone || (curUser && curUser.phone) || '',
+                                city: meta.city || (curUser && curUser.city) || 'Valledupar',
+                                provider: sbUser.app_metadata?.provider || 'google',
+                                loggedAt: (curUser && curUser.loggedAt) || new Date().toISOString()
+                            };
+                            localStorage.setItem('renteasy_current_user', JSON.stringify(syncedUser));
+                            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+                            renderUser(syncedUser);
+                        }
+                    });
+                }
+
                 client.auth.getSession().then(({ data: { session } }) => {
                     if (session && session.user) {
                         const sbUser = session.user;
                         const meta = sbUser.user_metadata || {};
-                        const currentRole = (user && user.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
+                        let curUser = null;
+                        try { curUser = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) {}
+                        const currentRole = (curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
                         const syncedUser = {
                             id: sbUser.id,
-                            name: meta.full_name || meta.name || (user && user.name) || sbUser.email.split('@')[0],
+                            name: meta.full_name || meta.name || (curUser && curUser.name) || sbUser.email.split('@')[0],
                             email: sbUser.email,
                             role: currentRole,
-                            avatar: meta.avatar_url || meta.picture || (user && user.avatar) || 'img/team-1.jpg',
-                            phone: meta.phone || (user && user.phone) || '',
-                            city: meta.city || (user && user.city) || 'Valledupar',
+                            avatar: meta.avatar_url || meta.picture || (curUser && curUser.avatar) || 'img/team-1.jpg',
+                            phone: meta.phone || (curUser && curUser.phone) || '',
+                            city: meta.city || (curUser && curUser.city) || 'Valledupar',
                             provider: sbUser.app_metadata?.provider || 'google',
-                            loggedAt: (user && user.loggedAt) || new Date().toISOString()
+                            loggedAt: (curUser && curUser.loggedAt) || new Date().toISOString()
                         };
                         localStorage.setItem('renteasy_current_user', JSON.stringify(syncedUser));
+                        localStorage.setItem('renteasy_last_activity', Date.now().toString());
                         renderUser(syncedUser);
                     }
                 }).catch(() => {});
@@ -529,23 +602,44 @@
 
     window.injectProfileModal = injectProfileModal;
 
-    // Ejecutar al cargar la página
+    // Ejecutar inicialización de forma inmediata y en todos los ciclos de vida del DOM
+    initUserNavbar();
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            injectProfileModal();
+            initUserNavbar();
+        });
+    } else {
+        injectProfileModal();
+        initUserNavbar();
+    }
+
     $(document).ready(function() {
         injectProfileModal();
+        initUserNavbar();
+    });
+
+    $(window).on('load', function() {
         initUserNavbar();
     });
 
     /**
      * =========================================================================
      * SEGURIDAD: CIERRE AUTOMÁTICO DE SESIÓN POR INACTIVIDAD PROLONGADA
-     * Si el usuario deja la plataforma desatendida por 30 minutos sin mover
-     * el cursor ni escribir, se cierra la sesión de forma segura.
+     * Si el usuario deja la plataforma desatendida por 30 minutos sin interacción
+     * y sin foco en la pestaña, se cierra la sesión de forma segura.
      * =========================================================================
      */
     (function setupInactivityTimeout() {
         const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
         const CHECK_INTERVAL_MS = 15 * 1000;        // Verificar cada 15 segundos
         let lastActivity = Date.now();
+
+        // Registrar actividad fresca al cargar cualquier página
+        try {
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+        } catch (e) {}
 
         function registerActivity() {
             const now = Date.now();
@@ -562,10 +656,16 @@
             window.addEventListener(evt, registerActivity, { passive: true });
         });
 
-        // Verificador periódico
+        // Verificador periódico defensivo
         setInterval(function() {
             const currentUser = localStorage.getItem('renteasy_current_user');
             if (!currentUser) return;
+
+            // Si la ventana o pestaña tiene foco activo, el usuario está presente
+            if (document.hasFocus && document.hasFocus()) {
+                registerActivity();
+                return;
+            }
 
             const storedLast = parseInt(localStorage.getItem('renteasy_last_activity')) || lastActivity;
             const idleTime = Date.now() - storedLast;

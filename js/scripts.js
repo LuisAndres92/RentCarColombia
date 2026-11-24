@@ -334,12 +334,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 city: newUser.city,
                 phone: newUser.phone,
                 avatar: newUser.avatar,
-                city: newUser.city,
-                phone: newUser.phone,
                 appliedCoupon: newUser.appliedCoupon,
                 discountPercent: newUser.discountPercent,
                 loggedAt: new Date().toISOString()
             }));
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+
+            if (typeof window.initUserNavbar === 'function') {
+                window.initUserNavbar();
+            }
 
             showAlert('¡Registro exitoso! Preparando tu espacio de trabajo...', 'success');
 

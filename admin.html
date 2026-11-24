@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -13,7 +13,9 @@
 
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
+    <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
@@ -31,7 +33,7 @@
                     alert('Acceso Denegado: Esta sección es exclusiva para el Administrador de Rent Car Colombia. Por favor inicia sesión con tu cuenta autorizada.');
                     window.location.replace('LOGIN.html?redirect=admin.html');
                 }
-            } catch(e) {
+            } catch (e) {
                 window.location.replace('LOGIN.html?redirect=admin.html');
             }
         })();
@@ -77,7 +79,7 @@
             color: #94A3B8;
             flex-shrink: 0;
             padding: 25px 0;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.06);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.06);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -85,7 +87,7 @@
 
         .admin-sidebar-header {
             padding: 0 20px 20px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             margin-bottom: 15px;
         }
 
@@ -103,7 +105,7 @@
 
         .admin-nav-item:hover {
             color: #FFFFFF;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .admin-nav-item.active {
@@ -139,12 +141,13 @@
             border-radius: 12px;
             padding: 22px 24px;
             border: 1px solid var(--admin-border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             transition: transform 0.2s, box-shadow 0.2s;
         }
+
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
         }
 
         .stat-icon {
@@ -161,7 +164,7 @@
             background: #ffffff;
             border-radius: 12px;
             border: 1px solid var(--admin-border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             margin-bottom: 25px;
             overflow: hidden;
         }
@@ -188,19 +191,24 @@
             overflow: hidden;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+
         .accordion .card:hover {
             border-color: #cbd5e1 !important;
         }
+
         .accordion .card-header {
             transition: background-color 0.2s ease;
             user-select: none;
         }
+
         .accordion .card-header:hover {
             background-color: #f8fafc !important;
         }
+
         .accordion .card-header .fa-chevron-down {
             transition: transform 0.3s ease;
         }
+
         .accordion .card-header:not(.collapsed) .fa-chevron-down {
             transform: rotate(180deg);
         }
@@ -253,24 +261,33 @@
             color: #ffffff;
             padding: 16px 20px;
             border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             font-weight: 600;
             display: none;
             animation: slideIn 0.3s ease-out;
         }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @media (max-width: 992px) {
             .admin-layout {
                 flex-direction: column;
             }
+
             .admin-sidebar {
                 width: 100%;
             }
+
             .admin-content {
                 padding: 20px;
             }
@@ -298,15 +315,19 @@
 
             <div class="d-flex align-items-center">
                 <span class="text-light mr-3 small d-none d-md-inline">
-                    <i class="fa fa-user-circle text-primary mr-1"></i> Administrador: <strong class="admin-display-name text-white">Superadmin</strong>
+                    <i class="fa fa-user-circle text-primary mr-1"></i> Administrador: <strong
+                        class="admin-display-name text-white">Superadmin</strong>
                 </span>
-                <a href="index.html" class="btn btn-outline-light btn-sm mr-2" target="_blank" title="Ver sitio web público">
+                <a href="index.html" class="btn btn-outline-light btn-sm mr-2" target="_blank"
+                    title="Ver sitio web público">
                     <i class="fa fa-globe mr-1"></i> Ver Sitio Web
                 </a>
-                <a href="dashboard-propietario.html" class="btn btn-outline-warning btn-sm mr-2" title="Ir al panel de anfitrión">
+                <a href="dashboard-propietario.html" class="btn btn-outline-warning btn-sm mr-2"
+                    title="Ir al panel de anfitrión">
                     <i class="fa fa-car mr-1"></i> Vista Propietario
                 </a>
-                <button type="button" class="btn btn-danger btn-sm font-weight-bold btn-admin-logout" title="Cerrar Sesión">
+                <button type="button" class="btn btn-danger btn-sm font-weight-bold btn-admin-logout"
+                    title="Cerrar Sesión">
                     <i class="fa fa-sign-out-alt mr-1"></i> Salir
                 </button>
             </div>
@@ -325,33 +346,40 @@
 
                 <nav class="nav flex-column" id="admin-pills-tab" role="tablist">
                     <!-- 1. Resumen -->
-                    <a class="admin-nav-item nav-link active" id="tab-overview-pill" data-toggle="pill" href="#tab-overview" role="tab">
+                    <a class="admin-nav-item nav-link active" id="tab-overview-pill" data-toggle="pill"
+                        href="#tab-overview" role="tab">
                         <i class="fa fa-chart-line"></i>
                         <span>Resumen & Métricas</span>
                     </a>
 
                     <!-- 2. Moderación de Autos -->
-                    <a class="admin-nav-item nav-link" id="tab-fleet-pill" data-toggle="pill" href="#tab-fleet" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-fleet-pill" data-toggle="pill" href="#tab-fleet"
+                        role="tab">
                         <i class="fa fa-car"></i>
                         <span>Moderación de Flota</span>
-                        <span id="badge-cars-pending" class="badge badge-warning badge-pending ml-auto" style="display: none;">0</span>
+                        <span id="badge-cars-pending" class="badge badge-warning badge-pending ml-auto"
+                            style="display: none;">0</span>
                     </a>
 
                     <!-- 3. Usuarios & KYC -->
-                    <a class="admin-nav-item nav-link" id="tab-users-pill" data-toggle="pill" href="#tab-users" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-users-pill" data-toggle="pill" href="#tab-users"
+                        role="tab">
                         <i class="fa fa-id-card"></i>
                         <span>Usuarios & Seguridad KYC</span>
                     </a>
 
                     <!-- 4. Reservas & Disputas -->
-                    <a class="admin-nav-item nav-link" id="tab-bookings-pill" data-toggle="pill" href="#tab-bookings" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-bookings-pill" data-toggle="pill" href="#tab-bookings"
+                        role="tab">
                         <i class="fa fa-calendar-check"></i>
                         <span>Reservas & Disputas</span>
-                        <span id="badge-disputes-pending" class="badge badge-danger badge-pending ml-auto" style="display: none;">0</span>
+                        <span id="badge-disputes-pending" class="badge badge-danger badge-pending ml-auto"
+                            style="display: none;">0</span>
                     </a>
 
                     <!-- 5. Pasarelas & Finanzas -->
-                    <a class="admin-nav-item nav-link" id="tab-payments-pill" data-toggle="pill" href="#tab-payments" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-payments-pill" data-toggle="pill" href="#tab-payments"
+                        role="tab">
                         <i class="fa fa-wallet"></i>
                         <span>Pasarelas & Finanzas</span>
                     </a>
@@ -363,13 +391,15 @@
                     </a>
 
                     <!-- 7. Empresa & Contacto -->
-                    <a class="admin-nav-item nav-link" id="tab-company-pill" data-toggle="pill" href="#tab-company" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-company-pill" data-toggle="pill" href="#tab-company"
+                        role="tab">
                         <i class="fa fa-building"></i>
                         <span>Empresa & Contacto</span>
                     </a>
 
                     <!-- 8. Marco Legal -->
-                    <a class="admin-nav-item nav-link" id="tab-legal-pill" data-toggle="pill" href="#tab-legal" role="tab">
+                    <a class="admin-nav-item nav-link" id="tab-legal-pill" data-toggle="pill" href="#tab-legal"
+                        role="tab">
                         <i class="fa fa-file-contract"></i>
                         <span>Marco Legal & Contratos</span>
                     </a>
@@ -386,13 +416,14 @@
         <!-- Contenido Dinámico de las Pestañas -->
         <main class="admin-content">
             <div class="tab-content" id="admin-tabContent">
-                
+
                 <!-- ================= MÓDULO 1: RESUMEN Y MÉTRICAS ================= -->
                 <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h3 class="font-weight-bold text-dark mb-1">Métricas y Desempeño Financiero</h3>
-                            <p class="text-muted mb-0">Resumen en tiempo real de transacciones, comisiones de plataforma y flota operativa en Colombia.</p>
+                            <p class="text-muted mb-0">Resumen en tiempo real de transacciones, comisiones de plataforma
+                                y flota operativa en Colombia.</p>
                         </div>
                         <span class="badge badge-success px-3 py-2 font-weight-bold">
                             <i class="fa fa-circle mr-1 small"></i> Plataforma en Vivo
@@ -406,9 +437,12 @@
                             <div class="stat-card">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-muted">Volumen Bruto (GMV)</div>
-                                        <h4 class="font-weight-bold text-dark mt-2 mb-0" id="stat-gmv-volume">$0 COP</h4>
-                                        <small class="text-muted font-weight-semi-bold">Total reservas procesadas</small>
+                                        <div class="text-uppercase font-weight-bold small text-muted">Volumen Bruto
+                                            (GMV)</div>
+                                        <h4 class="font-weight-bold text-dark mt-2 mb-0" id="stat-gmv-volume">$0 COP
+                                        </h4>
+                                        <small class="text-muted font-weight-semi-bold">Total reservas
+                                            procesadas</small>
                                     </div>
                                     <div class="stat-icon bg-light text-primary">
                                         <i class="fa fa-money-bill-wave"></i>
@@ -419,12 +453,16 @@
 
                         <!-- Ganancias Plataforma -->
                         <div class="col-xl-4 col-md-6 mb-4">
-                            <div class="stat-card border-left-success" style="border-left: 4px solid #10B981 !important;">
+                            <div class="stat-card border-left-success"
+                                style="border-left: 4px solid #10B981 !important;">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-success">Ingresos Plataforma (15%)</div>
-                                        <h4 class="font-weight-bold text-success mt-2 mb-0" id="stat-platform-profit">$0 COP</h4>
-                                        <small class="text-muted font-weight-semi-bold">Tu ganancia neta por comisión</small>
+                                        <div class="text-uppercase font-weight-bold small text-success">Ingresos
+                                            Plataforma (15%)</div>
+                                        <h4 class="font-weight-bold text-success mt-2 mb-0" id="stat-platform-profit">$0
+                                            COP</h4>
+                                        <small class="text-muted font-weight-semi-bold">Tu ganancia neta por
+                                            comisión</small>
                                     </div>
                                     <div class="stat-icon bg-light text-success">
                                         <i class="fa fa-hand-holding-usd"></i>
@@ -438,9 +476,12 @@
                             <div class="stat-card">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-muted">Liquidaciones a Dueños (85%)</div>
-                                        <h4 class="font-weight-bold text-primary mt-2 mb-0" id="stat-owner-payouts">$0 COP</h4>
-                                        <small class="text-muted font-weight-semi-bold">Ganancias netas de propietarios</small>
+                                        <div class="text-uppercase font-weight-bold small text-muted">Liquidaciones a
+                                            Dueños (85%)</div>
+                                        <h4 class="font-weight-bold text-primary mt-2 mb-0" id="stat-owner-payouts">$0
+                                            COP</h4>
+                                        <small class="text-muted font-weight-semi-bold">Ganancias netas de
+                                            propietarios</small>
                                     </div>
                                     <div class="stat-icon bg-light text-primary">
                                         <i class="fa fa-users"></i>
@@ -454,9 +495,11 @@
                             <div class="stat-card">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-muted">Flota de Vehículos</div>
+                                        <div class="text-uppercase font-weight-bold small text-muted">Flota de Vehículos
+                                        </div>
                                         <h4 class="font-weight-bold text-dark mt-2 mb-0" id="stat-fleet-total">0</h4>
-                                        <small class="text-muted font-weight-semi-bold">Publicados en toda Colombia</small>
+                                        <small class="text-muted font-weight-semi-bold">Publicados en toda
+                                            Colombia</small>
                                     </div>
                                     <div class="stat-icon bg-light text-warning">
                                         <i class="fa fa-car-side"></i>
@@ -470,7 +513,8 @@
                             <div class="stat-card">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-muted">Viajes Activos</div>
+                                        <div class="text-uppercase font-weight-bold small text-muted">Viajes Activos
+                                        </div>
                                         <h4 class="font-weight-bold text-dark mt-2 mb-0" id="stat-active-trips">0</h4>
                                         <small class="text-muted font-weight-semi-bold">En curso o confirmados</small>
                                     </div>
@@ -486,9 +530,11 @@
                             <div class="stat-card">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div class="text-uppercase font-weight-bold small text-muted">Usuarios Totales</div>
+                                        <div class="text-uppercase font-weight-bold small text-muted">Usuarios Totales
+                                        </div>
                                         <h4 class="font-weight-bold text-dark mt-2 mb-0" id="stat-total-users">0</h4>
-                                        <small class="text-muted font-weight-semi-bold">Conductores y Anfitriones</small>
+                                        <small class="text-muted font-weight-semi-bold">Conductores y
+                                            Anfitriones</small>
                                     </div>
                                     <div class="stat-icon bg-light text-secondary">
                                         <i class="fa fa-user-friends"></i>
@@ -503,34 +549,52 @@
                         <div class="col-lg-8">
                             <div class="section-card">
                                 <div class="section-card-header">
-                                    <h5><i class="fa fa-shield-alt text-primary mr-2"></i> Estado Operativo del Marketplace</h5>
+                                    <h5><i class="fa fa-shield-alt text-primary mr-2"></i> Estado Operativo del
+                                        Marketplace</h5>
                                     <span class="badge badge-light border">Rent Car Colombia</span>
                                 </div>
                                 <div class="section-card-body">
-                                    <p class="text-muted">Como administrador de la plataforma, tú controlas el flujo completo de negocio:</p>
+                                    <p class="text-muted">Como administrador de la plataforma, tú controlas el flujo
+                                        completo de negocio:</p>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <div class="p-3 border rounded bg-light">
-                                                <h6 class="font-weight-bold text-dark"><i class="fa fa-check-circle text-success mr-2"></i>Comisión Automática del 15%</h6>
-                                                <p class="small text-muted mb-0">Cada vez que un cliente reserva, la plataforma retiene el 15% de comisión de servicio y dispersa el 85% al anfitrión.</p>
+                                                <h6 class="font-weight-bold text-dark"><i
+                                                        class="fa fa-check-circle text-success mr-2"></i>Comisión
+                                                    Automática del 15%</h6>
+                                                <p class="small text-muted mb-0">Cada vez que un cliente reserva, la
+                                                    plataforma retiene el 15% de comisión de servicio y dispersa el 85%
+                                                    al anfitrión.</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <div class="p-3 border rounded bg-light">
-                                                <h6 class="font-weight-bold text-dark"><i class="fa fa-lock text-warning mr-2"></i>Custodia de Fianza ($200.000)</h6>
-                                                <p class="small text-muted mb-0">El depósito de garantía queda en custodia de Rent Car Colombia hasta que el viaje finalice sin daños o infracciones.</p>
+                                                <h6 class="font-weight-bold text-dark"><i
+                                                        class="fa fa-lock text-warning mr-2"></i>Custodia de Fianza
+                                                    ($200.000)</h6>
+                                                <p class="small text-muted mb-0">El depósito de garantía queda en
+                                                    custodia de Rent Car Colombia hasta que el viaje finalice sin daños
+                                                    o infracciones.</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <div class="p-3 border rounded bg-light">
-                                                <h6 class="font-weight-bold text-dark"><i class="fa fa-id-card text-info mr-2"></i>Verificación de Seguridad</h6>
-                                                <p class="small text-muted mb-0">Revisa cédulas, licencias y antecedentes de conductores antes de que reciban las llaves de cualquier auto.</p>
+                                                <h6 class="font-weight-bold text-dark"><i
+                                                        class="fa fa-id-card text-info mr-2"></i>Verificación de
+                                                    Seguridad</h6>
+                                                <p class="small text-muted mb-0">Revisa cédulas, licencias y
+                                                    antecedentes de conductores antes de que reciban las llaves de
+                                                    cualquier auto.</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <div class="p-3 border rounded bg-light">
-                                                <h6 class="font-weight-bold text-dark"><i class="fa fa-map-marker-alt text-danger mr-2"></i>Expansión Nacional</h6>
-                                                <p class="small text-muted mb-0">Desde Valledupar gestionas operaciones en Bogotá, Medellín, Barranquilla, Cali, Bucaramanga y todo el país.</p>
+                                                <h6 class="font-weight-bold text-dark"><i
+                                                        class="fa fa-map-marker-alt text-danger mr-2"></i>Expansión
+                                                    Nacional</h6>
+                                                <p class="small text-muted mb-0">Desde Valledupar gestionas operaciones
+                                                    en Bogotá, Medellín, Barranquilla, Cali, Bucaramanga y todo el país.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -541,20 +605,26 @@
                         <div class="col-lg-4">
                             <div class="section-card bg-dark text-white">
                                 <div class="section-card-header bg-transparent border-secondary text-white">
-                                    <h5 class="text-white"><i class="fa fa-bolt text-warning mr-2"></i> Accesos Rápidos</h5>
+                                    <h5 class="text-white"><i class="fa fa-bolt text-warning mr-2"></i> Accesos Rápidos
+                                    </h5>
                                 </div>
                                 <div class="section-card-body">
-                                    <p class="small text-light">Acciones directas para optimizar tu jornada administrativa:</p>
-                                    <button class="btn btn-primary btn-block text-left mb-2" onclick="$('#tab-fleet-pill').tab('show');">
+                                    <p class="small text-light">Acciones directas para optimizar tu jornada
+                                        administrativa:</p>
+                                    <button class="btn btn-primary btn-block text-left mb-2"
+                                        onclick="$('#tab-fleet-pill').tab('show');">
                                         <i class="fa fa-car mr-2"></i> Revisar Autos Pendientes
                                     </button>
-                                    <button class="btn btn-outline-light btn-block text-left mb-2" onclick="$('#tab-users-pill').tab('show');">
+                                    <button class="btn btn-outline-light btn-block text-left mb-2"
+                                        onclick="$('#tab-users-pill').tab('show');">
                                         <i class="fa fa-user-check mr-2"></i> Verificación KYC de Usuarios
                                     </button>
-                                    <button class="btn btn-outline-light btn-block text-left mb-2" onclick="$('#tab-bookings-pill').tab('show');">
+                                    <button class="btn btn-outline-light btn-block text-left mb-2"
+                                        onclick="$('#tab-bookings-pill').tab('show');">
                                         <i class="fa fa-balance-scale mr-2"></i> Centro de Disputas y Fianza
                                     </button>
-                                    <button class="btn btn-outline-warning btn-block text-left" onclick="$('#tab-payments-pill').tab('show');">
+                                    <button class="btn btn-outline-warning btn-block text-left"
+                                        onclick="$('#tab-payments-pill').tab('show');">
                                         <i class="fa fa-cogs mr-2"></i> Configurar Pasarelas y %
                                     </button>
                                 </div>
@@ -568,12 +638,15 @@
                     <div class="section-card">
                         <div class="section-card-header">
                             <div>
-                                <h5><i class="fa fa-car-side text-primary mr-2"></i> Moderación y Aprobación de Vehículos</h5>
-                                <small class="text-muted">Revisa las solicitudes de publicación enviadas por los propietarios antes de que aparezcan en el catálogo público.</small>
+                                <h5><i class="fa fa-car-side text-primary mr-2"></i> Moderación y Aprobación de
+                                    Vehículos</h5>
+                                <small class="text-muted">Revisa las solicitudes de publicación enviadas por los
+                                    propietarios antes de que aparezcan en el catálogo público.</small>
                             </div>
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0 small font-weight-bold text-muted">Filtrar:</label>
-                                <select id="fleet-filter-status" class="form-control form-control-sm" style="width: 170px;">
+                                <select id="fleet-filter-status" class="form-control form-control-sm"
+                                    style="width: 170px;">
                                     <option value="all">Todos los Autos</option>
                                     <option value="En Revision">En Revisión (Pendientes)</option>
                                     <option value="Activo">Activos / Aprobados</option>
@@ -609,12 +682,15 @@
                     <div class="section-card">
                         <div class="section-card-header">
                             <div>
-                                <h5><i class="fa fa-user-shield text-primary mr-2"></i> Gestión de Usuarios y Seguridad KYC</h5>
-                                <small class="text-muted">Valida identidades, cédulas y licencias de conducción para mantener la comunidad segura y libre de fraudes.</small>
+                                <h5><i class="fa fa-user-shield text-primary mr-2"></i> Gestión de Usuarios y Seguridad
+                                    KYC</h5>
+                                <small class="text-muted">Valida identidades, cédulas y licencias de conducción para
+                                    mantener la comunidad segura y libre de fraudes.</small>
                             </div>
                             <div style="width: 280px;">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" id="search-users-input" class="form-control" placeholder="Buscar por nombre, correo...">
+                                    <input type="text" id="search-users-input" class="form-control"
+                                        placeholder="Buscar por nombre, correo...">
                                     <div class="input-group-append">
                                         <span class="input-group-text"><i class="fa fa-search"></i></span>
                                     </div>
@@ -648,8 +724,10 @@
                     <div class="section-card">
                         <div class="section-card-header">
                             <div>
-                                <h5><i class="fa fa-calendar-check text-primary mr-2"></i> Monitor de Reservas y Centro de Arbitraje</h5>
-                                <small class="text-muted">Supervisa cada alquiler en curso, comisiones retenidas y resuelve disputas sobre la fianza de garantía.</small>
+                                <h5><i class="fa fa-calendar-check text-primary mr-2"></i> Monitor de Reservas y Centro
+                                    de Arbitraje</h5>
+                                <small class="text-muted">Supervisa cada alquiler en curso, comisiones retenidas y
+                                    resuelve disputas sobre la fianza de garantía.</small>
                             </div>
                             <span class="badge badge-warning text-dark font-weight-bold px-3 py-2">
                                 <i class="fa fa-shield-alt mr-1"></i> Fianza Estándar: $200.000 COP
@@ -686,32 +764,39 @@
                             <div class="col-lg-6">
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-percentage text-primary mr-2"></i> Porcentajes y Fianza de Garantía</h5>
+                                        <h5><i class="fa fa-percentage text-primary mr-2"></i> Porcentajes y Fianza de
+                                            Garantía</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark">Comisión de la Plataforma (%)</label>
+                                            <label class="font-weight-bold small text-dark">Comisión de la Plataforma
+                                                (%)</label>
                                             <div class="input-group">
-                                                <input type="number" id="pay-commission" class="form-control" min="1" max="50" required>
+                                                <input type="number" id="pay-commission" class="form-control" min="1"
+                                                    max="50" required>
                                                 <div class="input-group-append">
                                                     <span class="input-group-text">% por alquiler</span>
                                                 </div>
                                             </div>
-                                            <small class="text-muted">Por defecto el 15%. El 85% restante se liquida automáticamente al anfitrión/dueño.</small>
+                                            <small class="text-muted">Por defecto el 15%. El 85% restante se liquida
+                                                automáticamente al anfitrión/dueño.</small>
                                         </div>
 
                                         <div class="form-group mb-0">
-                                            <label class="font-weight-bold small text-dark">Depósito de Fianza de Garantía (COP)</label>
+                                            <label class="font-weight-bold small text-dark">Depósito de Fianza de
+                                                Garantía (COP)</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text">$</span>
                                                 </div>
-                                                <input type="number" id="pay-deposit" class="form-control" min="50000" step="10000" required>
+                                                <input type="number" id="pay-deposit" class="form-control" min="50000"
+                                                    step="10000" required>
                                                 <div class="input-group-append">
                                                     <span class="input-group-text">COP</span>
                                                 </div>
                                             </div>
-                                            <small class="text-muted">Fianza retenida al conductor durante el viaje para cubrir multas o daños menores.</small>
+                                            <small class="text-muted">Fianza retenida al conductor durante el viaje para
+                                                cubrir multas o daños menores.</small>
                                         </div>
                                     </div>
                                 </div>
@@ -719,20 +804,24 @@
                                 <!-- Cuentas Manuales / Dispersión -->
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-university text-primary mr-2"></i> Cuentas Corporativas para Dispersión / Transferencias</h5>
+                                        <h5><i class="fa fa-university text-primary mr-2"></i> Cuentas Corporativas para
+                                            Dispersión / Transferencias</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <!-- Cuenta Bancaria Principal con Selector de Banco -->
                                         <div class="border rounded p-3 bg-light mb-3">
                                             <div class="d-flex align-items-center mb-2">
                                                 <i class="fa fa-landmark text-warning mr-2"></i>
-                                                <span class="font-weight-bold small text-dark">Cuenta Bancaria Corporativa</span>
+                                                <span class="font-weight-bold small text-dark">Cuenta Bancaria
+                                                    Corporativa</span>
                                             </div>
 
                                             <div class="row">
                                                 <div class="col-md-7 form-group mb-2">
-                                                    <label class="small text-muted font-weight-bold mb-1">Entidad Bancaria</label>
-                                                    <select id="manual-bank-name" class="form-control form-control-sm custom-select">
+                                                    <label class="small text-muted font-weight-bold mb-1">Entidad
+                                                        Bancaria</label>
+                                                    <select id="manual-bank-name"
+                                                        class="form-control form-control-sm custom-select">
                                                         <option value="Bancolombia">Bancolombia</option>
                                                         <option value="Banco de Bogotá">Banco de Bogotá</option>
                                                         <option value="Davivienda">Davivienda</option>
@@ -741,10 +830,12 @@
                                                         <option value="Banco Popular">Banco Popular</option>
                                                         <option value="Banco Caja Social">Banco Caja Social</option>
                                                         <option value="Banco AV Villas">Banco AV Villas</option>
-                                                        <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                                        <option value="Scotiabank Colpatria">Scotiabank Colpatria
+                                                        </option>
                                                         <option value="Banco Falabella">Banco Falabella</option>
                                                         <option value="Banco Itaú">Banco Itaú</option>
-                                                        <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                                        <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)
+                                                        </option>
                                                         <option value="Lulo Bank">Lulo Bank</option>
                                                         <option value="Banco Pichincha">Banco Pichincha</option>
                                                         <option value="Banco Santander">Banco Santander</option>
@@ -755,8 +846,10 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-5 form-group mb-2">
-                                                    <label class="small text-muted font-weight-bold mb-1">Tipo de Cuenta</label>
-                                                    <select id="manual-bank-type" class="form-control form-control-sm custom-select">
+                                                    <label class="small text-muted font-weight-bold mb-1">Tipo de
+                                                        Cuenta</label>
+                                                    <select id="manual-bank-type"
+                                                        class="form-control form-control-sm custom-select">
                                                         <option value="Ahorros">Ahorros</option>
                                                         <option value="Corriente">Corriente</option>
                                                     </select>
@@ -764,25 +857,37 @@
                                             </div>
 
                                             <div class="form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Número de Cuenta</label>
-                                                <input type="text" id="manual-bank-number" class="form-control form-control-sm" placeholder="Ej. 542-000000-00">
+                                                <label class="small text-muted font-weight-bold mb-1">Número de
+                                                    Cuenta</label>
+                                                <input type="text" id="manual-bank-number"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. 542-000000-00">
                                             </div>
 
                                             <div class="form-group mb-0">
-                                                <label class="small text-muted font-weight-bold mb-1">Titular & Identificación (Cédula / NIT)</label>
-                                                <input type="text" id="manual-bank-holder" class="form-control form-control-sm" placeholder="Ej. Rent Car Colombia - NIT / Cédula">
+                                                <label class="small text-muted font-weight-bold mb-1">Titular &
+                                                    Identificación (Cédula / NIT)</label>
+                                                <input type="text" id="manual-bank-holder"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. Rent Car Colombia - NIT / Cédula">
                                             </div>
                                         </div>
 
                                         <!-- Billeteras Móviles Oficiales -->
                                         <div class="row">
                                             <div class="col-md-6 form-group mb-0">
-                                                <label class="font-weight-bold small text-dark"><i class="fa fa-mobile-alt text-purple mr-1"></i> Cuenta Nequi Oficial</label>
-                                                <input type="text" id="manual-nequi" class="form-control" placeholder="Ej. 3162357871">
+                                                <label class="font-weight-bold small text-dark"><i
+                                                        class="fa fa-mobile-alt text-purple mr-1"></i> Cuenta Nequi
+                                                    Oficial</label>
+                                                <input type="text" id="manual-nequi" class="form-control"
+                                                    placeholder="Ej. 3162357871">
                                             </div>
                                             <div class="col-md-6 form-group mb-0">
-                                                <label class="font-weight-bold small text-dark"><i class="fa fa-wallet text-danger mr-1"></i> Cuenta Daviplata</label>
-                                                <input type="text" id="manual-daviplata" class="form-control" placeholder="Ej. 3162357871">
+                                                <label class="font-weight-bold small text-dark"><i
+                                                        class="fa fa-wallet text-danger mr-1"></i> Cuenta
+                                                    Daviplata</label>
+                                                <input type="text" id="manual-daviplata" class="form-control"
+                                                    placeholder="Ej. 3162357871">
                                             </div>
                                         </div>
                                     </div>
@@ -793,22 +898,27 @@
                             <div class="col-lg-6">
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-credit-card text-primary mr-2"></i> Pasarelas de Pago en Línea (Llaves API)</h5>
+                                        <h5><i class="fa fa-credit-card text-primary mr-2"></i> Pasarelas de Pago en
+                                            Línea (Llaves API)</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <!-- Mercado Pago -->
                                         <div class="p-3 border rounded mb-3 bg-light">
                                             <div class="font-weight-bold text-dark mb-2">
-                                                <img src="img/payment-1.png" alt="Mercado Pago" style="height: 20px;" onerror="this.style.display='none'"> 
+                                                <img src="img/payment-1.png" alt="Mercado Pago" style="height: 20px;"
+                                                    onerror="this.style.display='none'">
                                                 Mercado Pago Colombia
                                             </div>
                                             <div class="form-group mb-2">
                                                 <label class="small text-muted mb-1">Public Key</label>
-                                                <input type="text" id="mp-public-key" class="form-control form-control-sm" placeholder="APP_USR-xxxx...">
+                                                <input type="text" id="mp-public-key"
+                                                    class="form-control form-control-sm" placeholder="APP_USR-xxxx...">
                                             </div>
                                             <div class="form-group mb-0">
                                                 <label class="small text-muted mb-1">Access Token (Privado)</label>
-                                                <input type="password" id="mp-access-token" class="form-control form-control-sm" placeholder="TEST-xxxx o PROD-xxxx">
+                                                <input type="password" id="mp-access-token"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="TEST-xxxx o PROD-xxxx">
                                             </div>
                                         </div>
 
@@ -819,7 +929,9 @@
                                             </div>
                                             <div class="form-group mb-0">
                                                 <label class="small text-muted mb-1">Public Key</label>
-                                                <input type="text" id="wompi-public-key" class="form-control form-control-sm" placeholder="pub_prod_xxxx o pub_test_xxxx">
+                                                <input type="text" id="wompi-public-key"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="pub_prod_xxxx o pub_test_xxxx">
                                             </div>
                                         </div>
 
@@ -830,11 +942,14 @@
                                             </div>
                                             <div class="form-group mb-0">
                                                 <label class="small text-muted mb-1">Publishable Key</label>
-                                                <input type="text" id="stripe-public-key" class="form-control form-control-sm" placeholder="pk_live_xxxx o pk_test_xxxx">
+                                                <input type="text" id="stripe-public-key"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="pk_live_xxxx o pk_test_xxxx">
                                             </div>
                                         </div>
 
-                                        <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm">
+                                        <button type="submit"
+                                            class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm">
                                             <i class="fa fa-save mr-2"></i> Guardar Pasarelas y Parámetros Financieros
                                         </button>
                                     </div>
@@ -848,8 +963,11 @@
                 <div class="tab-pane fade" id="tab-cms" role="tabpanel">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h5 class="mb-0 text-dark font-weight-bold"><i class="fa fa-layer-group text-primary mr-2"></i> Gestión de Contenidos (CMS), Equipo y Portada</h5>
-                            <small class="text-muted">Despliega cada sección haciendo clic en su título para administrar contenidos específicos de la plataforma.</small>
+                            <h5 class="mb-0 text-dark font-weight-bold"><i
+                                    class="fa fa-layer-group text-primary mr-2"></i> Gestión de Contenidos (CMS), Equipo
+                                y Portada</h5>
+                            <small class="text-muted">Despliega cada sección haciendo clic en su título para administrar
+                                contenidos específicos de la plataforma.</small>
                         </div>
                     </div>
 
@@ -858,66 +976,90 @@
 
                         <!-- ================= ACORDEÓN 1: CONTROL DE VISIBILIDAD DE SECCIONES ================= -->
                         <div class="card mb-3 border shadow-sm">
-                            <div class="card-header bg-white py-3 collapsed" id="headingCmsVis" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsVis" aria-expanded="false" aria-controls="collapseCmsVis">
+                            <div class="card-header bg-white py-3 collapsed" id="headingCmsVis" style="cursor: pointer;"
+                                data-toggle="collapse" data-target="#collapseCmsVis" aria-expanded="false"
+                                aria-controls="collapseCmsVis">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-toggle-on text-primary mr-2"></i> 1. Control Maestro de Visibilidad de Secciones (Mostrar u Ocultar en la Web)
+                                        <i class="fa fa-toggle-on text-primary mr-2"></i> 1. Control Maestro de
+                                        Visibilidad de Secciones (Mostrar u Ocultar en la Web)
                                     </div>
                                     <i class="fa fa-chevron-down text-muted"></i>
                                 </div>
                             </div>
-                            <div id="collapseCmsVis" class="collapse" aria-labelledby="headingCmsVis" data-parent="#cmsMasterAccordion">
+                            <div id="collapseCmsVis" class="collapse" aria-labelledby="headingCmsVis"
+                                data-parent="#cmsMasterAccordion">
                                 <div class="card-body">
-                                    <p class="small text-muted mb-3">Enciende o apaga secciones completas del sitio web con un solo clic sin necesidad de modificar código fuente:</p>
+                                    <p class="small text-muted mb-3">Enciende o apaga secciones completas del sitio web
+                                        con un solo clic sin necesidad de modificar código fuente:</p>
                                     <form id="form-visibility-config">
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
                                                 <div class="custom-control custom-switch p-3 border rounded bg-light">
-                                                    <input type="checkbox" class="custom-control-input" id="vis-team" checked>
-                                                    <label class="custom-control-label font-weight-bold text-dark" for="vis-team">
+                                                    <input type="checkbox" class="custom-control-input" id="vis-team"
+                                                        checked>
+                                                    <label class="custom-control-label font-weight-bold text-dark"
+                                                        for="vis-team">
                                                         <i class="fa fa-users text-primary mr-1"></i> Sección de Equipo
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra u oculta "Conozca a nuestro equipo".</div>
+                                                    <div class="small text-muted mt-1">Muestra u oculta "Conozca a
+                                                        nuestro equipo".</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <div class="custom-control custom-switch p-3 border rounded bg-light">
-                                                    <input type="checkbox" class="custom-control-input" id="vis-testimonials">
-                                                    <label class="custom-control-label font-weight-bold text-dark" for="vis-testimonials">
-                                                        <i class="fa fa-comments text-success mr-1"></i> Sección de Reseñas Reales
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="vis-testimonials">
+                                                    <label class="custom-control-label font-weight-bold text-dark"
+                                                        for="vis-testimonials">
+                                                        <i class="fa fa-comments text-success mr-1"></i> Sección de
+                                                        Reseñas Reales
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra u oculta opiniones de usuarios reales.</div>
+                                                    <div class="small text-muted mt-1">Muestra u oculta opiniones de
+                                                        usuarios reales.</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <div class="custom-control custom-switch p-3 border rounded bg-light">
-                                                    <input type="checkbox" class="custom-control-input" id="vis-vendors" checked>
-                                                    <label class="custom-control-label font-weight-bold text-dark" for="vis-vendors">
+                                                    <input type="checkbox" class="custom-control-input" id="vis-vendors"
+                                                        checked>
+                                                    <label class="custom-control-label font-weight-bold text-dark"
+                                                        for="vis-vendors">
                                                         <i class="fa fa-handshake text-info mr-1"></i> Marcas y Aliados
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra el carrusel de logos aliados.</div>
+                                                    <div class="small text-muted mt-1">Muestra el carrusel de logos
+                                                        aliados.</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <div class="custom-control custom-switch p-3 border rounded bg-light">
-                                                    <input type="checkbox" class="custom-control-input" id="vis-banners" checked>
-                                                    <label class="custom-control-label font-weight-bold text-dark" for="vis-banners">
-                                                        <i class="fa fa-bullhorn text-warning mr-1"></i> Banners de Ofertas
+                                                    <input type="checkbox" class="custom-control-input" id="vis-banners"
+                                                        checked>
+                                                    <label class="custom-control-label font-weight-bold text-dark"
+                                                        for="vis-banners">
+                                                        <i class="fa fa-bullhorn text-warning mr-1"></i> Banners de
+                                                        Ofertas
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra los llamados a la acción de propietarios y conductores.</div>
+                                                    <div class="small text-muted mt-1">Muestra los llamados a la acción
+                                                        de propietarios y conductores.</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <div class="custom-control custom-switch p-3 border rounded bg-light">
-                                                    <input type="checkbox" class="custom-control-input" id="vis-services" checked>
-                                                    <label class="custom-control-label font-weight-bold text-dark" for="vis-services">
-                                                        <i class="fa fa-cogs text-secondary mr-1"></i> Sección de Servicios
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="vis-services" checked>
+                                                    <label class="custom-control-label font-weight-bold text-dark"
+                                                        for="vis-services">
+                                                        <i class="fa fa-cogs text-secondary mr-1"></i> Sección de
+                                                        Servicios
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra los 6 servicios principales de alquiler.</div>
+                                                    <div class="small text-muted mt-1">Muestra los 6 servicios
+                                                        principales de alquiler.</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3 d-flex align-items-center">
-                                                <button type="submit" class="btn btn-primary btn-block font-weight-bold py-3 shadow-sm">
+                                                <button type="submit"
+                                                    class="btn btn-primary btn-block font-weight-bold py-3 shadow-sm">
                                                     <i class="fa fa-save mr-2"></i> Guardar Visibilidad
                                                 </button>
                                             </div>
@@ -929,75 +1071,109 @@
 
                         <!-- ================= ACORDEÓN 2: PORTADA (HERO BANNER) Y BANNERS ================= -->
                         <div class="card mb-3 border shadow-sm">
-                            <div class="card-header bg-white py-3 collapsed" id="headingCmsHero" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsHero" aria-expanded="false" aria-controls="collapseCmsHero">
+                            <div class="card-header bg-white py-3 collapsed" id="headingCmsHero"
+                                style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsHero"
+                                aria-expanded="false" aria-controls="collapseCmsHero">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-image text-primary mr-2"></i> 2. Carrusel de Portada Principal (Hero Banner) y Cupones
+                                        <i class="fa fa-image text-primary mr-2"></i> 2. Carrusel de Portada Principal
+                                        (Hero Banner) y Cupones
                                     </div>
                                     <i class="fa fa-chevron-down text-muted"></i>
                                 </div>
                             </div>
-                            <div id="collapseCmsHero" class="collapse" aria-labelledby="headingCmsHero" data-parent="#cmsMasterAccordion">
+                            <div id="collapseCmsHero" class="collapse" aria-labelledby="headingCmsHero"
+                                data-parent="#cmsMasterAccordion">
                                 <div class="card-body">
                                     <div class="alert alert-light border small text-muted mb-4">
                                         <i class="fa fa-info-circle text-primary mr-1"></i>
-                                        <strong>Carrusel Dinámico sin Límite:</strong> Ahora puedes tener <strong>2, 3, 4 o cuantas diapositivas desees</strong>. La altura está optimizada a <strong>520px</strong> para que el buscador y los vehículos sean accesibles de inmediato.
+                                        <strong>Carrusel Dinámico sin Límite:</strong> Ahora puedes tener <strong>2, 3,
+                                            4 o cuantas diapositivas desees</strong>. La altura está optimizada a
+                                        <strong>520px</strong> para que el buscador y los vehículos sean accesibles de
+                                        inmediato.
                                     </div>
 
                                     <!-- Formulario para Añadir Nueva Diapositiva -->
                                     <form id="form-add-hero-slide" class="p-3 border rounded bg-light mb-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 class="font-weight-bold text-dark mb-0"><i class="fa fa-plus-circle text-primary mr-2"></i> Añadir Nueva Diapositiva al Carrusel</h6>
-                                            <span class="badge badge-primary px-2 py-1" id="badge-slides-count">2 diapositivas activas</span>
+                                            <h6 class="font-weight-bold text-dark mb-0"><i
+                                                    class="fa fa-plus-circle text-primary mr-2"></i> Añadir Nueva
+                                                Diapositiva al Carrusel</h6>
+                                            <span class="badge badge-primary px-2 py-1" id="badge-slides-count">2
+                                                diapositivas activas</span>
                                         </div>
 
                                         <div class="row">
                                             <div class="col-md-8 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Titular Principal (H1)</label>
-                                                <input type="text" id="new-slide-title" class="form-control form-control-sm" placeholder="Ej. Tu próximo viaje comienza aquí" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Titular Principal
+                                                    (H1)</label>
+                                                <input type="text" id="new-slide-title"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. Tu próximo viaje comienza aquí" required>
                                             </div>
                                             <div class="col-md-4 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Subtítulo / Bajada</label>
-                                                <input type="text" id="new-slide-subtitle" class="form-control form-control-sm" placeholder="Ej. Alquila con seguro y asistencia 24/7" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Subtítulo /
+                                                    Bajada</label>
+                                                <input type="text" id="new-slide-subtitle"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. Alquila con seguro y asistencia 24/7" required>
                                             </div>
                                         </div>
 
                                         <div class="row">
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Texto Botón 1 (Primario)</label>
-                                                <input type="text" id="new-slide-btn1-text" class="form-control form-control-sm" value="Explorar Autos Disponibles">
+                                                <label class="small text-muted font-weight-bold mb-1">Texto Botón 1
+                                                    (Primario)</label>
+                                                <input type="text" id="new-slide-btn1-text"
+                                                    class="form-control form-control-sm"
+                                                    value="Explorar Autos Disponibles">
                                             </div>
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Enlace Botón 1</label>
-                                                <input type="text" id="new-slide-btn1-url" class="form-control form-control-sm" value="car.html">
+                                                <label class="small text-muted font-weight-bold mb-1">Enlace Botón
+                                                    1</label>
+                                                <input type="text" id="new-slide-btn1-url"
+                                                    class="form-control form-control-sm" value="car.html">
                                             </div>
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Texto Botón 2 (Secundario)</label>
-                                                <input type="text" id="new-slide-btn2-text" class="form-control form-control-sm" value="Publicar mi Auto">
+                                                <label class="small text-muted font-weight-bold mb-1">Texto Botón 2
+                                                    (Secundario)</label>
+                                                <input type="text" id="new-slide-btn2-text"
+                                                    class="form-control form-control-sm" value="Publicar mi Auto">
                                             </div>
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Enlace Botón 2</label>
-                                                <input type="text" id="new-slide-btn2-url" class="form-control form-control-sm" value="LOGIN.html?action=register&role=propietario">
+                                                <label class="small text-muted font-weight-bold mb-1">Enlace Botón
+                                                    2</label>
+                                                <input type="text" id="new-slide-btn2-url"
+                                                    class="form-control form-control-sm"
+                                                    value="LOGIN.html?action=register&role=propietario">
                                             </div>
                                         </div>
 
                                         <!-- Foto de Fondo de la Diapositiva -->
                                         <div class="p-3 border rounded bg-white mt-2 mb-3">
                                             <label class="small font-weight-bold text-dark mb-2 d-block">
-                                                <i class="fa fa-camera text-primary mr-1"></i> Imagen de Fondo de esta Diapositiva
+                                                <i class="fa fa-camera text-primary mr-1"></i> Imagen de Fondo de esta
+                                                Diapositiva
                                             </label>
                                             <div class="row align-items-center">
                                                 <div class="col-auto">
-                                                    <img id="new-slide-preview" src="img/carousel-1.jpg" alt="Preview Slide" class="rounded border shadow-sm" style="width: 130px; height: 75px; object-fit: cover;">
+                                                    <img id="new-slide-preview" src="img/carousel-1.jpg"
+                                                        alt="Preview Slide" class="rounded border shadow-sm"
+                                                        style="width: 130px; height: 75px; object-fit: cover;">
                                                 </div>
                                                 <div class="col">
                                                     <div class="custom-file">
-                                                        <input type="file" class="custom-file-input" id="new-slide-file" accept="image/*">
-                                                        <label class="custom-file-label small" for="new-slide-file" id="new-slide-label">Subir foto desde PC o teléfono...</label>
+                                                        <input type="file" class="custom-file-input" id="new-slide-file"
+                                                            accept="image/*">
+                                                        <label class="custom-file-label small" for="new-slide-file"
+                                                            id="new-slide-label">Subir foto desde PC o
+                                                            teléfono...</label>
                                                     </div>
                                                     <input type="hidden" id="new-slide-data" value="img/carousel-1.jpg">
                                                     <div class="mt-2">
-                                                        <input type="text" id="new-slide-url" class="form-control form-control-sm" placeholder="O escribe URL: img/carousel-1.jpg">
+                                                        <input type="text" id="new-slide-url"
+                                                            class="form-control form-control-sm"
+                                                            placeholder="O escribe URL: img/carousel-1.jpg">
                                                     </div>
                                                 </div>
                                             </div>
@@ -1009,38 +1185,48 @@
                                     </form>
 
                                     <!-- Lista de Diapositivas Activas -->
-                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Diapositivas Publicadas en la Portada:</div>
+                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Diapositivas
+                                        Publicadas en la Portada:</div>
                                     <div id="hero-slides-admin-list" class="mb-4">
                                         <!-- Renderizado dinámicamente por js/admin-dashboard.js -->
                                     </div>
 
                                     <!-- Configuración de Banner de Descuento y Cupón -->
                                     <form id="form-promo-config" class="p-3 border rounded bg-light">
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                        <div
+                                            class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
                                             <h6 class="font-weight-bold text-dark mb-0">
-                                                <i class="fa fa-tag text-warning mr-2"></i> Banner de Descuento, Calendario de Vigencia y Cupón
+                                                <i class="fa fa-tag text-warning mr-2"></i> Banner de Descuento,
+                                                Calendario de Vigencia y Cupón
                                             </h6>
                                             <!-- Interruptor de activación manual -->
                                             <div class="custom-control custom-switch mt-2 mt-sm-0">
-                                                <input type="checkbox" class="custom-control-input" id="cms-promo-enabled" checked>
-                                                <label class="custom-control-label font-weight-bold small text-dark" for="cms-promo-enabled">
+                                                <input type="checkbox" class="custom-control-input"
+                                                    id="cms-promo-enabled" checked>
+                                                <label class="custom-control-label font-weight-bold small text-dark"
+                                                    for="cms-promo-enabled">
                                                     Habilitar Promoción y Cupón
                                                 </label>
                                             </div>
                                         </div>
 
                                         <!-- Indicador dinámico de estado en tiempo real -->
-                                        <div id="promo-status-box" class="alert alert-success border d-flex align-items-center py-2 px-3 mb-3">
-                                            <i id="promo-status-icon" class="fa fa-check-circle fa-2x mr-3 text-success"></i>
+                                        <div id="promo-status-box"
+                                            class="alert alert-success border d-flex align-items-center py-2 px-3 mb-3">
+                                            <i id="promo-status-icon"
+                                                class="fa fa-check-circle fa-2x mr-3 text-success"></i>
                                             <div class="w-100">
                                                 <div class="d-flex justify-content-between align-items-center">
-                                                    <span id="promo-status-badge" class="badge badge-success px-2 py-1 font-weight-bold">
+                                                    <span id="promo-status-badge"
+                                                        class="badge badge-success px-2 py-1 font-weight-bold">
                                                         <i class="fa fa-check mr-1"></i> CUPÓN ACTIVO Y VISIBLE
                                                     </span>
-                                                    <span id="promo-status-countdown" class="small font-weight-bold text-muted"></span>
+                                                    <span id="promo-status-countdown"
+                                                        class="small font-weight-bold text-muted"></span>
                                                 </div>
                                                 <div id="promo-status-desc" class="small mt-1 text-dark">
-                                                    El banner se muestra en la portada y el cupón está listo para aplicarse a nuevos registros.
+                                                    El banner se muestra en la portada y el cupón está listo para
+                                                    aplicarse a nuevos registros.
                                                 </div>
                                             </div>
                                         </div>
@@ -1049,20 +1235,28 @@
                                             <!-- Selector de Calendario para Fecha de Expiración -->
                                             <div class="col-md-6 form-group">
                                                 <label class="small text-dark font-weight-bold mb-1">
-                                                    <i class="fa fa-calendar-alt text-primary mr-1"></i> Fecha Límite de Expiración del Cupón
+                                                    <i class="fa fa-calendar-alt text-primary mr-1"></i> Fecha Límite de
+                                                    Expiración del Cupón
                                                 </label>
-                                                <input type="date" id="cms-promo-expiry-date" class="form-control form-control-sm font-weight-bold" required>
+                                                <input type="date" id="cms-promo-expiry-date"
+                                                    class="form-control form-control-sm font-weight-bold" required>
                                                 <small class="text-muted d-block mt-1">
-                                                    A las 23:59 de esta fecha, el cupón <strong>expira automáticamente</strong> y el banner de descuento <strong>deja de mostrarse</strong> en la web.
+                                                    A las 23:59 de esta fecha, el cupón <strong>expira
+                                                        automáticamente</strong> y el banner de descuento <strong>deja
+                                                        de mostrarse</strong> en la web.
                                                 </small>
                                             </div>
 
                                             <!-- Código de Cupón -->
                                             <div class="col-md-6 form-group">
                                                 <label class="small text-dark font-weight-bold mb-1">
-                                                    <i class="fa fa-ticket-alt text-warning mr-1"></i> Código de Cupón Activo
+                                                    <i class="fa fa-ticket-alt text-warning mr-1"></i> Código de Cupón
+                                                    Activo
                                                 </label>
-                                                <input type="text" id="cms-promo-code" class="form-control form-control-sm font-weight-bold" placeholder="Ej. VALLEDUPAR2026" required style="text-transform: uppercase; letter-spacing: 1px;">
+                                                <input type="text" id="cms-promo-code"
+                                                    class="form-control form-control-sm font-weight-bold"
+                                                    placeholder="Ej. VALLEDUPAR2026" required
+                                                    style="text-transform: uppercase; letter-spacing: 1px;">
                                                 <small class="text-muted d-block mt-1">
                                                     Código enlazado al banner que se validará en el registro.
                                                 </small>
@@ -1070,34 +1264,53 @@
 
                                             <!-- Título del Descuento -->
                                             <div class="col-md-6 form-group">
-                                                <label class="small text-muted font-weight-bold mb-1">Título Principal del Descuento</label>
-                                                <input type="text" id="cms-promo-title" class="form-control form-control-sm" placeholder="Ej. 50% DE DESCUENTO" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Título Principal
+                                                    del Descuento</label>
+                                                <input type="text" id="cms-promo-title"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. 50% DE DESCUENTO" required>
                                             </div>
 
                                             <!-- Subtítulo de Oferta -->
                                             <div class="col-md-6 form-group">
-                                                <label class="small text-muted font-weight-bold mb-1">Subtítulo de Oferta</label>
-                                                <input type="text" id="cms-promo-subtitle" class="form-control form-control-sm" placeholder="Ej. Oferta especial para nuevos miembros" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Subtítulo de
+                                                    Oferta</label>
+                                                <input type="text" id="cms-promo-subtitle"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. Oferta especial para nuevos miembros" required>
                                             </div>
 
                                             <!-- Texto / Leyenda de Vigencia para el Banner -->
                                             <div class="col-md-12 form-group">
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <label class="small text-muted font-weight-bold mb-0">Leyenda de Vigencia visible en el Banner</label>
-                                                    <button type="button" id="btn-sync-promo-date-text" class="btn btn-link btn-sm p-0 small text-primary" style="text-decoration: underline;">
-                                                        <i class="fa fa-magic mr-1"></i> Generar texto según fecha del calendario
+                                                    <label class="small text-muted font-weight-bold mb-0">Leyenda de
+                                                        Vigencia visible en el Banner</label>
+                                                    <button type="button" id="btn-sync-promo-date-text"
+                                                        class="btn btn-link btn-sm p-0 small text-primary"
+                                                        style="text-decoration: underline;">
+                                                        <i class="fa fa-magic mr-1"></i> Generar texto según fecha del
+                                                        calendario
                                                     </button>
                                                 </div>
-                                                <input type="text" id="cms-promo-validity" class="form-control form-control-sm" placeholder="Ej. Válido hasta el 31 de Diciembre de 2026 para nuevos usuarios">
-                                                <small class="text-muted">Si lo dejas vacío, se genera automáticamente con el formato de la fecha del calendario.</small>
+                                                <input type="text" id="cms-promo-validity"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Ej. Válido hasta el 31 de Diciembre de 2026 para nuevos usuarios">
+                                                <small class="text-muted">Si lo dejas vacío, se genera automáticamente
+                                                    con el formato de la fecha del calendario.</small>
                                             </div>
                                         </div>
 
                                         <div class="alert alert-info border small py-2 mb-3">
-                                            <i class="fa fa-shield-alt mr-1"></i> <strong>Comportamiento Inteligente:</strong> Cuando llegue la fecha de vencimiento, el banner de descuento <strong>se inhabilitará y ocultará automáticamente</strong> de la portada. Si un usuario intenta registrarse con un cupón vencido, el sistema le alertará en rojo. Para reactivarlo, solo elige una nueva fecha y cupón en este panel.
+                                            <i class="fa fa-shield-alt mr-1"></i> <strong>Comportamiento
+                                                Inteligente:</strong> Cuando llegue la fecha de vencimiento, el banner
+                                            de descuento <strong>se inhabilitará y ocultará automáticamente</strong> de
+                                            la portada. Si un usuario intenta registrarse con un cupón vencido, el
+                                            sistema le alertará en rojo. Para reactivarlo, solo elige una nueva fecha y
+                                            cupón en este panel.
                                         </div>
 
-                                        <button type="submit" class="btn btn-primary font-weight-bold py-2 px-4 shadow-sm">
+                                        <button type="submit"
+                                            class="btn btn-primary font-weight-bold py-2 px-4 shadow-sm">
                                             <i class="fa fa-save mr-2"></i> Guardar Banner de Descuento y Cupón
                                         </button>
                                     </form>
@@ -1107,68 +1320,95 @@
 
                         <!-- ================= ACORDEÓN 3: INTEGRANTES DEL EQUIPO ================= -->
                         <div class="card mb-3 border shadow-sm">
-                            <div class="card-header bg-white py-3 collapsed" id="headingCmsTeam" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsTeam" aria-expanded="false" aria-controls="collapseCmsTeam">
+                            <div class="card-header bg-white py-3 collapsed" id="headingCmsTeam"
+                                style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsTeam"
+                                aria-expanded="false" aria-controls="collapseCmsTeam">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-users text-primary mr-2"></i> 3. Gestor de Integrantes del Equipo de Trabajo (Con fotos reales y carrusel rotativo)
+                                        <i class="fa fa-users text-primary mr-2"></i> 3. Gestor de Integrantes del
+                                        Equipo de Trabajo (Con fotos reales y carrusel rotativo)
                                     </div>
                                     <div>
-                                        <span class="badge badge-light border mr-2" id="badge-team-count">4 miembros</span>
+                                        <span class="badge badge-light border mr-2" id="badge-team-count">4
+                                            miembros</span>
                                         <i class="fa fa-chevron-down text-muted"></i>
                                     </div>
                                 </div>
                             </div>
-                            <div id="collapseCmsTeam" class="collapse" aria-labelledby="headingCmsTeam" data-parent="#cmsMasterAccordion">
+                            <div id="collapseCmsTeam" class="collapse" aria-labelledby="headingCmsTeam"
+                                data-parent="#cmsMasterAccordion">
                                 <div class="card-body">
                                     <div class="alert alert-light border small text-muted mb-3">
                                         <i class="fa fa-check-circle text-success mr-1"></i>
-                                        En la página web, los integrantes se visualizan en un <strong>carrusel rotativo con flechas de avance y retroceso (&lt; y &gt;)</strong>, permitiendo ver a todos los miembros de forma fluida.
+                                        En la página web, los integrantes se visualizan en un <strong>carrusel rotativo
+                                            con flechas de avance y retroceso (&lt; y &gt;)</strong>, permitiendo ver a
+                                        todos los miembros de forma fluida.
                                     </div>
 
                                     <!-- Formulario para agregar nuevo miembro -->
                                     <form id="form-add-team" class="p-3 bg-light border rounded mb-4">
-                                        <div class="font-weight-bold text-dark small mb-2"><i class="fa fa-user-plus text-primary mr-1"></i> Añadir Nuevo Integrante al Equipo</div>
+                                        <div class="font-weight-bold text-dark small mb-2"><i
+                                                class="fa fa-user-plus text-primary mr-1"></i> Añadir Nuevo Integrante
+                                            al Equipo</div>
                                         <div class="row">
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Nombre Completo</label>
-                                                <input type="text" id="team-name" class="form-control form-control-sm" placeholder="Ej. Andrés Rodríguez" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Nombre
+                                                    Completo</label>
+                                                <input type="text" id="team-name" class="form-control form-control-sm"
+                                                    placeholder="Ej. Andrés Rodríguez" required>
                                             </div>
                                             <div class="col-md-6 form-group mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Cargo o Puesto</label>
-                                                <input type="text" id="team-role" class="form-control form-control-sm" placeholder="Ej. Gerente de Operaciones" required>
+                                                <label class="small text-muted font-weight-bold mb-1">Cargo o
+                                                    Puesto</label>
+                                                <input type="text" id="team-role" class="form-control form-control-sm"
+                                                    placeholder="Ej. Gerente de Operaciones" required>
                                             </div>
                                         </div>
 
                                         <!-- Sección para subir foto real con vista previa en vivo -->
                                         <div class="p-3 border rounded bg-white mb-3">
                                             <label class="small font-weight-bold text-dark mb-2 d-block">
-                                                <i class="fa fa-camera text-primary mr-1"></i> Foto Real del Miembro del Equipo
+                                                <i class="fa fa-camera text-primary mr-1"></i> Foto Real del Miembro del
+                                                Equipo
                                             </label>
                                             <div class="row align-items-center">
                                                 <div class="col-auto text-center">
                                                     <div class="position-relative d-inline-block">
-                                                        <img id="team-preview-avatar" src="img/team-1.jpg" alt="Vista previa" class="rounded-circle border shadow-sm" style="width: 70px; height: 70px; object-fit: cover;">
-                                                        <span class="badge badge-primary position-absolute" style="bottom: 0; right: 0; font-size: 9px;"><i class="fa fa-check"></i></span>
+                                                        <img id="team-preview-avatar" src="img/team-1.jpg"
+                                                            alt="Vista previa" class="rounded-circle border shadow-sm"
+                                                            style="width: 70px; height: 70px; object-fit: cover;">
+                                                        <span class="badge badge-primary position-absolute"
+                                                            style="bottom: 0; right: 0; font-size: 9px;"><i
+                                                                class="fa fa-check"></i></span>
                                                     </div>
                                                 </div>
                                                 <div class="col">
                                                     <div class="custom-file">
-                                                        <input type="file" class="custom-file-input" id="team-file-input" accept="image/*">
-                                                        <label class="custom-file-label small" for="team-file-input" id="team-file-label">Subir foto desde tu dispositivo...</label>
+                                                        <input type="file" class="custom-file-input"
+                                                            id="team-file-input" accept="image/*">
+                                                        <label class="custom-file-label small" for="team-file-input"
+                                                            id="team-file-label">Subir foto desde tu
+                                                            dispositivo...</label>
                                                     </div>
-                                                    <small class="text-muted d-block mt-1">Elige una foto real desde tu PC o teléfono (JPG, PNG o WebP).</small>
+                                                    <small class="text-muted d-block mt-1">Elige una foto real desde tu
+                                                        PC o teléfono (JPG, PNG o WebP).</small>
                                                     <input type="hidden" id="team-photo-data" value="img/team-1.jpg">
                                                 </div>
                                             </div>
                                             <div class="mt-2 pt-2 border-top">
-                                                <small class="text-muted d-block mb-1">O si prefieres, escribe un enlace / URL web directo:</small>
-                                                <input type="text" id="team-image-url" class="form-control form-control-sm" placeholder="https://ejemplo.com/foto.jpg o img/team-1.jpg">
+                                                <small class="text-muted d-block mb-1">O si prefieres, escribe un enlace
+                                                    / URL web directo:</small>
+                                                <input type="text" id="team-image-url"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="https://ejemplo.com/foto.jpg o img/team-1.jpg">
                                             </div>
                                         </div>
 
                                         <div class="form-group mb-2">
-                                            <label class="small text-muted font-weight-bold mb-1">Breve Descripción o Rol</label>
-                                            <input type="text" id="team-desc" class="form-control form-control-sm" placeholder="Ej. Lidera la calidad y atención a usuarios">
+                                            <label class="small text-muted font-weight-bold mb-1">Breve Descripción o
+                                                Rol</label>
+                                            <input type="text" id="team-desc" class="form-control form-control-sm"
+                                                placeholder="Ej. Lidera la calidad y atención a usuarios">
                                         </div>
                                         <button type="submit" class="btn btn-success btn-sm font-weight-bold mt-1">
                                             <i class="fa fa-plus mr-1"></i> Agregar Integrante al Equipo
@@ -1176,7 +1416,8 @@
                                     </form>
 
                                     <!-- Lista de miembros del equipo -->
-                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Miembros Activos en la Web:</div>
+                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Miembros Activos
+                                        en la Web:</div>
                                     <div id="team-members-list">
                                         <!-- Renderizado dinámicamente -->
                                     </div>
@@ -1186,30 +1427,39 @@
 
                         <!-- ================= ACORDEÓN 4: PREGUNTAS FRECUENTES (FAQS) ================= -->
                         <div class="card mb-3 border shadow-sm">
-                            <div class="card-header bg-white py-3 collapsed" id="headingCmsFaqs" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsFaqs" aria-expanded="false" aria-controls="collapseCmsFaqs">
+                            <div class="card-header bg-white py-3 collapsed" id="headingCmsFaqs"
+                                style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsFaqs"
+                                aria-expanded="false" aria-controls="collapseCmsFaqs">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-question-circle text-primary mr-2"></i> 4. Gestor de Preguntas Frecuentes (FAQs Dinámicas)
+                                        <i class="fa fa-question-circle text-primary mr-2"></i> 4. Gestor de Preguntas
+                                        Frecuentes (FAQs Dinámicas)
                                     </div>
                                     <i class="fa fa-chevron-down text-muted"></i>
                                 </div>
                             </div>
-                            <div id="collapseCmsFaqs" class="collapse" aria-labelledby="headingCmsFaqs" data-parent="#cmsMasterAccordion">
+                            <div id="collapseCmsFaqs" class="collapse" aria-labelledby="headingCmsFaqs"
+                                data-parent="#cmsMasterAccordion">
                                 <div class="card-body">
                                     <form id="form-add-faq" class="p-3 bg-light border rounded mb-3">
-                                        <div class="font-weight-bold text-dark small mb-2"><i class="fa fa-plus-circle text-primary mr-1"></i> Agregar Nueva Pregunta</div>
-                                        <div class="form-group mb-2">
-                                            <input type="text" id="new-faq-q" class="form-control form-control-sm" placeholder="Pregunta (Ej. ¿Qué incluye el seguro?)" required>
+                                        <div class="font-weight-bold text-dark small mb-2"><i
+                                                class="fa fa-plus-circle text-primary mr-1"></i> Agregar Nueva Pregunta
                                         </div>
                                         <div class="form-group mb-2">
-                                            <textarea id="new-faq-a" class="form-control form-control-sm" rows="2" placeholder="Respuesta detallada..." required></textarea>
+                                            <input type="text" id="new-faq-q" class="form-control form-control-sm"
+                                                placeholder="Pregunta (Ej. ¿Qué incluye el seguro?)" required>
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <textarea id="new-faq-a" class="form-control form-control-sm" rows="2"
+                                                placeholder="Respuesta detallada..." required></textarea>
                                         </div>
                                         <button type="submit" class="btn btn-success btn-sm font-weight-bold">
                                             <i class="fa fa-plus mr-1"></i> Añadir FAQ
                                         </button>
                                     </form>
 
-                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Preguntas Publicadas:</div>
+                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Preguntas
+                                        Publicadas:</div>
                                     <div id="faq-accordion-list">
                                         <!-- Renderizado dinámicamente -->
                                     </div>
@@ -1219,36 +1469,52 @@
 
                         <!-- ================= ACORDEÓN 5: RESEÑAS Y OPINIONES REALES ================= -->
                         <div class="card mb-3 border shadow-sm">
-                            <div class="card-header bg-white py-3 collapsed" id="headingCmsReviews" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsReviews" aria-expanded="false" aria-controls="collapseCmsReviews">
+                            <div class="card-header bg-white py-3 collapsed" id="headingCmsReviews"
+                                style="cursor: pointer;" data-toggle="collapse" data-target="#collapseCmsReviews"
+                                aria-expanded="false" aria-controls="collapseCmsReviews">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-star text-warning mr-2"></i> 5. Gestión y Moderación de Reseñas de Clientes (100% Reales)
+                                        <i class="fa fa-star text-warning mr-2"></i> 5. Gestión y Moderación de Reseñas
+                                        de Clientes (100% Reales)
                                     </div>
                                     <i class="fa fa-chevron-down text-muted"></i>
                                 </div>
                             </div>
-                            <div id="collapseCmsReviews" class="collapse" aria-labelledby="headingCmsReviews" data-parent="#cmsMasterAccordion">
+                            <div id="collapseCmsReviews" class="collapse" aria-labelledby="headingCmsReviews"
+                                data-parent="#cmsMasterAccordion">
                                 <div class="card-body">
                                     <!-- Compromiso Ético -->
                                     <div class="alert alert-info border small mb-3">
-                                        <div class="font-weight-bold mb-1"><i class="fa fa-shield-alt mr-1"></i> Política de Transparencia y Honestidad Comercial:</div>
-                                        En <strong>Rent Car Colombia</strong> no se generan testimonios ficticios ni inventados. Las opiniones mostradas provienen únicamente de conductores y propietarios reales con reservas finalizadas en la plataforma. Tú decides libremente si mostrar u ocultar la sección de reseñas en el sitio web según la cantidad de comentarios recopilados.
+                                        <div class="font-weight-bold mb-1"><i class="fa fa-shield-alt mr-1"></i>
+                                            Política de Transparencia y Honestidad Comercial:</div>
+                                        En <strong>Rent Car Colombia</strong> no se generan testimonios ficticios ni
+                                        inventados. Las opiniones mostradas provienen únicamente de conductores y
+                                        propietarios reales con reservas finalizadas en la plataforma. Tú decides
+                                        libremente si mostrar u ocultar la sección de reseñas en el sitio web según la
+                                        cantidad de comentarios recopilados.
                                     </div>
 
                                     <!-- Switch de Visibilidad Rápida -->
-                                    <div class="p-3 border rounded bg-light d-flex justify-content-between align-items-center mb-3">
+                                    <div
+                                        class="p-3 border rounded bg-light d-flex justify-content-between align-items-center mb-3">
                                         <div>
-                                            <div class="font-weight-bold text-dark"><i class="fa fa-eye text-primary mr-1"></i> Visibilidad de la Sección de Reseñas en la Web</div>
-                                            <small class="text-muted">Si la apagas, el bloque completo de opiniones desaparecerá de la página de inicio.</small>
+                                            <div class="font-weight-bold text-dark"><i
+                                                    class="fa fa-eye text-primary mr-1"></i> Visibilidad de la Sección
+                                                de Reseñas en la Web</div>
+                                            <small class="text-muted">Si la apagas, el bloque completo de opiniones
+                                                desaparecerá de la página de inicio.</small>
                                         </div>
                                         <div class="custom-control custom-switch">
-                                            <input type="checkbox" class="custom-control-input" id="quick-toggle-reviews">
-                                            <label class="custom-control-label font-weight-bold" for="quick-toggle-reviews">Mostrar en la Web</label>
+                                            <input type="checkbox" class="custom-control-input"
+                                                id="quick-toggle-reviews">
+                                            <label class="custom-control-label font-weight-bold"
+                                                for="quick-toggle-reviews">Mostrar en la Web</label>
                                         </div>
                                     </div>
 
                                     <!-- Bandeja de Moderación de Reseñas Reales -->
-                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Bandeja de Moderación de Opiniones Verificadas:</div>
+                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Bandeja de
+                                        Moderación de Opiniones Verificadas:</div>
                                     <div id="verified-reviews-moderation-list">
                                         <!-- Renderizado dinámicamente por js/admin-dashboard.js -->
                                     </div>
@@ -1267,13 +1533,16 @@
                             <div class="col-lg-6">
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-building text-primary mr-2"></i> Razón Comercial y Operación Nacional</h5>
+                                        <h5><i class="fa fa-building text-primary mr-2"></i> Razón Comercial y Operación
+                                            Nacional</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark">Nombre Comercial de la Marca</label>
+                                            <label class="font-weight-bold small text-dark">Nombre Comercial de la
+                                                Marca</label>
                                             <input type="text" id="cfg-brand-name" class="form-control" required>
-                                            <small class="text-muted">Aparece en encabezados, pie de página y títulos.</small>
+                                            <small class="text-muted">Aparece en encabezados, pie de página y
+                                                títulos.</small>
                                         </div>
 
                                         <div class="form-group">
@@ -1283,7 +1552,8 @@
 
                                         <div class="row">
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">Ciudad Base Operativa</label>
+                                                <label class="font-weight-bold small text-dark">Ciudad Base
+                                                    Operativa</label>
                                                 <input type="text" id="cfg-city-base" class="form-control" required>
                                             </div>
                                             <div class="col-md-6 form-group">
@@ -1293,20 +1563,24 @@
                                         </div>
 
                                         <div class="form-group mb-0">
-                                            <label class="font-weight-bold small text-dark">Modalidad de Operación</label>
+                                            <label class="font-weight-bold small text-dark">Modalidad de
+                                                Operación</label>
                                             <input type="text" id="cfg-address-display" class="form-control" required>
-                                            <small class="text-muted">Ej. Plataforma 100% Digital • Sede Operativa: Valledupar, Colombia</small>
+                                            <small class="text-muted">Ej. Plataforma 100% Digital • Sede Operativa:
+                                                Valledupar, Colombia</small>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-clock text-primary mr-2"></i> Horarios de Atención al Cliente</h5>
+                                        <h5><i class="fa fa-clock text-primary mr-2"></i> Horarios de Atención al
+                                            Cliente</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="form-group mb-0">
-                                            <label class="font-weight-bold small text-dark">Texto de Horario y Soporte</label>
+                                            <label class="font-weight-bold small text-dark">Texto de Horario y
+                                                Soporte</label>
                                             <input type="text" id="cfg-schedule" class="form-control" required>
                                             <small class="text-muted">Visible en el encabezado de la web.</small>
                                         </div>
@@ -1318,16 +1592,19 @@
                             <div class="col-lg-6">
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-phone-alt text-primary mr-2"></i> Canales de Atención Directa</h5>
+                                        <h5><i class="fa fa-phone-alt text-primary mr-2"></i> Canales de Atención
+                                            Directa</h5>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="row">
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">Teléfono Visible al Público</label>
+                                                <label class="font-weight-bold small text-dark">Teléfono Visible al
+                                                    Público</label>
                                                 <input type="text" id="cfg-phone-display" class="form-control" required>
                                             </div>
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">WhatsApp (Solo dígitos)</label>
+                                                <label class="font-weight-bold small text-dark">WhatsApp (Solo
+                                                    dígitos)</label>
                                                 <input type="text" id="cfg-phone-raw" class="form-control" required>
                                             </div>
                                         </div>
@@ -1338,8 +1615,10 @@
                                                 <input type="email" id="cfg-email-main" class="form-control" required>
                                             </div>
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">Correo de Soporte</label>
-                                                <input type="email" id="cfg-email-support" class="form-control" required>
+                                                <label class="font-weight-bold small text-dark">Correo de
+                                                    Soporte</label>
+                                                <input type="email" id="cfg-email-support" class="form-control"
+                                                    required>
                                             </div>
                                         </div>
                                     </div>
@@ -1347,27 +1626,37 @@
 
                                 <div class="section-card">
                                     <div class="section-card-header">
-                                        <h5><i class="fa fa-share-alt text-primary mr-2"></i> Redes Sociales Oficiales</h5>
+                                        <h5><i class="fa fa-share-alt text-primary mr-2"></i> Redes Sociales Oficiales
+                                        </h5>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark"><i class="fab fa-whatsapp text-success mr-1"></i> Enlace WhatsApp Directo</label>
+                                            <label class="font-weight-bold small text-dark"><i
+                                                    class="fab fa-whatsapp text-success mr-1"></i> Enlace WhatsApp
+                                                Directo</label>
                                             <input type="text" id="cfg-social-whatsapp" class="form-control">
                                         </div>
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark"><i class="fab fa-instagram text-danger mr-1"></i> Enlace Instagram</label>
+                                            <label class="font-weight-bold small text-dark"><i
+                                                    class="fab fa-instagram text-danger mr-1"></i> Enlace
+                                                Instagram</label>
                                             <input type="text" id="cfg-social-instagram" class="form-control">
                                         </div>
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark"><i class="fab fa-facebook-f text-primary mr-1"></i> Enlace Facebook</label>
+                                            <label class="font-weight-bold small text-dark"><i
+                                                    class="fab fa-facebook-f text-primary mr-1"></i> Enlace
+                                                Facebook</label>
                                             <input type="text" id="cfg-social-facebook" class="form-control">
                                         </div>
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark"><i class="fab fa-tiktok text-dark mr-1"></i> Enlace TikTok</label>
+                                            <label class="font-weight-bold small text-dark"><i
+                                                    class="fab fa-tiktok text-dark mr-1"></i> Enlace TikTok</label>
                                             <input type="text" id="cfg-social-tiktok" class="form-control">
                                         </div>
                                         <div class="form-group mb-0">
-                                            <label class="font-weight-bold small text-dark"><i class="fab fa-twitter text-info mr-1"></i> Enlace Twitter / X</label>
+                                            <label class="font-weight-bold small text-dark"><i
+                                                    class="fab fa-twitter text-info mr-1"></i> Enlace Twitter /
+                                                X</label>
                                             <input type="text" id="cfg-social-twitter" class="form-control">
                                         </div>
                                     </div>
@@ -1381,44 +1670,60 @@
                                 <div class="section-card">
                                     <div class="section-card-header">
                                         <div>
-                                            <h5><i class="fa fa-compass text-primary mr-2"></i> Historia de la Empresa, Misión y Visión ("Acerca de Nosotros")</h5>
-                                            <small class="text-muted">Personaliza la presentación institucional visible en la página de inicio y en la sección Nosotros.</small>
+                                            <h5><i class="fa fa-compass text-primary mr-2"></i> Historia de la Empresa,
+                                                Misión y Visión ("Acerca de Nosotros")</h5>
+                                            <small class="text-muted">Personaliza la presentación institucional visible
+                                                en la página de inicio y en la sección Nosotros.</small>
                                         </div>
                                     </div>
                                     <div class="section-card-body">
                                         <div class="row">
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">Titular de Presentación</label>
+                                                <label class="font-weight-bold small text-dark">Titular de
+                                                    Presentación</label>
                                                 <input type="text" id="cfg-about-title" class="form-control" required>
                                             </div>
                                             <div class="col-md-6 form-group">
-                                                <label class="font-weight-bold small text-dark">Lema o Frase de Impacto</label>
+                                                <label class="font-weight-bold small text-dark">Lema o Frase de
+                                                    Impacto</label>
                                                 <input type="text" id="cfg-about-quote" class="form-control" required>
                                             </div>
                                         </div>
 
                                         <div class="form-group">
-                                            <label class="font-weight-bold small text-dark">Texto Principal de Presentación de la Empresa</label>
-                                            <textarea id="cfg-about-text" class="form-control" rows="3" required></textarea>
+                                            <label class="font-weight-bold small text-dark">Texto Principal de
+                                                Presentación de la Empresa</label>
+                                            <textarea id="cfg-about-text" class="form-control" rows="3"
+                                                required></textarea>
                                         </div>
 
                                         <div class="row">
                                             <div class="col-md-4 form-group">
-                                                <label class="font-weight-bold small text-dark"><i class="fa fa-bullseye text-primary mr-1"></i> Nuestra Misión</label>
-                                                <textarea id="cfg-about-mission" class="form-control" rows="3" required></textarea>
+                                                <label class="font-weight-bold small text-dark"><i
+                                                        class="fa fa-bullseye text-primary mr-1"></i> Nuestra
+                                                    Misión</label>
+                                                <textarea id="cfg-about-mission" class="form-control" rows="3"
+                                                    required></textarea>
                                             </div>
                                             <div class="col-md-4 form-group">
-                                                <label class="font-weight-bold small text-dark"><i class="fa fa-eye text-primary mr-1"></i> Nuestra Visión</label>
-                                                <textarea id="cfg-about-vision" class="form-control" rows="3" required></textarea>
+                                                <label class="font-weight-bold small text-dark"><i
+                                                        class="fa fa-eye text-primary mr-1"></i> Nuestra Visión</label>
+                                                <textarea id="cfg-about-vision" class="form-control" rows="3"
+                                                    required></textarea>
                                             </div>
                                             <div class="col-md-4 form-group">
-                                                <label class="font-weight-bold small text-dark"><i class="fa fa-shield-alt text-primary mr-1"></i> Nuestros Valores</label>
-                                                <textarea id="cfg-about-values" class="form-control" rows="3" required></textarea>
+                                                <label class="font-weight-bold small text-dark"><i
+                                                        class="fa fa-shield-alt text-primary mr-1"></i> Nuestros
+                                                    Valores</label>
+                                                <textarea id="cfg-about-values" class="form-control" rows="3"
+                                                    required></textarea>
                                             </div>
                                         </div>
 
-                                        <button type="submit" class="btn btn-primary btn-block font-weight-bold py-3 shadow mt-2">
-                                            <i class="fa fa-save mr-2"></i> Guardar Toda la Información de Contacto, Redes y Empresa
+                                        <button type="submit"
+                                            class="btn btn-primary btn-block font-weight-bold py-3 shadow mt-2">
+                                            <i class="fa fa-save mr-2"></i> Guardar Toda la Información de Contacto,
+                                            Redes y Empresa
                                         </button>
                                     </div>
                                 </div>
@@ -1430,10 +1735,13 @@
                     <div class="section-card mt-4">
                         <div class="section-card-header d-flex justify-content-between align-items-center">
                             <div>
-                                <h5><i class="fa fa-envelope-open text-primary mr-2"></i> Buzón de Mensajes y Consultas de la Web (contact.html)</h5>
-                                <small class="text-muted">Mensajes de usuarios interesados en alquilar, publicar o soporte recibidos desde el formulario de contacto.</small>
+                                <h5><i class="fa fa-envelope-open text-primary mr-2"></i> Buzón de Mensajes y Consultas
+                                    de la Web (contact.html)</h5>
+                                <small class="text-muted">Mensajes de usuarios interesados en alquilar, publicar o
+                                    soporte recibidos desde el formulario de contacto.</small>
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="renderInquiriesAdmin()">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="renderInquiriesAdmin()">
                                 <i class="fa fa-sync-alt mr-1"></i> Actualizar
                             </button>
                         </div>
@@ -1464,25 +1772,32 @@
                     <form id="form-legal-config">
                         <div class="section-card">
                             <div class="section-card-header">
-                                <h5><i class="fa fa-file-contract text-primary mr-2"></i> Términos de Servicio, Habeas Data y Contratos Digitales</h5>
-                                <small class="text-muted">Define los acuerdos legales que rigen el alquiler de vehículos entre particulares en Colombia.</small>
+                                <h5><i class="fa fa-file-contract text-primary mr-2"></i> Términos de Servicio, Habeas
+                                    Data y Contratos Digitales</h5>
+                                <small class="text-muted">Define los acuerdos legales que rigen el alquiler de vehículos
+                                    entre particulares en Colombia.</small>
                             </div>
                             <div class="section-card-body">
                                 <div class="form-group">
-                                    <label class="font-weight-bold small text-dark">Términos y Condiciones Generales de la Plataforma</label>
+                                    <label class="font-weight-bold small text-dark">Términos y Condiciones Generales de
+                                        la Plataforma</label>
                                     <textarea id="legal-terms" class="form-control" rows="5" required></textarea>
-                                    <small class="text-muted">Aparecen en el pie de página y son aceptados durante el registro.</small>
+                                    <small class="text-muted">Aparecen en el pie de página y son aceptados durante el
+                                        registro.</small>
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="font-weight-bold small text-dark">Política de Privacidad y Tratamiento de Datos (Ley 1581 / Habeas Data)</label>
+                                    <label class="font-weight-bold small text-dark">Política de Privacidad y Tratamiento
+                                        de Datos (Ley 1581 / Habeas Data)</label>
                                     <textarea id="legal-privacy" class="form-control" rows="4" required></textarea>
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="font-weight-bold small text-dark">Cláusulas del Contrato de Alquiler y Acta de Entrega Digital</label>
+                                    <label class="font-weight-bold small text-dark">Cláusulas del Contrato de Alquiler y
+                                        Acta de Entrega Digital</label>
                                     <textarea id="legal-contract" class="form-control" rows="6" required></textarea>
-                                    <small class="text-muted">Este texto forma parte del documento que firman conductor y propietario al entregarse el vehículo.</small>
+                                    <small class="text-muted">Este texto forma parte del documento que firman conductor
+                                        y propietario al entregarse el vehículo.</small>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary font-weight-bold px-4 py-2 shadow-sm">
