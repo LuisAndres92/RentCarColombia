@@ -162,69 +162,85 @@
                     </button>
                 </form>
 
-                <!-- Modal Recuperación de Contraseña (Correo o Teléfono/SMS/WhatsApp) -->
+                <!-- Modal Recuperación de Contraseña Profesional -->
                 <div class="modal fade" id="modalRecovery" tabindex="-1" role="dialog" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content border-0 shadow-lg rounded-lg">
+                        <div class="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
                             <div class="modal-header bg-secondary text-white py-3">
                                 <h5 class="modal-title font-weight-bold text-white">
-                                    <i class="fa fa-key text-primary mr-2"></i> Recuperar Acceso a tu Cuenta
+                                    <i class="fa fa-shield-alt text-primary mr-2"></i> Restablecer Contraseña
                                 </h5>
                                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
                             <div class="modal-body p-4 text-left">
-                                <p class="text-muted small mb-3">
-                                    Selecciona el canal por el cual deseas recibir el enlace o código para restablecer tu contraseña:
-                                </p>
-
-                                <!-- Selector de Método: Correo vs Teléfono -->
-                                <div class="btn-group btn-group-toggle w-100 mb-3" data-toggle="buttons">
+                                <!-- Selector de Canal Oficial -->
+                                <div class="btn-group btn-group-toggle w-100 mb-4" data-toggle="buttons">
                                     <label class="btn btn-outline-primary active font-weight-bold py-2" id="lbl-rec-email">
-                                        <input type="radio" name="recMethod" id="method-email" checked> <i class="fa fa-envelope mr-1"></i> Por Correo
+                                        <input type="radio" name="recMethod" id="method-email" checked> <i class="fa fa-envelope mr-1"></i> Correo Electrónico
                                     </label>
                                     <label class="btn btn-outline-primary font-weight-bold py-2" id="lbl-rec-phone">
-                                        <input type="radio" name="recMethod" id="method-phone"> <i class="fa fa-mobile-alt mr-1"></i> Por SMS / WhatsApp
+                                        <input type="radio" name="recMethod" id="method-phone"> <i class="fab fa-whatsapp mr-1"></i> WhatsApp / Soporte
                                     </label>
                                 </div>
 
-                                <!-- Opción 1: Correo Electrónico -->
+                                <!-- Canal 1: Correo Electrónico Oficial (Supabase Auth) -->
                                 <div id="box-rec-email">
-                                    <div class="form-group">
-                                        <label class="small font-weight-bold text-dark">Correo Electrónico Registrado</label>
+                                    <div class="form-group mb-3">
+                                        <label class="small font-weight-bold text-dark">Correo Electrónico de tu Cuenta *</label>
                                         <div class="input-group">
                                             <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                                <span class="input-group-text"><i class="fa fa-envelope text-primary"></i></span>
                                             </div>
-                                            <input type="email" id="rec-input-email" class="form-control" placeholder="tu-correo@ejemplo.com">
+                                            <input type="email" id="rec-input-email" class="form-control" placeholder="tu-correo@ejemplo.com" required style="height: 48px;">
                                         </div>
-                                        <small class="text-muted">Te enviaremos un enlace oficial de Supabase para crear una nueva clave.</small>
+                                        <small class="text-muted d-block mt-1">Verificaremos que el correo exista y te enviaremos un enlace seguro para crear tu nueva contraseña.</small>
                                     </div>
-                                    <button type="button" id="btn-submit-rec-email" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm">
-                                        <i class="fa fa-paper-plane mr-1"></i> Enviar Enlace al Correo
+
+                                    <button type="button" id="btn-submit-rec-email" class="btn btn-primary btn-block font-weight-bold py-3 shadow-sm">
+                                        <i class="fa fa-paper-plane mr-2"></i> Enviar Enlace de Restablecimiento
                                     </button>
                                 </div>
 
-                                <!-- Opción 2: Teléfono / SMS / WhatsApp -->
+                                <!-- Canal 2: WhatsApp / Asistencia Directa de Cuenta -->
                                 <div id="box-rec-phone" style="display: none;">
-                                    <div class="form-group">
-                                        <label class="small font-weight-bold text-dark">Número de Teléfono / Celular (Colombia)</label>
+                                    <div class="form-group mb-3">
+                                        <label class="small font-weight-bold text-dark">Número de Celular Registrado *</label>
                                         <div class="input-group">
                                             <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="fa fa-phone-alt"></i> +57</span>
+                                                <span class="input-group-text"><i class="fa fa-mobile-alt text-primary"></i> +57</span>
                                             </div>
-                                            <input type="tel" id="rec-input-phone" class="form-control" placeholder="300 000 0000">
+                                            <input type="tel" id="rec-input-phone" class="form-control" placeholder="300 000 0000" required style="height: 48px;">
                                         </div>
-                                        <small class="text-muted">Recibirás un código de verificación temporal por SMS o atención directa por WhatsApp oficial.</small>
+                                        <small class="text-muted d-block mt-1">Validaremos que el número pertenezca a un usuario registrado para enlazar tu solicitud de restablecimiento con un asesor de seguridad.</small>
                                     </div>
-                                    <button type="button" id="btn-submit-rec-phone" class="btn btn-success btn-block font-weight-bold py-2 shadow-sm">
-                                        <i class="fab fa-whatsapp mr-1"></i> Restablecer por SMS / WhatsApp
+
+                                    <button type="button" id="btn-submit-rec-phone" class="btn btn-success btn-block font-weight-bold py-3 shadow-sm">
+                                        <i class="fab fa-whatsapp mr-2"></i> Verificar y Contactar por WhatsApp
                                     </button>
                                 </div>
 
-                                <!-- Alerta de Resultado -->
+                                <!-- Contenedor de Alertas y Estados -->
                                 <div id="rec-alert" class="alert d-none mt-3 p-3 small rounded" role="alert"></div>
+
+                                <!-- Pantalla de Confirmación de Correo Enviado -->
+                                <div id="rec-success-email" class="text-center py-3 d-none">
+                                    <div class="mb-3 text-success" style="font-size: 50px;">
+                                        <i class="fa fa-envelope-open-text"></i>
+                                    </div>
+                                    <h5 class="font-weight-bold text-dark mb-2">¡Revisa tu Bandeja de Entrada!</h5>
+                                    <p class="text-muted small mb-3">
+                                        Hemos enviado las instrucciones para restablecer tu contraseña a <strong id="rec-target-email" class="text-dark"></strong>.
+                                    </p>
+                                    <div class="bg-light p-3 rounded text-left small text-muted border mb-3">
+                                        <p class="mb-1"><i class="fa fa-info-circle text-primary mr-1"></i> Abre el correo recibido y haz clic en el enlace para ingresar tu nueva contraseña.</p>
+                                        <p class="m-0"><i class="fa fa-clock text-warning mr-1"></i> Si no lo encuentras en unos minutos, revisa tu carpeta de correo no deseado (Spam).</p>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary font-weight-bold px-4" data-dismiss="modal">
+                                        Cerrar y Continuar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -655,6 +671,9 @@
             // ---------------- RECUPERACIÓN DE CONTRASEÑA ----------------
             $('#btn-open-recovery').on('click', function() {
                 $('#rec-alert').addClass('d-none').empty();
+                $('#box-rec-email').show();
+                $('#box-rec-phone').hide();
+                $('#rec-success-email').addClass('d-none');
                 $('#modalRecovery').modal('show');
             });
 
@@ -662,11 +681,13 @@
             $('#lbl-rec-email').on('click', function() {
                 $('#box-rec-email').show();
                 $('#box-rec-phone').hide();
+                $('#rec-success-email').addClass('d-none');
                 $('#rec-alert').addClass('d-none');
             });
             $('#lbl-rec-phone').on('click', function() {
                 $('#box-rec-email').hide();
                 $('#box-rec-phone').show();
+                $('#rec-success-email').addClass('d-none');
                 $('#rec-alert').addClass('d-none');
             });
 
@@ -721,11 +742,10 @@
                 }
 
                 if (emailSent || !errorMsg) {
-                    alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
-                        .html(`
-                            <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> ¡Correo Enviado con Éxito!</div>
-                            <div>Hemos enviado un mensaje con el enlace de restablecimiento a <strong>${email}</strong>. Por favor revisa tu bandeja de entrada o tu carpeta de spam y haz clic en el enlace para crear tu nueva clave.</div>
-                        `);
+                    $('#box-rec-email').hide();
+                    $('#rec-alert').addClass('d-none');
+                    $('#rec-target-email').text(email);
+                    $('#rec-success-email').removeClass('d-none');
                     $('#rec-input-email').val('');
                 } else {
                     alertBox.removeClass('alert-info alert-success').addClass('alert-danger')
@@ -733,7 +753,7 @@
                 }
             });
 
-            // 2. Recuperación por Teléfono / WhatsApp (VALIDACIÓN ESTRICTA)
+            // 2. Asistencia por Teléfono / WhatsApp (VALIDACIÓN ESTRICTA - SIN SIMULACIONES)
             $('#btn-submit-rec-phone').on('click', async function() {
                 const phone = $('#rec-input-phone').val().trim().replace(/\D/g, '');
                 const alertBox = $('#rec-alert');
@@ -759,32 +779,23 @@
                     return;
                 }
 
-                // SI EXISTE: Generar código de seguridad real y abrir WhatsApp con la verificación
+                // SI EXISTE: Enlace directo y transparente con soporte oficial (SIN códigos ficticios en pantalla)
                 const userName = check.user.nombre_completo || check.user.name || 'Usuario';
-                const code = 'RC-' + Math.floor(100000 + Math.random() * 900000);
-                
-                // Guardar código temporal con 15 minutos de vigencia
-                const tokenData = {
-                    code: code,
-                    phone: phone,
-                    user: userName,
-                    expiresAt: Date.now() + (15 * 60 * 1000)
-                };
-                localStorage.setItem('renteasy_recovery_token', JSON.stringify(tokenData));
-
                 const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
                 const waSupportPhone = cfg.phoneRaw || '573162357871';
-                const waMsg = encodeURIComponent(`Hola Rent Car Colombia, mi nombre es ${userName}.\nSolicito restablecer la contraseña de mi cuenta registrada con el celular +57 ${phone}.\nCódigo de verificación de seguridad: ${code}`);
+                const waMsg = encodeURIComponent(`Hola Rent Car Colombia, solicito asistencia para recuperar el acceso a mi cuenta.\nNombre: ${userName}\nCelular registrado: +57 ${phone}`);
                 const waUrl = `https://api.whatsapp.com/send?phone=${waSupportPhone}&text=${waMsg}`;
 
                 alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
                     .html(`
-                        <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> Usuario Verificado: ${userName}</div>
-                        <p class="mb-2">Tu código de seguridad temporal es: <strong class="badge badge-dark px-2 py-1" style="font-size: 14px;">${code}</strong></p>
-                        <p class="small text-muted mb-3">Para verificar tu identidad y restablecer tu contraseña inmediatamente, haz clic abajo para enviar tu código al WhatsApp oficial de soporte:</p>
+                        <div class="font-weight-bold mb-2"><i class="fa fa-check-circle mr-1"></i> Usuario Verificado: ${userName}</div>
+                        <p class="small text-muted mb-3">Tu número ha sido validado en el sistema. Puedes comunicarte directamente con nuestro equipo de seguridad para validar tu titularidad y asistirte de inmediato:</p>
                         <a href="${waUrl}" target="_blank" class="btn btn-block btn-success font-weight-bold py-2 shadow-sm">
-                            <i class="fab fa-whatsapp mr-1"></i> Enviar Código por WhatsApp y Restablecer
+                            <i class="fab fa-whatsapp mr-1"></i> Contactar a Soporte por WhatsApp (+57 316 235 7871)
                         </a>
+                        <small class="text-muted d-block mt-3 text-center">
+                            <i class="fa fa-lightbulb text-warning mr-1"></i> Recuerda: También puedes usar la opción <strong>Correo Electrónico</strong> para restablecer tu clave en 1 minuto de forma automática y directa.
+                        </small>
                     `);
             });
         });
