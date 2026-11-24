@@ -1,21 +1,9 @@
 (function ($) {
     "use strict";
     
-    // Dropdown on mouse hover
+    // Comportamiento de Dropdowns de Bootstrap: solo al clic y cierre al hacer clic fuera (sin hover brusco)
     $(document).ready(function () {
-        function toggleNavbarMethod() {
-            if ($(window).width() > 992) {
-                $('.navbar .dropdown').on('mouseover', function () {
-                    $('.dropdown-toggle', this).trigger('click');
-                }).on('mouseout', function () {
-                    $('.dropdown-toggle', this).trigger('click').blur();
-                });
-            } else {
-                $('.navbar .dropdown').off('mouseover').off('mouseout');
-            }
-        }
-        toggleNavbarMethod();
-        $(window).resize(toggleNavbarMethod);
+        $('.navbar .dropdown').off('mouseover mouseout');
     });
 
 
@@ -290,7 +278,7 @@
             userDropdown.className = 'nav-item dropdown user-profile-nav-item d-inline-block';
             userDropdown.id = 'nav-user-dropdown';
             userDropdown.innerHTML = `
-                <a href="#" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
+                <a href="javascript:void(0)" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                     <img src="${userPhoto}" alt="${u.name}" class="rounded-circle border mr-2 user-current-avatar" style="width: 34px; height: 34px; object-fit: cover; border-color: rgba(255,255,255,0.4) !important;" onerror="this.src='img/team-1.jpg'">
                     <span class="user-current-name text-truncate" style="max-width: 120px;">${firstName}</span>
                     ${roleBadge}
@@ -636,6 +624,23 @@
             const btn = $(this);
             btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-1"></i> Cerrando...');
             await performFullLogout();
+        }
+    });
+
+    // Intercepción global: exigir sesión obligatoria antes de rentar o pasar al checkout
+    $(document).on('click', 'a[href*="booking.html"], .btn-rent-car', function(e) {
+        let u = null;
+        try {
+            u = JSON.parse(localStorage.getItem('renteasy_current_user'));
+        } catch(err) {
+            u = null;
+        }
+
+        if (!u || (!u.email && !u.name && !u.id)) {
+            e.preventDefault();
+            alert('Para rentar un vehículo en Rent Car Colombia debes iniciar sesión o crear tu cuenta de conductor.');
+            const targetHref = $(this).attr('href') || 'booking.html';
+            window.location.href = 'LOGIN.html?action=register&role=conductor&redirect=' + encodeURIComponent(targetHref);
         }
     });
 

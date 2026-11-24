@@ -22,6 +22,20 @@
     <!-- Customized Bootstrap Stylesheet -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+
+    <!-- Verificación Inmediata de Sesión para Alquiler -->
+    <script>
+        (function checkBookingAuth() {
+            try {
+                const user = JSON.parse(localStorage.getItem('renteasy_current_user'));
+                if (!user || (!user.email && !user.name && !user.id)) {
+                    alert('Para rentar un vehículo en Rent Car Colombia debes iniciar sesión o crear tu cuenta de conductor.');
+                    const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.replace('LOGIN.html?action=register&role=conductor&redirect=' + redirectUrl);
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 
 <body>

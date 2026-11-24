@@ -29,8 +29,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const allCars = getStoredCars();
     let car = allCars.find(c => c.id === carId) || allCars[0];
 
-    // Cargar sesión de usuario si está logueado
+    // Control de acceso: Para rentar un vehículo se DEBE contar con una sesión activa
     const currentUser = getCurrentUser();
+    if (!currentUser || (!currentUser.email && !currentUser.name && !currentUser.id)) {
+        alert('Para rentar un vehículo en Rent Car Colombia debes iniciar sesión o crear tu cuenta de conductor.');
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.replace(`LOGIN.html?action=register&role=conductor&redirect=${returnUrl}`);
+        return;
+    }
 
     // Referencias DOM Vehículo
     const bookTitle = document.getElementById('book-car-title');
