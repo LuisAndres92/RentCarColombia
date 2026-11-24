@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 3. Manejo del Login
     if (formLogin) {
-        formLogin.addEventListener('submit', function (e) {
+        formLogin.addEventListener('submit', async function (e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
@@ -76,9 +76,43 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const users = getUsers();
-            const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+            let foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+
+            // Si no está en usuarios locales, intentar autenticar con Supabase
+            if (!foundUser && typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client && client.auth) {
+                    try {
+                        const { data, error } = await client.auth.signInWithPassword({ email, password });
+                        if (!error && data && data.user) {
+                            const meta = data.user.user_metadata || {};
+                            foundUser = {
+                                id: data.user.id,
+                                name: meta.name || data.user.email.split('@')[0],
+                                email: data.user.email,
+                                role: meta.role || 'conductor',
+                                city: meta.city || 'Valledupar',
+                                phone: meta.phone || ''
+                            };
+                            // Guardar en copia local
+                            users.push(foundUser);
+                            localStorage.setItem('renteasy_users', JSON.stringify(users));
+                        }
+                    } catch (err) {
+                        console.warn("Fallo login Supabase:", err);
+                    }
+                }
+            }
 
             if (foundUser) {
+                // Iniciar sesión en Supabase en segundo plano si es posible
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) {
+                        client.auth.signInWithPassword({ email, password }).catch(() => {});
+                    }
+                }
+
                 // Guardar sesión activa
                 const sessionData = {
                     id: foundUser.id,
@@ -95,16 +129,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 setTimeout(() => {
                     if (foundUser.role === 'admin') {
-                        // Si es administrador, va directamente al panel de control maestro
                         window.location.href = 'admin.html';
                     } else if (foundUser.role === 'propietario') {
-                        // Si es propietario, va a su panel de gestión / publicación
                         window.location.href = 'dashboard-propietario.html';
                     } else {
-                        // Si es cliente, va al catálogo de vehículos para rentar
                         window.location.href = 'car.html';
                     }
-                }, 1200);
+                }, 1000);
             } else {
                 showAlert('Correo electrónico o contraseña incorrectos. Verifica tus datos o crea una cuenta.', 'error');
             }
@@ -182,6 +213,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
             users.push(newUser);
             localStorage.setItem('renteasy_users', JSON.stringify(users));
+
+            // Sincronizar automáticamente con Supabase Auth & tabla perfiles
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client) {
+                    if (client.auth) {
+                        client.auth.signUp({
+                            email: email,
+                            password: password,
+                            options: {
+                                data: { name: name, phone: phone, role: role, city: city }
+                            }
+                        }).catch(e => console.warn("Supabase signUp:", e));
+                    }
+                    client.from('perfiles').insert([{
+                        email: email,
+                        nombre_completo: name,
+                        telefono: phone,
+                        rol: role,
+                        ciudad: city
+                    }]).catch(e => console.warn("Supabase insert perfil:", e));
+                }
+            }
 
             // Iniciar sesión automáticamente
             localStorage.setItem('renteasy_current_user', JSON.stringify({

@@ -3,10 +3,12 @@
 -- Ejecutar en el SQL Editor de Supabase
 -- =====================================================================
 
--- 1. Permitir que propietario_id sea opcional para vehículos iniciales de la plataforma
+-- 1. Permitir que propietario_id sea opcional para vehículos iniciales de la plataforma y flexibilizar perfiles
 ALTER TABLE public.vehiculos ALTER COLUMN propietario_id DROP NOT NULL;
 ALTER TABLE public.reservas ALTER COLUMN propietario_id DROP NOT NULL;
 ALTER TABLE public.reservas ALTER COLUMN conductor_id DROP NOT NULL;
+ALTER TABLE public.perfiles ALTER COLUMN id SET DEFAULT uuid_generate_v4();
+ALTER TABLE public.perfiles DROP CONSTRAINT IF EXISTS perfiles_id_fkey;
 
 -- 2. Insertar los 6 autos iniciales en Supabase
 INSERT INTO public.vehiculos (marca, modelo, nombre_completo, año, categoria, transmision, combustible, puestos, precio_por_dia, ciudad, kilometraje_limite, descripcion, imagen_url, estado)

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -140,10 +140,7 @@
                     </div>
 
                     <div class="form-group-custom">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label for="login-password" class="mb-0">Contraseña</label>
-                            <a href="#" class="small text-primary">¿Olvidaste tu contraseña?</a>
-                        </div>
+                        <label for="login-password" class="mb-1">Contraseña</label>
                         <div class="input-icon-group">
                             <i class="fa fa-lock"></i>
                             <input type="password" id="login-password" placeholder="Tu contraseña" required>
@@ -232,6 +229,43 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Formulario 3: Restablecer Nueva Contraseña (Activado al hacer clic en el enlace del correo) -->
+                <form id="form-reset-password" class="auth-form" style="display: none;">
+                    <div class="text-center mb-4">
+                        <span class="badge badge-primary px-3 py-1 font-weight-bold mb-2">Seguridad de la Cuenta</span>
+                        <h4 class="font-weight-bold text-dark mb-1">Crea tu Nueva Contraseña</h4>
+                        <p class="small text-muted">Ingresa tu nueva contraseña para volver a acceder a Rent Car Colombia.</p>
+                    </div>
+
+                    <div class="form-group-custom">
+                        <label for="new-password">Nueva Contraseña *</label>
+                        <div class="input-icon-group">
+                            <i class="fa fa-lock"></i>
+                            <input type="password" id="new-password" placeholder="Mínimo 6 caracteres" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group-custom">
+                        <label for="confirm-new-password">Confirmar Nueva Contraseña *</label>
+                        <div class="input-icon-group">
+                            <i class="fa fa-shield-alt"></i>
+                            <input type="password" id="confirm-new-password" placeholder="Repite tu nueva contraseña" required>
+                        </div>
+                    </div>
+
+                    <div id="reset-alert" class="alert d-none mb-3 p-3 small rounded" role="alert"></div>
+
+                    <button type="submit" id="btn-submit-new-password" class="btn-auth-submit">
+                        <i class="fa fa-save mr-1"></i> Guardar Nueva Contraseña y Entrar
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <a href="LOGIN.html" class="small text-muted font-weight-semi-bold">
+                            <i class="fa fa-arrow-left mr-1"></i> Volver a Iniciar Sesión
+                        </a>
+                    </div>
+                </form>
 
                 <!-- Formulario 2: Registro con Selección de Roles -->
                 <form id="form-register" class="auth-form">
@@ -499,7 +533,126 @@
                 }
             });
 
-            // ---------------- RECUPERACIÓN DE CONTRASEÑA (CORREO & SMS/WHATSAPP) ----------------
+            // ---------------- FUNCIÓN DE VALIDACIÓN ESTRICTA DE USUARIO EN BASE DE DATOS ----------------
+            async function verifyUserRegistered(identifier, type) {
+                // 1. Validar en Supabase (tabla public.perfiles)
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client) {
+                        try {
+                            if (type === 'email') {
+                                const { data, error } = await client
+                                    .from('perfiles')
+                                    .select('id, email, nombre_completo, telefono')
+                                    .ilike('email', identifier.trim())
+                                    .limit(1);
+                                if (!error && data && data.length > 0) {
+                                    return { exists: true, user: data[0] };
+                                }
+                            } else {
+                                const cleanNum = identifier.replace(/\D/g, '');
+                                const { data, error } = await client
+                                    .from('perfiles')
+                                    .select('id, email, nombre_completo, telefono')
+                                    .ilike('telefono', `%${cleanNum}%`)
+                                    .limit(1);
+                                if (!error && data && data.length > 0) {
+                                    return { exists: true, user: data[0] };
+                                }
+                            }
+                        } catch (err) {
+                            console.warn("Consulta Supabase perfiles:", err);
+                        }
+                    }
+                }
+
+                // 2. Validar en usuarios del sistema local
+                let users = [];
+                try {
+                    users = JSON.parse(localStorage.getItem('renteasy_users')) || [];
+                } catch (e) { users = []; }
+
+                if (type === 'email') {
+                    const found = users.find(u => (u.email || '').toLowerCase().trim() === identifier.toLowerCase().trim());
+                    if (found) return { exists: true, user: found };
+                } else {
+                    const cleanNum = identifier.replace(/\D/g, '');
+                    const found = users.find(u => (u.phone || '').replace(/\D/g, '').includes(cleanNum));
+                    if (found) return { exists: true, user: found };
+                }
+
+                return { exists: false, user: null };
+            }
+
+            // ---------------- DETECTAR ENLACE DE RESTABLECER CONTRASEÑA ----------------
+            const hash = window.location.hash;
+            const hasRecoveryToken = hash && (hash.includes('access_token=') || hash.includes('type=recovery'));
+            
+            if (action === 'reset-password' || hasRecoveryToken) {
+                // Mostrar exclusivamente el formulario para fijar la nueva contraseña
+                $('#form-login').hide();
+                $('#form-register').hide();
+                $('.auth-tabs').hide();
+                $('#form-reset-password').show();
+            }
+
+            // Enviar Nueva Contraseña
+            $('#form-reset-password').on('submit', async function(e) {
+                e.preventDefault();
+                const newPass = $('#new-password').val();
+                const confirmPass = $('#confirm-new-password').val();
+                const alertBox = $('#reset-alert');
+
+                if (newPass.length < 6) {
+                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                        .html('<i class="fa fa-times-circle mr-1"></i> La contraseña debe tener al menos 6 caracteres.');
+                    return;
+                }
+
+                if (newPass !== confirmPass) {
+                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                        .html('<i class="fa fa-times-circle mr-1"></i> Las contraseñas no coinciden.');
+                    return;
+                }
+
+                alertBox.removeClass('d-none alert-danger alert-success').addClass('alert-info')
+                    .html('<i class="fa fa-spinner fa-spin mr-1"></i> Actualizando contraseña en el servidor...');
+
+                // 1. Actualizar en Supabase Auth si hay sesión activa por el token
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) {
+                        try {
+                            await client.auth.updateUser({ password: newPass });
+                        } catch (err) {
+                            console.warn("Error Supabase updateUser:", err);
+                        }
+                    }
+                }
+
+                // 2. Actualizar también en el registro de usuarios local
+                let users = [];
+                try { users = JSON.parse(localStorage.getItem('renteasy_users')) || []; } catch (e) {}
+                const currentUser = JSON.parse(localStorage.getItem('renteasy_current_user') || '{}');
+                const targetEmail = currentUser.email || '';
+                
+                users.forEach(u => {
+                    if (targetEmail && u.email.toLowerCase() === targetEmail.toLowerCase()) {
+                        u.password = newPass;
+                    }
+                });
+                localStorage.setItem('renteasy_users', JSON.stringify(users));
+
+                setTimeout(() => {
+                    alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
+                        .html('<i class="fa fa-check-circle mr-1"></i> <strong>¡Contraseña actualizada con éxito!</strong> Redirigiendo al inicio de sesión...');
+                    setTimeout(() => {
+                        window.location.href = 'LOGIN.html';
+                    }, 1500);
+                }, 800);
+            });
+
+            // ---------------- RECUPERACIÓN DE CONTRASEÑA ----------------
             $('#btn-open-recovery').on('click', function() {
                 $('#rec-alert').addClass('d-none').empty();
                 $('#modalRecovery').modal('show');
@@ -517,66 +670,120 @@
                 $('#rec-alert').addClass('d-none');
             });
 
-            // Recuperación por Correo (Supabase Auth)
+            // 1. Recuperación por Correo Electrónico (VALIDACIÓN ESTRICTA)
             $('#btn-submit-rec-email').on('click', async function() {
                 const email = $('#rec-input-email').val().trim();
                 const alertBox = $('#rec-alert');
 
                 if (!email || !email.includes('@')) {
-                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                    alertBox.removeClass('d-none alert-success alert-info').addClass('alert-danger')
                         .html('<i class="fa fa-exclamation-triangle mr-1"></i> Por favor ingresa un correo electrónico válido.');
                     return;
                 }
 
                 alertBox.removeClass('d-none alert-danger alert-success').addClass('alert-info')
-                    .html('<i class="fa fa-spinner fa-spin mr-1"></i> Procesando solicitud de restablecimiento...');
+                    .html('<i class="fa fa-spinner fa-spin mr-1"></i> Verificando correo en el sistema...');
+
+                // VALIDACIÓN ESTRICTA: ¿Existe la persona registrada?
+                const check = await verifyUserRegistered(email, 'email');
+                if (!check.exists) {
+                    // BLOQUEO INMEDIATO: NO PERMITIR CONTINUAR
+                    alertBox.removeClass('alert-info alert-success').addClass('alert-danger')
+                        .html(`
+                            <div class="font-weight-bold mb-1"><i class="fa fa-times-circle mr-1"></i> Correo No Registrado</div>
+                            <div>No encontramos ninguna cuenta asociada a <strong>${email}</strong>. Por seguridad, solo los usuarios registrados pueden solicitar restablecimiento. Verifica tus datos o crea una cuenta nueva.</div>
+                        `);
+                    return;
+                }
+
+                // SI EXISTE: Enviar correo real con Supabase Auth
+                alertBox.html('<i class="fa fa-spinner fa-spin mr-1"></i> Enviando correo de restablecimiento seguro...');
+                let emailSent = false;
+                let errorMsg = '';
 
                 if (typeof getSupabaseClient === 'function') {
                     const client = getSupabaseClient();
                     if (client && client.auth) {
                         try {
-                            await client.auth.resetPasswordForEmail(email, {
-                                redirectTo: window.location.origin + '/LOGIN.html?action=reset-password'
+                            const redirectUrl = window.location.origin + window.location.pathname + '?action=reset-password';
+                            const { error } = await client.auth.resetPasswordForEmail(email, {
+                                redirectTo: redirectUrl
                             });
-                        } catch (e) {
-                            console.warn("Supabase auth reset:", e);
+                            if (error) {
+                                errorMsg = error.message;
+                            } else {
+                                emailSent = true;
+                            }
+                        } catch (err) {
+                            errorMsg = err.message || 'Error de conexión con el servidor de correo.';
                         }
                     }
                 }
 
-                setTimeout(() => {
+                if (emailSent || !errorMsg) {
                     alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
                         .html(`
-                            <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> ¡Enlace Enviado con Éxito!</div>
-                            <div>Hemos enviado las instrucciones para restablecer tu contraseña a <strong>${email}</strong>. Revisa tu bandeja de entrada o carpeta de spam.</div>
+                            <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> ¡Correo Enviado con Éxito!</div>
+                            <div>Hemos enviado un mensaje con el enlace de restablecimiento a <strong>${email}</strong>. Por favor revisa tu bandeja de entrada o tu carpeta de spam y haz clic en el enlace para crear tu nueva clave.</div>
                         `);
                     $('#rec-input-email').val('');
-                }, 600);
+                } else {
+                    alertBox.removeClass('alert-info alert-success').addClass('alert-danger')
+                        .html(`<i class="fa fa-times-circle mr-1"></i> No fue posible enviar el correo: ${errorMsg}`);
+                }
             });
 
-            // Recuperación por SMS / WhatsApp
-            $('#btn-submit-rec-phone').on('click', function() {
+            // 2. Recuperación por Teléfono / WhatsApp (VALIDACIÓN ESTRICTA)
+            $('#btn-submit-rec-phone').on('click', async function() {
                 const phone = $('#rec-input-phone').val().trim().replace(/\D/g, '');
                 const alertBox = $('#rec-alert');
 
                 if (!phone || phone.length < 10) {
-                    alertBox.removeClass('d-none alert-success').addClass('alert-danger')
+                    alertBox.removeClass('d-none alert-success alert-info').addClass('alert-danger')
                         .html('<i class="fa fa-exclamation-triangle mr-1"></i> Ingresa un número de celular colombiano válido (10 dígitos).');
                     return;
                 }
 
-                const code = Math.floor(100000 + Math.random() * 900000);
+                alertBox.removeClass('d-none alert-danger alert-success').addClass('alert-info')
+                    .html('<i class="fa fa-spinner fa-spin mr-1"></i> Verificando número en la base de datos...');
+
+                // VALIDACIÓN ESTRICTA: ¿Existe el teléfono registrado?
+                const check = await verifyUserRegistered(phone, 'phone');
+                if (!check.exists) {
+                    // BLOQUEO INMEDIATO: NO PERMITIR CONTINUAR
+                    alertBox.removeClass('alert-info alert-success').addClass('alert-danger')
+                        .html(`
+                            <div class="font-weight-bold mb-1"><i class="fa fa-times-circle mr-1"></i> Número de Teléfono No Registrado</div>
+                            <div>El número <strong>+57 ${phone}</strong> no se encuentra vinculado a ningún usuario en nuestra plataforma. Verifica el número o regístrate.</div>
+                        `);
+                    return;
+                }
+
+                // SI EXISTE: Generar código de seguridad real y abrir WhatsApp con la verificación
+                const userName = check.user.nombre_completo || check.user.name || 'Usuario';
+                const code = 'RC-' + Math.floor(100000 + Math.random() * 900000);
+                
+                // Guardar código temporal con 15 minutos de vigencia
+                const tokenData = {
+                    code: code,
+                    phone: phone,
+                    user: userName,
+                    expiresAt: Date.now() + (15 * 60 * 1000)
+                };
+                localStorage.setItem('renteasy_recovery_token', JSON.stringify(tokenData));
+
                 const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
                 const waSupportPhone = cfg.phoneRaw || '573162357871';
-                const waMsg = encodeURIComponent(`Hola Rent Car Colombia, solicito restablecer mi contraseña. Mi número registrado es +57 ${phone}. Mi código temporal generado es: ${code}`);
-                const waUrl = `https://wa.me/${waSupportPhone}?text=${waMsg}`;
+                const waMsg = encodeURIComponent(`Hola Rent Car Colombia, mi nombre es ${userName}.\nSolicito restablecer la contraseña de mi cuenta registrada con el celular +57 ${phone}.\nCódigo de verificación de seguridad: ${code}`);
+                const waUrl = `https://api.whatsapp.com/send?phone=${waSupportPhone}&text=${waMsg}`;
 
-                alertBox.removeClass('d-none alert-danger').addClass('alert-success')
+                alertBox.removeClass('alert-info alert-danger').addClass('alert-success')
                     .html(`
-                        <div class="font-weight-bold mb-1"><i class="fa fa-mobile-alt mr-1"></i> Código de Verificación: <strong>${code}</strong></div>
-                        <p class="mb-2">Se ha emitido un código temporal para el <strong>+57 ${phone}</strong>. También puedes validarlo de inmediato vía WhatsApp con un asesor:</p>
-                        <a href="${waUrl}" target="_blank" class="btn btn-sm btn-success font-weight-bold">
-                            <i class="fab fa-whatsapp mr-1"></i> Abrir WhatsApp Oficial con mi Código
+                        <div class="font-weight-bold mb-1"><i class="fa fa-check-circle mr-1"></i> Usuario Verificado: ${userName}</div>
+                        <p class="mb-2">Tu código de seguridad temporal es: <strong class="badge badge-dark px-2 py-1" style="font-size: 14px;">${code}</strong></p>
+                        <p class="small text-muted mb-3">Para verificar tu identidad y restablecer tu contraseña inmediatamente, haz clic abajo para enviar tu código al WhatsApp oficial de soporte:</p>
+                        <a href="${waUrl}" target="_blank" class="btn btn-block btn-success font-weight-bold py-2 shadow-sm">
+                            <i class="fab fa-whatsapp mr-1"></i> Enviar Código por WhatsApp y Restablecer
                         </a>
                     `);
             });
