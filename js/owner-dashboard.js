@@ -864,6 +864,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function getOrSetHostSession() {
+        // Verificar inactividad primero (30 minutos)
+        const storedLast = parseInt(localStorage.getItem('renteasy_last_activity'), 10);
+        if (storedLast && (Date.now() - storedLast) >= 30 * 60 * 1000) {
+            localStorage.removeItem('renteasy_current_user');
+            localStorage.removeItem('renteasy_last_activity');
+            window.location.replace('LOGIN.html?reason=timeout&redirect=dashboard-propietario.html');
+            return null;
+        }
+
         let user = null;
         try {
             user = JSON.parse(localStorage.getItem('renteasy_current_user'));

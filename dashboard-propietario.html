@@ -23,6 +23,25 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
 
+    <!-- Verificación Inmediata de Sesión de Propietario -->
+    <script>
+        (function checkHostAuth() {
+            try {
+                const storedLast = parseInt(localStorage.getItem('renteasy_last_activity'), 10);
+                if (storedLast && (Date.now() - storedLast) >= 30 * 60 * 1000) {
+                    localStorage.removeItem('renteasy_current_user');
+                    localStorage.removeItem('renteasy_last_activity');
+                    window.location.replace('LOGIN.html?reason=timeout&redirect=dashboard-propietario.html');
+                    return;
+                }
+                const user = JSON.parse(localStorage.getItem('renteasy_current_user'));
+                if (!user || !user.email) {
+                    window.location.replace('LOGIN.html?action=register&role=propietario&redirect=dashboard-propietario.html');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
         .dashboard-header {
             background: linear-gradient(135deg, #1C1E32 0%, #2B2E4A 100%);

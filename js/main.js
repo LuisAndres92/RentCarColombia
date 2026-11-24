@@ -147,6 +147,74 @@
 
     /**
      * =========================================================================
+     * SEGURIDAD DE SESIÓN: CONTROL DE INACTIVIDAD
+     * Límite: 30 minutos sin interacción física del usuario.
+     * =========================================================================
+     */
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
+
+    function isSessionTimedOut() {
+        const currentUser = localStorage.getItem('renteasy_current_user');
+        if (!currentUser) return false;
+
+        const storedLast = parseInt(localStorage.getItem('renteasy_last_activity'), 10);
+        if (!storedLast || isNaN(storedLast)) {
+            // Inicializar timestamp fresco si no existía previamente
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+            return false;
+        }
+
+        return (Date.now() - storedLast) >= INACTIVITY_LIMIT_MS;
+    }
+
+    async function performInactivityLogout() {
+        console.warn("Seguridad Rent Car Colombia: Sesión finalizada automáticamente por inactividad prolongada (30 min).");
+
+        try {
+            sessionStorage.setItem('renteasy_explicit_logout', 'true');
+            localStorage.removeItem('renteasy_current_user');
+            localStorage.removeItem('renteasy_last_activity');
+            localStorage.removeItem('renteasy_pending_role');
+
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('sb-') || k.includes('auth-token') || k.startsWith('renteasy_current_user'))) {
+                    keysToRemove.push(k);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client && client.auth) {
+                    await Promise.race([
+                        client.auth.signOut({ scope: 'local' }),
+                        new Promise(resolve => setTimeout(resolve, 500))
+                    ]);
+                }
+            }
+        } catch (e) {
+            console.warn("Inactivity logout cleanup error:", e);
+        } finally {
+            const currentPath = window.location.pathname.toLowerCase();
+            if (!currentPath.includes('login.html')) {
+                const redirectTarget = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `LOGIN.html?reason=timeout&redirect=${redirectTarget}`;
+            } else {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('reason') !== 'timeout') {
+                    window.location.href = 'LOGIN.html?reason=timeout';
+                }
+            }
+        }
+    }
+
+    window.isSessionTimedOut = isSessionTimedOut;
+    window.performInactivityLogout = performInactivityLogout;
+
+    /**
+     * =========================================================================
      * NAVBAR DE USUARIO: PERFIL, FOTO, CONFIGURACIÓN Y CERRAR SESIÓN
      * Detecta si hay una sesión activa (localStorage o Supabase Auth) y renderiza
      * dinámicamente el botón de usuario con avatar, nombre, rol, modal de perfil
@@ -157,10 +225,11 @@
         // Asegurar que el modal de perfil exista siempre en cualquier página
         injectProfileModal();
 
-        // Refrescar timestamp de actividad al iniciar la vista
-        try {
-            localStorage.setItem('renteasy_last_activity', Date.now().toString());
-        } catch (e) {}
+        // 1. Verificación estricta de inactividad antes de procesar o renderizar sesión
+        if (isSessionTimedOut()) {
+            performInactivityLogout();
+            return;
+        }
 
         let user = null;
         try {
@@ -328,16 +397,23 @@
         if (typeof getSupabaseClient === 'function') {
             const client = getSupabaseClient();
             if (client && client.auth) {
-                // Si el usuario acaba de cerrar sesión explícitamente, no re-hidratar sesión
-                if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
+                // Si el usuario acaba de cerrar sesión explícitamente o expiró por inactividad, no re-hidratar sesión
+                if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out') || window.location.search.includes('reason=timeout') || isSessionTimedOut()) {
+                    if (isSessionTimedOut()) {
+                        performInactivityLogout();
+                    }
                     return;
                 }
 
                 // Escuchar cambios de autenticación
                 if (typeof client.auth.onAuthStateChange === 'function') {
                     client.auth.onAuthStateChange((event, session) => {
-                        if (event === 'SIGNED_OUT' || sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
-                            localStorage.removeItem('renteasy_current_user');
+                        if (event === 'SIGNED_OUT' || sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out') || window.location.search.includes('reason=timeout') || isSessionTimedOut()) {
+                            if (isSessionTimedOut()) {
+                                performInactivityLogout();
+                            } else {
+                                localStorage.removeItem('renteasy_current_user');
+                            }
                             return;
                         }
                         if (session && session.user) {
@@ -358,14 +434,16 @@
                                 loggedAt: (curUser && curUser.loggedAt) || new Date().toISOString()
                             };
                             localStorage.setItem('renteasy_current_user', JSON.stringify(syncedUser));
-                            localStorage.setItem('renteasy_last_activity', Date.now().toString());
                             renderUser(syncedUser);
                         }
                     });
                 }
 
                 client.auth.getSession().then(({ data: { session } }) => {
-                    if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out')) {
+                    if (sessionStorage.getItem('renteasy_explicit_logout') === 'true' || window.location.search.includes('action=logged_out') || window.location.search.includes('reason=timeout') || isSessionTimedOut()) {
+                        if (isSessionTimedOut()) {
+                            performInactivityLogout();
+                        }
                         return;
                     }
                     if (session && session.user) {
@@ -386,7 +464,6 @@
                             loggedAt: (curUser && curUser.loggedAt) || new Date().toISOString()
                         };
                         localStorage.setItem('renteasy_current_user', JSON.stringify(syncedUser));
-                        localStorage.setItem('renteasy_last_activity', Date.now().toString());
                         renderUser(syncedUser);
                     }
                 }).catch(() => {});
@@ -670,72 +747,79 @@
 
     /**
      * =========================================================================
-     * SEGURIDAD: CIERRE AUTOMÁTICO DE SESIÓN POR INACTIVIDAD PROLONGADA
-     * Si el usuario deja la plataforma desatendida por 30 minutos sin interacción
-     * y sin foco en la pestaña, se cierra la sesión de forma segura.
+     * SEGURIDAD: MONITOR ACTIVO DE INACTIVIDAD
+     * Captura interacción física real (clic, teclas, touch, scroll) y detecta
+     * retorno a la pestaña (visibilitychange / focus) tras ausencias prolongadas.
      * =========================================================================
      */
-    (function setupInactivityTimeout() {
-        const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutos
-        const CHECK_INTERVAL_MS = 15 * 1000;        // Verificar cada 15 segundos
-        let lastActivity = Date.now();
+    (function setupInactivityMonitor() {
+        const CHECK_INTERVAL_MS = 10 * 1000; // Verificar cada 10 segundos
+        let lastInteraction = 0;
 
-        // Registrar actividad fresca al cargar cualquier página
-        try {
-            localStorage.setItem('renteasy_last_activity', Date.now().toString());
-        } catch (e) {}
+        // Si ya está expirada al inicializar, cerrar de inmediato
+        if (isSessionTimedOut()) {
+            performInactivityLogout();
+            return;
+        }
 
-        function registerActivity() {
+        // Registrar interacción física REAL del usuario (con throttle de 3 seg)
+        function registerUserActivity() {
+            const currentUser = localStorage.getItem('renteasy_current_user');
+            if (!currentUser) return;
+
             const now = Date.now();
-            if (now - lastActivity > 4000) {
-                lastActivity = now;
+            if (now - lastInteraction > 3000) {
+                lastInteraction = now;
                 try {
                     localStorage.setItem('renteasy_last_activity', now.toString());
                 } catch (e) {}
             }
         }
 
-        const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
-        events.forEach(evt => {
-            window.addEventListener(evt, registerActivity, { passive: true });
+        // Eventos reales de interacción física del usuario
+        const realEvents = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+        realEvents.forEach(evt => {
+            window.addEventListener(evt, registerUserActivity, { passive: true });
         });
 
-        // Verificador periódico defensivo
-        setInterval(function() {
+        // Mousemove throttled a 15 segundos para no sobrecargar el almacenamiento
+        let lastMouseMove = 0;
+        window.addEventListener('mousemove', function() {
+            const now = Date.now();
+            if (now - lastMouseMove > 15000) {
+                lastMouseMove = now;
+                registerUserActivity();
+            }
+        }, { passive: true });
+
+        // Verificador periódico
+        function checkInactivity() {
             const currentUser = localStorage.getItem('renteasy_current_user');
             if (!currentUser) return;
 
-            // Si la ventana o pestaña tiene foco activo, el usuario está presente
-            if (document.hasFocus && document.hasFocus()) {
-                registerActivity();
-                return;
+            const storedLast = parseInt(localStorage.getItem('renteasy_last_activity'), 10);
+            if (!storedLast) return;
+
+            const idleDuration = Date.now() - storedLast;
+            if (idleDuration >= INACTIVITY_LIMIT_MS) {
+                performInactivityLogout();
             }
+        }
 
-            const storedLast = parseInt(localStorage.getItem('renteasy_last_activity')) || lastActivity;
-            const idleTime = Date.now() - storedLast;
+        // 1. Verificación periódica continua
+        setInterval(checkInactivity, CHECK_INTERVAL_MS);
 
-            if (idleTime >= INACTIVITY_LIMIT_MS) {
-                console.warn("Seguridad Rent Car Colombia: Sesión expirada por inactividad prolongada (" + Math.round(idleTime / 60000) + " min).");
-
-                // Cerrar sesión en Supabase si está activo
-                if (typeof getSupabaseClient === 'function') {
-                    const client = getSupabaseClient();
-                    if (client && client.auth) {
-                        client.auth.signOut().catch(() => {});
-                    }
-                }
-
-                // Limpiar almacenamiento de sesión
-                localStorage.removeItem('renteasy_current_user');
-                localStorage.removeItem('renteasy_last_activity');
-
-                // Redirigir a login con aviso de seguridad si no está ya en el login
-                const currentPath = window.location.pathname.toLowerCase();
-                if (!currentPath.includes('login.html')) {
-                    window.location.href = 'LOGIN.html?reason=timeout';
-                }
+        // 2. Verificación instantánea al regresar a la pestaña (cuando el usuario vuelve tras mucho tiempo)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                checkInactivity();
             }
-        }, CHECK_INTERVAL_MS);
+        });
+
+        // 3. Verificación instantánea al enfocar la ventana
+        window.addEventListener('focus', function() {
+            checkInactivity();
+        });
     })();
     
 })(jQuery);

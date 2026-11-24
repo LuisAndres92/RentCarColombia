@@ -550,11 +550,48 @@
 
             // Notificación de cierre de sesión por inactividad o cierre voluntario
             if (reason === 'timeout') {
+                // Limpieza total y confirmación limpia de cierre de sesión por inactividad
+                sessionStorage.removeItem('renteasy_explicit_logout');
+                localStorage.removeItem('renteasy_current_user');
+                localStorage.removeItem('renteasy_last_activity');
+                localStorage.removeItem('renteasy_pending_role');
+
+                // Limpiar llaves de supabase en localStorage
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && (k.startsWith('sb-') || k.includes('auth-token') || k.startsWith('renteasy_current_user'))) {
+                            localStorage.removeItem(k);
+                        }
+                    }
+                } catch(e) {}
+
+                if (typeof getSupabaseClient === 'function') {
+                    const c = getSupabaseClient();
+                    if (c && c.auth) c.auth.signOut().catch(() => {});
+                }
+
                 $('#auth-alert').html(`
-                    <div class="alert alert-warning py-3 px-3 mb-3 small rounded shadow-sm border-warning">
+                    <div class="alert alert-warning alert-dismissible fade show py-3 px-3 mb-3 small rounded shadow-sm border-warning" role="alert">
                         <i class="fa fa-shield-alt text-warning mr-2"></i> <strong>Sesión finalizada por inactividad:</strong> Para proteger la seguridad de tu cuenta, tu sesión se cerró automáticamente tras un período prolongado sin actividad (30 min). Por favor ingresa nuevamente.
+                        <button type="button" class="close py-2" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                 `).show();
+
+                // Limpiar parámetro ?reason=timeout de la barra de direcciones para que no persista al recargar
+                if (window.history && window.history.replaceState) {
+                    const cleanUrl = window.location.pathname + (window.location.search ? window.location.search.replace(/[?&]reason=timeout/, '').replace(/^&/, '?') : '');
+                    window.history.replaceState({}, document.title, cleanUrl || window.location.pathname);
+                }
+
+                // Desvanecer automáticamente tras 6 segundos
+                setTimeout(() => {
+                    $('#auth-alert').fadeOut(500, function() {
+                        $(this).empty();
+                    });
+                }, 6000);
             } else if (action === 'logged_out' || sessionStorage.getItem('renteasy_explicit_logout') === 'true') {
                 // Limpieza total y confirmación limpia de cierre de sesión
                 sessionStorage.removeItem('renteasy_explicit_logout');
