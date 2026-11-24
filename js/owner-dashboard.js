@@ -6,7 +6,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     // 1. Validar y cargar sesión del propietario
     const currentUser = getOrSetHostSession();
-    document.getElementById('nav-user-name').innerText = currentUser.name || 'Propietario';
+    if (!currentUser) return; // Se redirige automáticamente al login si no está autenticado
+    const navUserName = document.getElementById('nav-user-name');
+    if (navUserName) navUserName.innerText = currentUser.name || 'Propietario';
 
     // 2. Inicializar base de datos local si no existe
     initDefaultCars();
@@ -159,8 +161,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnLogout) {
         btnLogout.addEventListener('click', function (e) {
             e.preventDefault();
-            localStorage.removeItem('renteasy_current_user');
-            window.location.href = 'LOGIN.html';
+            if (confirm('¿Deseas cerrar tu sesión?')) {
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client && client.auth) client.auth.signOut().catch(() => {});
+                }
+                localStorage.removeItem('renteasy_current_user');
+                localStorage.removeItem('renteasy_last_activity');
+                window.location.href = 'LOGIN.html';
+            }
         });
     }
 
@@ -860,18 +869,25 @@ document.addEventListener('DOMContentLoaded', function () {
             user = JSON.parse(localStorage.getItem('renteasy_current_user'));
         } catch (e) {}
 
-        if (!user || user.role !== 'propietario') {
-            // Usuario anfitrión por defecto para pruebas
-            user = {
-                id: 'usr_demo_host',
-                name: 'Carlos Mendoza',
-                email: 'propietario@ejemplo.com',
-                phone: '+57 316 235 7871',
-                role: 'propietario',
-                city: 'Bogotá'
-            };
-            localStorage.setItem('renteasy_current_user', JSON.stringify(user));
+        if (!user || !user.email) {
+            alert('Para acceder al Panel de Anfitrión y publicar vehículos, debes iniciar sesión o registrarte.');
+            window.location.replace('LOGIN.html?action=register&role=propietario&redirect=dashboard-propietario.html');
+            return null;
         }
+
+        // Si es conductor, promover su rol automáticamente a propietario
+        if (user.role !== 'admin' && user.role !== 'propietario') {
+            user.role = 'propietario';
+            localStorage.setItem('renteasy_current_user', JSON.stringify(user));
+            localStorage.setItem('renteasy_pending_role', 'propietario');
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client) {
+                    client.from('perfiles').update({ rol: 'propietario' }).eq('id', user.id).catch(() => {});
+                }
+            }
+        }
+
         return user;
     }
 

@@ -168,7 +168,7 @@
                         </a>
                     </div>
 
-                    <button type="submit" class="btn-auth-submit">
+                    <button type="submit" id="btn-login-submit" class="btn-auth-submit">
                         Ingresar a Rent Car Colombia <i class="fa fa-arrow-right"></i>
                     </button>
                 </form>
@@ -252,6 +252,35 @@
                                         Cerrar y Continuar
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Términos y Condiciones -->
+                <div class="modal fade" id="modalTerms" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+                        <div class="modal-content border-0 shadow-lg rounded-lg">
+                            <div class="modal-header bg-secondary text-white py-3">
+                                <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-file-contract text-primary mr-2"></i> Términos, Condiciones y Política de Privacidad</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body p-4 text-left small text-dark" style="line-height: 1.7;">
+                                <h6 class="font-weight-bold text-primary">Rent Car Colombia &bull; Marketplace P2P</h6>
+                                <p>Bienvenido a Rent Car Colombia. Al registrarte y utilizar nuestra plataforma, aceptas los siguientes términos:</p>
+                                <h6 class="font-weight-bold text-dark mt-3">1. Naturaleza del Servicio:</h6>
+                                <p>Rent Car Colombia es una plataforma tecnológica que conecta directamente a propietarios de vehículos particulares con conductores verificados bajo contratos digitales amparados por el Código Civil y Código de Comercio de Colombia.</p>
+                                <h6 class="font-weight-bold text-dark mt-3">2. Verificación de Identidad:</h6>
+                                <p>Los conductores deben contar con documento de identidad original y licencia de conducción vigente. Los propietarios garantizan que sus vehículos cuentan con SOAT y revisión técnico-mecánica al día.</p>
+                                <h6 class="font-weight-bold text-dark mt-3">3. Depósito de Garantía (Fianza):</h6>
+                                <p>Toda reserva contempla una fianza en custodia que se reembolsa al 100% una vez completado el acta de devolución sin novedades.</p>
+                                <h6 class="font-weight-bold text-dark mt-3">4. Tratamiento de Datos (Habeas Data):</h6>
+                                <p>Tus datos personales y documentos están protegidos conforme a la Ley 1581 de 2012 de Colombia y se usan exclusivamente para la validación y seguridad de los alquileres.</p>
+                            </div>
+                            <div class="modal-footer bg-light py-2">
+                                <button type="button" class="btn btn-primary font-weight-bold btn-sm px-4" data-dismiss="modal">Aceptar y Continuar</button>
                             </div>
                         </div>
                     </div>
@@ -436,7 +465,7 @@
                     <div class="custom-control custom-checkbox my-2">
                         <input type="checkbox" class="custom-control-input" id="terms-agree" required checked>
                         <label class="custom-control-label small text-muted" for="terms-agree">
-                            Acepto los <a href="#" class="text-primary">Términos y Condiciones</a> y la política de privacidad.
+                            Acepto los <a href="javascript:void(0)" data-toggle="modal" data-target="#modalTerms" class="text-primary font-weight-bold">Términos y Condiciones</a> y la política de privacidad.
                         </label>
                     </div>
 

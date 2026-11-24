@@ -174,11 +174,22 @@
         }
 
         function renderUser(u) {
-            if (!u || !u.email) return;
+            if (!u || !u.email) {
+                // Si NO hay sesión activa, asegurar que los botones de publicar lleven a login/registro
+                document.querySelectorAll('a[href*="role=propietario"], a[href*="dashboard-propietario"], .btn-publish-car').forEach(btn => {
+                    const text = (btn.textContent || '').trim().toLowerCase();
+                    if (text.includes('publicar') || btn.getAttribute('href')?.includes('dashboard-propietario')) {
+                        btn.href = 'LOGIN.html?action=register&role=propietario&redirect=dashboard-propietario.html';
+                    }
+                });
+                return;
+            }
 
-            // 1. Si el usuario está autenticado, el botón "Publicar mi Auto" lo lleva a su panel de propietario
-            document.querySelectorAll('.navbar-nav a[href*="role=propietario"], .navbar-nav a.btn-primary').forEach(btn => {
-                if (btn.textContent.trim().toLowerCase().includes('publicar')) {
+            // 1. Si el usuario está autenticado, TODOS los botones de "Publicar mi Auto" en toda la página lo llevan directo a su panel
+            document.querySelectorAll('a[href*="role=propietario"], a[href*="dashboard-propietario"], a.btn-primary, a.btn-outline-light, .btn-publish-car').forEach(btn => {
+                const text = (btn.textContent || '').trim().toLowerCase();
+                const currentHref = btn.getAttribute('href') || '';
+                if (text.includes('publicar') || currentHref.includes('role=propietario')) {
                     btn.href = 'dashboard-propietario.html';
                     btn.addEventListener('click', function(e) {
                         // Promover automáticamente el rol a propietario si estaba como conductor
@@ -222,11 +233,20 @@
 
             let panelLinkHtml = '';
             if (u.role === 'admin') {
-                panelLinkHtml = `<a class="dropdown-item py-2" href="admin.html"><i class="fa fa-tachometer-alt text-primary mr-2"></i> Panel de Administración</a>`;
+                panelLinkHtml = `
+                    <a class="dropdown-item py-2" href="admin.html"><i class="fa fa-tachometer-alt text-primary mr-2"></i> Panel de Administración</a>
+                    <a class="dropdown-item py-2" href="dashboard-propietario.html"><i class="fa fa-car text-success mr-2"></i> Panel de Anfitrión</a>
+                `;
             } else if (u.role === 'propietario') {
-                panelLinkHtml = `<a class="dropdown-item py-2" href="dashboard-propietario.html"><i class="fa fa-car text-primary mr-2"></i> Mis Autos y Ganancias</a>`;
+                panelLinkHtml = `
+                    <a class="dropdown-item py-2 font-weight-bold" href="dashboard-propietario.html"><i class="fa fa-car text-primary mr-2"></i> Mis Autos y Ganancias</a>
+                    <a class="dropdown-item py-2" href="car.html"><i class="fa fa-search text-secondary mr-2"></i> Explorar Autos</a>
+                `;
             } else {
-                panelLinkHtml = `<a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-primary mr-2"></i> Catálogo de Autos</a>`;
+                panelLinkHtml = `
+                    <a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-primary mr-2"></i> Catálogo de Autos</a>
+                    <a class="dropdown-item py-2 text-primary font-weight-bold" href="dashboard-propietario.html"><i class="fa fa-plus-circle text-primary mr-2"></i> Publicar mi Auto (Modo Anfitrión)</a>
+                `;
             }
 
             const userDropdown = document.createElement('div');
@@ -260,6 +280,8 @@
         // Si ya hay usuario en localStorage, renderizar de inmediato
         if (user && user.email) {
             renderUser(user);
+        } else {
+            renderUser(null);
         }
 
         // Sincronizar también directamente con la sesión de Supabase Auth

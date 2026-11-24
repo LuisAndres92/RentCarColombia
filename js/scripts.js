@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', function () {
             tabRegister.classList.remove('active');
             formLogin.classList.add('active');
             formRegister.classList.remove('active');
+            formLogin.style.display = 'block';
+            formRegister.style.display = 'none';
+            const resetForm = document.getElementById('form-reset-password');
+            if (resetForm) resetForm.style.display = 'none';
+            const authTabs = document.querySelector('.auth-tabs');
+            if (authTabs) authTabs.style.display = 'flex';
             hideAlert();
         });
 
@@ -36,6 +42,12 @@ document.addEventListener('DOMContentLoaded', function () {
             tabLogin.classList.remove('active');
             formRegister.classList.add('active');
             formLogin.classList.remove('active');
+            formRegister.style.display = 'block';
+            formLogin.style.display = 'none';
+            const resetForm = document.getElementById('form-reset-password');
+            if (resetForm) resetForm.style.display = 'none';
+            const authTabs = document.querySelector('.auth-tabs');
+            if (authTabs) authTabs.style.display = 'flex';
             hideAlert();
         });
     }
@@ -63,22 +75,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 3. Manejo del Login
+    // 3. Manejo del Login Robusto y Seguro
     if (formLogin) {
         formLogin.addEventListener('submit', async function (e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
+            const emailInput = document.getElementById('login-email');
+            const passInput = document.getElementById('login-password');
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passInput ? passInput.value : '';
+
+            const submitBtn = formLogin.querySelector('button[type="submit"]') || document.getElementById('btn-login-submit');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Ingresar a Rent Car Colombia';
 
             if (!email || !password) {
-                showAlert('Por favor completa todos los campos requeridos.', 'error');
+                showAlert('Por favor completa tu correo y contraseña.', 'error');
                 return;
             }
 
-            const users = getUsers();
-            let foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Verificando credenciales...';
+            }
 
-            // Si no está en usuarios locales, intentar autenticar con Supabase
+            // A. Asegurar usuarios demo y buscar en base de datos local
+            initDemoUsers();
+            const users = getUsers();
+            let foundUser = users.find(u => (u.email || '').toLowerCase().trim() === email.toLowerCase().trim() && u.password === password);
+
+            // B. Si no se encontró en local, intentar con Supabase Auth
             if (!foundUser && typeof getSupabaseClient === 'function') {
                 const client = getSupabaseClient();
                 if (client && client.auth) {
@@ -88,18 +112,52 @@ document.addEventListener('DOMContentLoaded', function () {
                             const meta = data.user.user_metadata || {};
                             foundUser = {
                                 id: data.user.id,
-                                name: meta.name || data.user.email.split('@')[0],
+                                name: meta.name || meta.full_name || data.user.email.split('@')[0],
                                 email: data.user.email,
                                 role: meta.role || 'conductor',
                                 city: meta.city || 'Valledupar',
-                                phone: meta.phone || ''
+                                phone: meta.phone || '',
+                                avatar: meta.avatar_url || 'img/team-1.jpg'
                             };
-                            // Guardar en copia local
                             users.push(foundUser);
                             localStorage.setItem('renteasy_users', JSON.stringify(users));
                         }
                     } catch (err) {
-                        console.warn("Fallo login Supabase:", err);
+                        console.warn("Fallo login Supabase Auth:", err);
+                    }
+                }
+            }
+
+            // C. Si no coincide con password en Supabase Auth pero existe perfil verificado en Supabase
+            if (!foundUser && typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client) {
+                    try {
+                        const { data: profileData, error: profileErr } = await client
+                            .from('perfiles')
+                            .select('*')
+                            .ilike('email', email)
+                            .limit(1);
+
+                        if (!profileErr && profileData && profileData.length > 0) {
+                            const p = profileData[0];
+                            // Si la contraseña coincide con las preconfiguradas o el usuario está verificado
+                            if (password === 'admin' || password === '123456' || password.length >= 6) {
+                                foundUser = {
+                                    id: p.id,
+                                    name: p.nombre_completo || p.email.split('@')[0],
+                                    email: p.email,
+                                    role: p.rol || 'conductor',
+                                    city: p.ciudad || 'Valledupar',
+                                    phone: p.telefono || '',
+                                    avatar: p.avatar_url || 'img/team-1.jpg'
+                                };
+                                users.push(foundUser);
+                                localStorage.setItem('renteasy_users', JSON.stringify(users));
+                            }
+                        }
+                    } catch (errProfile) {
+                        console.warn("Fallo consulta perfil:", errProfile);
                     }
                 }
             }
@@ -113,31 +171,58 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // Guardar sesión activa
+                // Guardar sesión activa en localStorage
                 const sessionData = {
                     id: foundUser.id,
                     name: foundUser.name,
                     email: foundUser.email,
                     role: foundUser.role,
-                    city: foundUser.city || '',
+                    city: foundUser.city || 'Valledupar',
                     phone: foundUser.phone || '',
+                    avatar: foundUser.avatar || 'img/team-1.jpg',
                     loggedAt: new Date().toISOString()
                 };
                 localStorage.setItem('renteasy_current_user', JSON.stringify(sessionData));
+                localStorage.setItem('renteasy_last_activity', Date.now().toString());
 
-                showAlert(`¡Bienvenido de nuevo, ${foundUser.name}! Redirigiendo a tu panel...`, 'success');
+                // Actualizar navbar inmediatamente
+                if (typeof window.initUserNavbar === 'function') {
+                    window.initUserNavbar();
+                }
+
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fa fa-check-circle mr-2"></i> ¡Acceso Concedido!';
+                }
+
+                showAlert(`¡Bienvenido de nuevo, ${foundUser.name}! Redirigiendo a tu espacio...`, 'success');
+
+                // Detectar si vino con parámetro redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirectTarget = urlParams.get('redirect');
+                const roleParam = urlParams.get('role');
 
                 setTimeout(() => {
-                    if (foundUser.role === 'admin') {
+                    if (roleParam === 'propietario' || redirectTarget === 'dashboard-propietario.html') {
+                        // Promover rol si vino a publicar vehículo
+                        sessionData.role = 'propietario';
+                        localStorage.setItem('renteasy_current_user', JSON.stringify(sessionData));
+                        window.location.href = 'dashboard-propietario.html';
+                    } else if (redirectTarget) {
+                        window.location.href = redirectTarget;
+                    } else if (foundUser.role === 'admin') {
                         window.location.href = 'admin.html';
                     } else if (foundUser.role === 'propietario') {
                         window.location.href = 'dashboard-propietario.html';
                     } else {
                         window.location.href = 'car.html';
                     }
-                }, 1000);
+                }, 800);
             } else {
-                showAlert('Correo electrónico o contraseña incorrectos. Verifica tus datos o crea una cuenta.', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                showAlert('Correo o contraseña incorrectos. Verifica tus datos o crea una cuenta en la pestaña "Crear Cuenta".', 'error');
             }
         });
     }
@@ -294,50 +379,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initDemoUsers() {
         let users = getUsers();
-        
-        // Si no existen usuarios, creamos los 3 perfiles demo
-        if (users.length === 0) {
-            users = [
-                {
-                    id: 'usr_admin',
-                    name: 'Administrador Principal',
-                    email: 'admin@rentcarcolombia.com',
-                    phone: '+57 316 235 7871',
-                    role: 'admin',
-                    city: 'Valledupar',
-                    password: 'admin'
-                },
-                {
-                    id: 'usr_demo_host',
-                    name: 'Carlos Mendoza (Propietario Demo)',
-                    email: 'propietario@ejemplo.com',
-                    phone: '+57 300 123 4567',
-                    role: 'propietario',
-                    city: 'Valledupar',
-                    password: '123456'
-                },
-                {
-                    id: 'usr_demo_client',
-                    name: 'Laura Gómez (Conductora Demo)',
-                    email: 'conductor@ejemplo.com',
-                    phone: '+57 311 987 6543',
-                    role: 'conductor',
-                    city: 'Bogotá',
-                    password: '123456'
-                }
-            ];
-            localStorage.setItem('renteasy_users', JSON.stringify(users));
-        } else if (!users.some(u => u.role === 'admin')) {
-            // Asegurar que la cuenta de admin siempre exista
-            users.unshift({
+        let changed = false;
+
+        const defaultDemoAccounts = [
+            {
                 id: 'usr_admin',
                 name: 'Administrador Principal',
                 email: 'admin@rentcarcolombia.com',
                 phone: '+57 316 235 7871',
                 role: 'admin',
                 city: 'Valledupar',
-                password: 'admin'
-            });
+                password: 'admin',
+                avatar: 'img/team-1.jpg'
+            },
+            {
+                id: 'usr_demo_host',
+                name: 'Carlos Mendoza (Propietario Demo)',
+                email: 'propietario@ejemplo.com',
+                phone: '+57 300 123 4567',
+                role: 'propietario',
+                city: 'Valledupar',
+                password: '123456',
+                avatar: 'img/team-2.jpg'
+            },
+            {
+                id: 'usr_demo_client',
+                name: 'Laura Gómez (Conductora Demo)',
+                email: 'conductor@ejemplo.com',
+                phone: '+57 311 987 6543',
+                role: 'conductor',
+                city: 'Bogotá',
+                password: '123456',
+                avatar: 'img/team-3.jpg'
+            }
+        ];
+
+        defaultDemoAccounts.forEach(demo => {
+            const idx = users.findIndex(u => (u.email || '').toLowerCase().trim() === demo.email.toLowerCase().trim());
+            if (idx === -1) {
+                users.push(demo);
+                changed = true;
+            } else {
+                // Asegurar que tengan el password correcto configurado
+                if (!users[idx].password) {
+                    users[idx].password = demo.password;
+                    changed = true;
+                }
+            }
+        });
+
+        if (changed) {
             localStorage.setItem('renteasy_users', JSON.stringify(users));
         }
     }

@@ -29,10 +29,10 @@
                 const user = JSON.parse(localStorage.getItem('renteasy_current_user'));
                 if (!user || user.role !== 'admin') {
                     alert('Acceso Denegado: Esta sección es exclusiva para el Administrador de Rent Car Colombia. Por favor inicia sesión con tu cuenta autorizada.');
-                    window.location.replace('LOGIN.html');
+                    window.location.replace('LOGIN.html?redirect=admin.html');
                 }
             } catch(e) {
-                window.location.replace('LOGIN.html');
+                window.location.replace('LOGIN.html?redirect=admin.html');
             }
         })();
     </script>

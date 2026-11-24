@@ -45,6 +45,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputPhone = document.getElementById('book-renter-phone');
     const inputLicense = document.getElementById('book-renter-license');
 
+    // Pre-llenar datos del conductor si ya ha iniciado sesión
+    if (currentUser) {
+        if (inputName && !inputName.value) inputName.value = currentUser.name || '';
+        if (inputEmail && !inputEmail.value) inputEmail.value = currentUser.email || '';
+        if (inputPhone && !inputPhone.value) inputPhone.value = currentUser.phone || '';
+    }
+
     // Fechas
     const inputStart = document.getElementById('book-start-date');
     const inputEnd = document.getElementById('book-end-date');
@@ -390,6 +397,33 @@ document.addEventListener('DOMContentLoaded', function () {
             const bookings = getStoredBookings();
             bookings.unshift(newBooking);
             localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
+
+            // Si el usuario no tenía sesión iniciada, creamos su perfil de conductor automáticamente
+            if (!currentUser) {
+                const autoUser = {
+                    id: 'usr_' + Date.now(),
+                    name: renterName,
+                    email: renterEmail,
+                    phone: renterPhone,
+                    role: 'conductor',
+                    city: car ? car.city : 'Valledupar',
+                    avatar: 'img/team-1.jpg',
+                    loggedAt: new Date().toISOString()
+                };
+                localStorage.setItem('renteasy_current_user', JSON.stringify(autoUser));
+                localStorage.setItem('renteasy_last_activity', Date.now().toString());
+
+                let usersList = [];
+                try { usersList = JSON.parse(localStorage.getItem('renteasy_users')) || []; } catch(e){}
+                if (!usersList.some(u => (u.email || '').toLowerCase() === renterEmail.toLowerCase())) {
+                    usersList.push(autoUser);
+                    localStorage.setItem('renteasy_users', JSON.stringify(usersList));
+                }
+
+                if (typeof window.initUserNavbar === 'function') {
+                    window.initUserNavbar();
+                }
+            }
 
             // Sincronizar en tiempo real con Supabase en la nube
             if (typeof dbSaveReserva === 'function') {
