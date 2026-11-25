@@ -304,6 +304,10 @@ h6,
 }
 
 .owl-item.center .team-item h4,
+.team-item:hover h4 {
+    color: var(--dark) !important;
+}
+
 .owl-item.center .rent-item h4 {
     color: var(--light);
 }
