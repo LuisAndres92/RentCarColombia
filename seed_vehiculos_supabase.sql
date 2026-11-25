@@ -1,5 +1,5 @@
 -- =====================================================================
--- RENT CAR COLOMBIA - SEMBRAR VEHÍCULOS INICIALES EN SUPABASE
+-- RENT CAR COLOMBIA - SEMBRAR VEHÍCULO INICIAL OFICIAL EN SUPABASE
 -- Ejecutar en el SQL Editor de Supabase
 -- =====================================================================
 
@@ -10,12 +10,21 @@ ALTER TABLE public.reservas ALTER COLUMN conductor_id DROP NOT NULL;
 ALTER TABLE public.perfiles ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 ALTER TABLE public.perfiles DROP CONSTRAINT IF EXISTS perfiles_id_fkey;
 
--- 2. Insertar los 6 autos iniciales en Supabase
-INSERT INTO public.vehiculos (marca, modelo, nombre_completo, año, categoria, transmision, combustible, puestos, precio_por_dia, ciudad, kilometraje_limite, descripcion, imagen_url, estado)
+-- 2. Limpiar reservas de prueba
+DELETE FROM public.reseñas;
+DELETE FROM public.resenas;
+DELETE FROM public.reservas;
+
+-- 3. Dejar solo 1 auto oficial de demostración en Valledupar
+DELETE FROM public.vehiculos;
+
+INSERT INTO public.vehiculos (marca, modelo, nombre_completo, año, categoria, transmision, combustible, puestos, precio_por_dia, ciudad, kilometraje_limite, descripcion, imagen_url, estado, soat_vigente)
 VALUES
-('Toyota', 'Corolla Cross', 'Toyota Corolla Cross XEI Híbrida', 2023, 'SUV / Camioneta', 'Automático', 'Híbrido', 5, 280000, 'Valledupar', '250 km/día', 'Excelente camioneta híbrida, confort total y mínimo consumo para ciudad o carretera.', 'img/car-rent-1.png', 'Activo'),
-('Mazda', 'CX-30', 'Mazda CX-30 Grand Touring', 2022, 'SUV / Camioneta', 'Automático', 'Gasolina', 5, 250000, 'Valledupar', '200 km/día', 'Diseño elegante, sonido Bose, acabados en cuero y seguridad activa i-Activsense.', 'img/car-rent-2.png', 'Activo'),
-('Renault', 'Duster', 'Renault Duster 4x4 Turbo', 2023, 'SUV / Camioneta', 'Mecánico', 'Gasolina', 5, 220000, 'Valledupar', '200 km/día', 'Capacidad todoterreno, excelente espacio de baúl, ideal para turismo en el Cesar y Guajira.', 'img/car-rent-3.png', 'Activo'),
-('Chevrolet', 'Onix Sedan', 'Chevrolet Onix Turbo Premier', 2022, 'Sedán', 'Automático', 'Gasolina', 5, 160000, 'Valledupar', '200 km/día', 'Motor turbo eficiente, conectividad Wi-Fi y 6 airbags de seguridad.', 'img/car-rent-4.png', 'Activo'),
-('Nissan', 'Frontier', 'Nissan Frontier Doble Cabina 4x4', 2021, 'Pickup', 'Mecánico', 'Diésel', 5, 320000, 'Valledupar', '250 km/día', 'Fuerza, tracción 4x4 y platón de carga para proyectos, fincas o viajes exigentes.', 'img/car-rent-5.png', 'Activo'),
-('Kia', 'Picanto', 'Kia Picanto GT Line', 2023, 'Compacto', 'Mecánico', 'Gasolina', 5, 130000, 'Valledupar', '200 km/día', 'El más económico para movilidad urbana, fácil de estacionar y aire acondicionado potente.', 'img/car-rent-6.png', 'Activo');
+('Renault', 'Duster', 'Renault Duster 4x4 Turbo', 2024, 'SUV / Camioneta', 'Automático', 'Gasolina', 5, 220000, 'Valledupar', '250 km/día', 'Camioneta todoterreno 4x4 turbo de demostración. Totalmente equipada, SOAT vigente, seguro todo riesgo y mantenimiento al día en Valledupar.', 'img/car-rent-1.png', 'Activo', true);
+
+-- 4. Habilitar permisos de gestión completa en RLS
+DROP POLICY IF EXISTS "Gestion total de vehiculos" ON public.vehiculos;
+CREATE POLICY "Gestion total de vehiculos" ON public.vehiculos FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Gestion total de reservas" ON public.reservas;
+CREATE POLICY "Gestion total de reservas" ON public.reservas FOR ALL USING (true) WITH CHECK (true);
