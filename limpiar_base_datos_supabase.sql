@@ -11,8 +11,10 @@ DELETE FROM public.reservas;
 
 -- 2. Eliminar los vehículos de prueba y dejar ÚNICAMENTE 1 vehículo oficial de ejemplo
 DELETE FROM public.vehiculos 
-WHERE nombre_completo NOT LIKE '%Renault Duster%' 
-  AND marca NOT LIKE '%Renault%';
+WHERE id = 'car_mod_demo'
+   OR propietario_id = 'usr_demo_host_2'
+   OR descripcion LIKE '%sierra%'
+   OR (nombre_completo NOT LIKE '%Renault Duster 4x4 Turbo%' AND nombre_completo NOT LIKE '%Duster Iconic%');
 
 -- 3. Si por alguna razón se borraron todos, asegurar que exista el vehículo oficial de ejemplo en Valledupar:
 INSERT INTO public.vehiculos (

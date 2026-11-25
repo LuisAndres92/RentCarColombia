@@ -45,6 +45,35 @@
                 window.location.replace('LOGIN.html?redirect=admin.html');
             }
         })();
+
+        // Restauración inmediata de pestaña activa para evitar que al actualizar (F5) regrese al dashboard
+        (function preserveActiveTabState() {
+            try {
+                var hash = (window.location.hash || '').replace('#', '').trim();
+                var targetPillId = null;
+                if (hash) {
+                    var clean = hash.replace('tab-', '');
+                    targetPillId = 'tab-' + clean + '-pill';
+                }
+                if (!targetPillId) {
+                    var saved = sessionStorage.getItem('renteasy_admin_active_tab') || localStorage.getItem('renteasy_admin_active_tab');
+                    if (saved) targetPillId = saved;
+                }
+                if (targetPillId && targetPillId !== 'tab-overview-pill') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var op = document.getElementById('tab-overview-pill');
+                        var ob = document.getElementById('tab-overview');
+                        if (op) op.classList.remove('active');
+                        if (ob) ob.classList.remove('show', 'active');
+                        var tp = document.getElementById(targetPillId);
+                        if (tp) tp.classList.add('active');
+                        var paneId = targetPillId.replace('-pill', '');
+                        var tb = document.getElementById(paneId);
+                        if (tb) tb.classList.add('show', 'active');
+                    });
+                }
+            } catch (e) {}
+        })();
     </script>
 
     <style>

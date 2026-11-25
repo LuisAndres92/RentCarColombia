@@ -384,52 +384,34 @@ document.addEventListener('DOMContentLoaded', function () {
         let users = getUsers();
         let changed = false;
 
-        const defaultDemoAccounts = [
-            {
-                id: 'usr_admin',
-                name: 'Administrador Principal',
-                email: 'admin@rentcarcolombia.com',
-                phone: '+57 316 235 7871',
-                role: 'admin',
-                city: 'Valledupar',
-                password: 'admin',
-                avatar: 'img/team-1.jpg'
-            },
-            {
-                id: 'usr_demo_host',
-                name: 'Carlos Mendoza (Propietario Demo)',
-                email: 'propietario@ejemplo.com',
-                phone: '+57 300 123 4567',
-                role: 'propietario',
-                city: 'Valledupar',
-                password: '123456',
-                avatar: 'img/team-2.jpg'
-            },
-            {
-                id: 'usr_demo_client',
-                name: 'Laura Gómez (Conductora Demo)',
-                email: 'conductor@ejemplo.com',
-                phone: '+57 311 987 6543',
-                role: 'conductor',
-                city: 'Bogotá',
-                password: '123456',
-                avatar: 'img/team-3.jpg'
-            }
-        ];
+        // Limpieza de usuarios demo ficticios para dejar la plataforma lista para producción
+        const prevLen = users.length;
+        users = users.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+        if (users.length !== prevLen) {
+            changed = true;
+        }
 
-        defaultDemoAccounts.forEach(demo => {
-            const idx = users.findIndex(u => (u.email || '').toLowerCase().trim() === demo.email.toLowerCase().trim());
-            if (idx === -1) {
-                users.push(demo);
+        const defaultAdminAccount = {
+            id: 'usr_admin',
+            name: 'Administrador Principal',
+            email: 'admin@rentcarcolombia.com',
+            phone: '+57 316 235 7871',
+            role: 'admin',
+            city: 'Valledupar',
+            password: 'admin',
+            avatar: 'img/team-1.jpg'
+        };
+
+        const idx = users.findIndex(u => (u.email || '').toLowerCase().trim() === defaultAdminAccount.email.toLowerCase().trim());
+        if (idx === -1) {
+            users.push(defaultAdminAccount);
+            changed = true;
+        } else {
+            if (!users[idx].password) {
+                users[idx].password = defaultAdminAccount.password;
                 changed = true;
-            } else {
-                // Asegurar que tengan el password correcto configurado
-                if (!users[idx].password) {
-                    users[idx].password = demo.password;
-                    changed = true;
-                }
             }
-        });
+        }
 
         if (changed) {
             localStorage.setItem('renteasy_users', JSON.stringify(users));

@@ -57,25 +57,28 @@ document.addEventListener('DOMContentLoaded', function () {
     // 3. Manejadores de Formularios y Acciones
     setupFormListeners();
 
-    // 4. Soporte para navegación directa por hash (#fleet, #users, #bookings, #payments)
-    const initialHash = (window.location.hash || '').replace('#', '');
-    if (initialHash) {
-        const targetPill = document.getElementById(`tab-${initialHash}-pill`);
-        if (targetPill) {
-            $(targetPill).tab('show');
-        }
-    }
+    // 4. Restauración y persistencia de pestaña activa (#fleet, #users, #bookings, #payments, etc.)
+    restoreActiveTab();
 
-    // Al cambiar manualmente de pestaña en el menú lateral, actualizar hash
+    // Al cambiar de pestaña en el menú lateral, persistir en sessionStorage, localStorage y URL hash
     $('#admin-pills-tab a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+        const pillId = $(e.target).attr('id');
         const targetHref = $(e.target).attr('href');
+        if (pillId) {
+            sessionStorage.setItem('renteasy_admin_active_tab', pillId);
+            localStorage.setItem('renteasy_admin_active_tab', pillId);
+        }
         if (targetHref && targetHref.startsWith('#tab-')) {
             const h = targetHref.replace('#tab-', '');
             if (history.replaceState) {
                 history.replaceState(null, null, `#${h}`);
+            } else {
+                window.location.hash = h;
             }
         }
     });
+
+    window.addEventListener('hashchange', restoreActiveTab);
 
     // 5. Sincronizar en segundo plano con base de datos real en Supabase
     syncLiveDataFromSupabase();
@@ -222,18 +225,22 @@ async function syncLiveDataFromSupabase() {
         // 3. Consultar perfiles registrados en Supabase
         const { data: dbProfiles, error: errProfiles } = await client.from('perfiles').select('*');
         if (!errProfiles && dbProfiles && dbProfiles.length > 0) {
-            const mappedUsers = dbProfiles.map(p => ({
-                id: p.id,
-                name: p.nombre_completo || p.email.split('@')[0],
-                email: p.email,
-                phone: p.telefono || '',
-                role: p.rol || 'conductor',
-                city: p.ciudad || 'Valledupar',
-                verified: p.identidad_verificada || false,
-                banned: false,
-                createdAt: p.creado_en
-            }));
-            saveUsers(mappedUsers);
+            const mappedUsers = dbProfiles
+                .filter(p => p.email !== 'propietario@ejemplo.com' && p.email !== 'conductor@ejemplo.com')
+                .map(p => ({
+                    id: p.id,
+                    name: p.nombre_completo || p.email.split('@')[0],
+                    email: p.email,
+                    phone: p.telefono || '',
+                    role: p.rol || 'conductor',
+                    city: p.ciudad || 'Valledupar',
+                    verified: p.identidad_verificada || false,
+                    banned: false,
+                    createdAt: p.creado_en
+                }));
+            if (mappedUsers.length > 0) {
+                saveUsers(mappedUsers);
+            }
         }
 
         // Refrescar vistas con datos en tiempo real de Supabase
@@ -243,11 +250,6 @@ async function syncLiveDataFromSupabase() {
         renderUsersManagement();
     } catch (e) {
         console.warn("Sincronización en segundo plano con Supabase:", e);
-    }
-}
-    if (badgeDisputes) {
-        badgeDisputes.innerText = pendingDisputes;
-        badgeDisputes.style.display = pendingDisputes > 0 ? 'inline-block' : 'none';
     }
 }
 
@@ -510,9 +512,9 @@ function renderBookingsAndDisputes() {
                             Estado
                         </button>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item text-success" href="#" onclick="changeBookingStatusAdmin('${b.id}', 'Completada')"><i class="fa fa-check mr-2"></i> Marcar Completada</a>
-                            <a class="dropdown-item text-warning" href="#" onclick="changeBookingStatusAdmin('${b.id}', 'Disputa')"><i class="fa fa-exclamation-triangle mr-2"></i> Abrir Disputa</a>
-                            <a class="dropdown-item text-danger" href="#" onclick="changeBookingStatusAdmin('${b.id}', 'Cancelada')"><i class="fa fa-ban mr-2"></i> Cancelar Viaje</a>
+                            <a class="dropdown-item text-success" href="javascript:void(0);" onclick="changeBookingStatusAdmin('${b.id}', 'Completada')"><i class="fa fa-check mr-2"></i> Marcar Completada</a>
+                            <a class="dropdown-item text-warning" href="javascript:void(0);" onclick="changeBookingStatusAdmin('${b.id}', 'Disputa')"><i class="fa fa-exclamation-triangle mr-2"></i> Abrir Disputa</a>
+                            <a class="dropdown-item text-danger" href="javascript:void(0);" onclick="changeBookingStatusAdmin('${b.id}', 'Cancelada')"><i class="fa fa-ban mr-2"></i> Cancelar Viaje</a>
                         </div>
                     `}
                 </div>
@@ -1418,19 +1420,44 @@ function setupImageUpload(fileInputId, labelId, previewImgId, dataInputId, urlIn
 
 /** ================= HELPERS Y ALMACENAMIENTO ================= **/
 function getCars() {
-    try { return JSON.parse(localStorage.getItem('renteasy_cars')) || []; } catch (e) { return []; }
+    try {
+        const raw = JSON.parse(localStorage.getItem('renteasy_cars')) || [];
+        const clean = raw.filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
+        return clean.length > 0 ? clean : [SINGLE_SAMPLE_CAR];
+    } catch (e) {
+        return [SINGLE_SAMPLE_CAR];
+    }
 }
-function saveCars(cars) { localStorage.setItem('renteasy_cars', JSON.stringify(cars)); }
+function saveCars(cars) {
+    const clean = (cars || []).filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
+    localStorage.setItem('renteasy_cars', JSON.stringify(clean.length > 0 ? clean : [SINGLE_SAMPLE_CAR]));
+}
 
 function getUsers() {
-    try { return JSON.parse(localStorage.getItem('renteasy_users')) || []; } catch (e) { return []; }
+    try {
+        const raw = JSON.parse(localStorage.getItem('renteasy_users')) || [];
+        return raw.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+    } catch (e) {
+        return [];
+    }
 }
-function saveUsers(users) { localStorage.setItem('renteasy_users', JSON.stringify(users)); }
+function saveUsers(users) {
+    const clean = (users || []).filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+    localStorage.setItem('renteasy_users', JSON.stringify(clean));
+}
 
 function getBookings() {
-    try { return JSON.parse(localStorage.getItem('renteasy_bookings')) || []; } catch (e) { return []; }
+    try {
+        const raw = JSON.parse(localStorage.getItem('renteasy_bookings')) || [];
+        return raw.filter(b => b && b.id !== 'book_101' && b.id !== 'book_dispute_demo' && b.renterName !== 'Laura Gómez' && b.renterName !== 'Roberto Silva');
+    } catch (e) {
+        return [];
+    }
 }
-function saveBookings(bookings) { localStorage.setItem('renteasy_bookings', JSON.stringify(bookings)); }
+function saveBookings(bookings) {
+    const clean = (bookings || []).filter(b => b && b.id !== 'book_101' && b.id !== 'book_dispute_demo' && b.renterName !== 'Laura Gómez' && b.renterName !== 'Roberto Silva');
+    localStorage.setItem('renteasy_bookings', JSON.stringify(clean));
+}
 
 function getVal(id) {
     const el = document.getElementById(id);
@@ -1464,33 +1491,85 @@ function notifySaved(msg) {
 }
 
 function initAdminData() {
-    // Migración única a datos limpios de producción: 1 solo auto de ejemplo, 0 reservas/disputas ficticias
-    const MIGRATION_KEY = 'renteasy_clean_prod_v2';
-    if (localStorage.getItem(MIGRATION_KEY) !== 'true') {
-        localStorage.setItem('renteasy_cars', JSON.stringify([SINGLE_SAMPLE_CAR]));
-        localStorage.setItem('renteasy_bookings', JSON.stringify([]));
-        localStorage.setItem(MIGRATION_KEY, 'true');
+    // 1. Limpieza rigurosa de vehículos demo: garantiza exactamente 1 auto de ejemplo oficial
+    let cars = [];
+    try {
+        cars = JSON.parse(localStorage.getItem('renteasy_cars')) || [];
+    } catch (e) {
+        cars = [];
     }
-
-    // Asegurar que si renteasy_cars no existe o está vacío, conserve el único auto de ejemplo
-    let cars = getCars();
+    cars = cars.filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
     if (!Array.isArray(cars) || cars.length === 0) {
         cars = [SINGLE_SAMPLE_CAR];
-        saveCars(cars);
     }
+    saveCars(cars);
 
-    // Asegurar que renteasy_bookings exista como arreglo limpio
-    let bookings = getBookings();
-    if (!Array.isArray(bookings)) {
-        saveBookings([]);
+    // 2. Limpieza de reservas ficticias: estado limpio para reservas reales de clientes
+    let bookings = [];
+    try {
+        bookings = JSON.parse(localStorage.getItem('renteasy_bookings')) || [];
+    } catch (e) {
+        bookings = [];
     }
+    bookings = bookings.filter(b => b && b.id !== 'book_101' && b.id !== 'book_dispute_demo' && b.renterName !== 'Laura Gómez' && b.renterName !== 'Roberto Silva');
+    saveBookings(bookings);
+
+    // 3. Limpieza de usuarios demo
+    let users = [];
+    try {
+        users = JSON.parse(localStorage.getItem('renteasy_users')) || [];
+    } catch (e) {
+        users = [];
+    }
+    users = users.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+    if (!users.some(u => u.role === 'admin' || u.id === 'usr_admin')) {
+        users.unshift({
+            id: 'usr_admin',
+            name: 'Administrador Principal',
+            email: 'admin@rentcarcolombia.com',
+            phone: '+57 316 235 7871',
+            role: 'admin',
+            city: 'Valledupar',
+            verified: true,
+            banned: false
+        });
+    }
+    saveUsers(users);
 }
 
 /** ================= NAVEGACIÓN Y ACCESOS RÁPIDOS CONSISTENTES ================= **/
+function restoreActiveTab() {
+    let targetPillId = null;
+    const rawHash = (window.location.hash || '').replace('#', '').trim();
+    if (rawHash) {
+        const cleanName = rawHash.replace('tab-', '');
+        const byHash = document.getElementById(`tab-${cleanName}-pill`);
+        if (byHash) targetPillId = `tab-${cleanName}-pill`;
+    }
+    if (!targetPillId) {
+        const savedPill = sessionStorage.getItem('renteasy_admin_active_tab') || localStorage.getItem('renteasy_admin_active_tab');
+        if (savedPill && document.getElementById(savedPill)) {
+            targetPillId = savedPill;
+        }
+    }
+    if (targetPillId) {
+        const pill = document.getElementById(targetPillId);
+        if (pill) {
+            $(pill).tab('show');
+            const h = targetPillId.replace('-pill', '').replace('tab-', '');
+            if (history.replaceState) {
+                history.replaceState(null, null, `#${h}`);
+            }
+        }
+    }
+}
+
 function goToAdminTab(tabId, subAction) {
     const pill = document.getElementById(`${tabId}-pill`);
     if (pill) {
         $(pill).tab('show');
+        sessionStorage.setItem('renteasy_admin_active_tab', `${tabId}-pill`);
+        localStorage.setItem('renteasy_admin_active_tab', `${tabId}-pill`);
         const hash = tabId.replace('tab-', '');
         if (history.replaceState) {
             history.replaceState(null, null, `#${hash}`);
@@ -1500,25 +1579,29 @@ function goToAdminTab(tabId, subAction) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     if (typeof subAction === 'function') {
-        setTimeout(subAction, 100);
+        setTimeout(subAction, 120);
     }
 }
 
 function quickAccessFleet(filter = 'En Revision') {
     goToAdminTab('tab-fleet', function () {
         const filterSelect = document.getElementById('fleet-filter-status');
+        const cars = getCars();
+        const hasPending = cars.some(c => c.status === filter);
+        const targetVal = hasPending ? filter : 'all';
         if (filterSelect) {
-            const cars = getCars();
-            const hasPending = cars.some(c => c.status === filter);
-            filterSelect.value = hasPending ? filter : 'all';
-            renderFleetModeration(filterSelect.value);
+            filterSelect.value = targetVal;
+        }
+        renderFleetModeration(targetVal);
+        if (!hasPending) {
+            notifySaved('No hay vehículos pendientes por revisar. Mostrando flota activa.');
         }
     });
 }
 
 function quickAccessUsers() {
     goToAdminTab('tab-users', function () {
-        const searchInput = document.getElementById('search-user-input');
+        const searchInput = document.getElementById('search-users-input');
         if (searchInput) {
             searchInput.value = '';
             renderUsersManagement('');
@@ -1538,6 +1621,7 @@ function quickAccessPayments() {
     });
 }
 
+window.restoreActiveTab = restoreActiveTab;
 window.goToAdminTab = goToAdminTab;
 window.quickAccessFleet = quickAccessFleet;
 window.quickAccessUsers = quickAccessUsers;
