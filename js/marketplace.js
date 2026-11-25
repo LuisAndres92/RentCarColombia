@@ -254,6 +254,32 @@ function initCarDetail() {
     if (inputStart) inputStart.value = today;
     if (inputEnd) inputEnd.value = threeDaysLater;
     updatePriceEstimate();
+
+    // Formulario de Feedback / Reporte de Novedad
+    const formFeedback = document.getElementById('form-report-feedback');
+    if (formFeedback) {
+        formFeedback.addEventListener('submit', function (e) {
+            e.preventDefault();
+            let items = [];
+            try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (err) { items = []; }
+            items.unshift({
+                id: 'fb_' + Date.now(),
+                carId: car.id,
+                carName: car.fullName || car.name || 'Vehículo',
+                reporterName: document.getElementById('fb-name').value.trim(),
+                reporterPhone: document.getElementById('fb-phone').value.trim(),
+                subject: document.getElementById('fb-subject').value,
+                message: document.getElementById('fb-message').value.trim(),
+                status: 'Pendiente',
+                createdAt: new Date().toISOString()
+            });
+            localStorage.setItem('rentcar_feedback', JSON.stringify(items));
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('feedback_updated');
+            formFeedback.reset();
+            $('#modalReportFeedback').modal('hide');
+            alert('¡Gracias! Tu reporte fue enviado al Administrador de Rent Car Colombia.');
+        });
+    }
 }
 
 /** ================= HELPERS GENERALES ================= **/

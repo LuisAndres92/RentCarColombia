@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderFleetModeration();
     renderUsersManagement();
     renderBookingsAndDisputes();
+    renderFeedbackAndAlertsAdmin();
     loadPaymentsConfig();
     syncFinancialLabels();
     loadCmsConfig();
@@ -284,7 +285,23 @@ function renderFleetModeration(filterStatus = 'all') {
         return;
     }
 
-    container.innerHTML = cars.map(car => `
+    container.innerHTML = cars.map(car => {
+        const neg = car.priceNegotiation || null;
+        let negHtml = '';
+        if (neg && neg.status === 'admin_proposed') {
+            negHtml = `<div class="small text-info mt-1"><i class="fa fa-tag mr-1"></i>Sugerida: <strong>$${formatCop(neg.suggestedPrice)}</strong></div>`;
+        } else if (neg && neg.status === 'counter_offer') {
+            negHtml = `<div class="small text-warning font-weight-bold mt-1"><i class="fa fa-exchange-alt mr-1"></i>Contraoferta: $${formatCop(neg.counterPrice)}<br><span class="text-muted font-weight-normal">"${neg.ownerNote || ''}"</span></div>`;
+        }
+
+        const badgeClass = car.status === 'Activo' ? 'badge-success'
+            : car.status === 'En Revision' ? 'badge-warning'
+            : car.status === 'Ajuste de Tarifa' ? 'badge-info'
+            : car.status === 'Contraoferta' ? 'badge-primary'
+            : car.status === 'Rechazado' ? 'badge-danger'
+            : 'badge-secondary';
+
+        return `
         <tr>
             <td style="width: 110px;">
                 <img src="${car.image}" alt="${car.fullName}" class="rounded border shadow-sm" style="width: 90px; height: 60px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
@@ -294,7 +311,7 @@ function renderFleetModeration(filterStatus = 'all') {
                 <small class="text-muted"><i class="fa fa-tag mr-1 text-primary"></i>${car.category} &bull; ${car.transmission}</small>
             </td>
             <td>
-                <div class="small font-weight-semi-bold">${car.ownerName || 'Anfitrión'}</div>
+                <div class="small font-weight-semi-bold">${car.ownerName || 'Propietario'}</div>
                 <small class="text-muted"><i class="fa fa-phone mr-1"></i>${car.ownerPhone || 'Sin teléfono'}</small>
             </td>
             <td>
@@ -302,39 +319,48 @@ function renderFleetModeration(filterStatus = 'all') {
             </td>
             <td class="font-weight-bold text-primary">
                 $${formatCop(car.pricePerDay)} <small class="text-muted">COP/día</small>
+                ${negHtml}
             </td>
             <td>
-                <span class="badge ${car.status === 'Activo' ? 'badge-success' : car.status === 'En Revision' ? 'badge-warning' : car.status === 'Rechazado' ? 'badge-danger' : 'badge-secondary'} px-2 py-1">
-                    ${car.status}
-                </span>
+                <span class="badge ${badgeClass} px-2 py-1">${car.status}</span>
                 ${car.featured ? '<span class="badge badge-primary ml-1" title="Destacado en portada"><i class="fa fa-star"></i> Destacado</span>' : ''}
             </td>
             <td>
-                <div class="btn-group btn-group-sm">
-                    ${car.status !== 'Activo' ? `
-                        <button class="btn btn-success" title="Aprobar para catálogo" onclick="approveCar('${car.id}')">
+                <div class="btn-group btn-group-sm flex-wrap">
+                    ${neg && neg.status === 'counter_offer' ? `
+                        <button type="button" class="btn btn-success" title="Aceptar contraoferta del dueño" onclick="acceptCounterOffer('${car.id}')">
+                            <i class="fa fa-check-double"></i> Aceptar $${formatCop(neg.counterPrice)}
+                        </button>
+                    ` : (car.status !== 'Activo' ? `
+                        <button type="button" class="btn btn-success" title="Aprobar para catálogo" onclick="approveCar('${car.id}')">
                             <i class="fa fa-check"></i> Aprobar
                         </button>
                     ` : `
-                        <button class="btn btn-outline-secondary" title="Pausar publicación" onclick="pauseCar('${car.id}')">
+                        <button type="button" class="btn btn-outline-secondary" title="Pausar publicación" onclick="pauseCar('${car.id}')">
                             <i class="fa fa-pause"></i>
                         </button>
-                    `}
+                    `)}
+                    <button type="button" class="btn btn-outline-info" title="Sugerir ajuste de tarifa al propietario" onclick="openSuggestPriceModal('${car.id}')">
+                        <i class="fa fa-tag"></i> Tarifa
+                    </button>
+                    <button type="button" class="btn btn-outline-success" title="Enviar alerta / WhatsApp al propietario" onclick="openOwnerAlertModal('${car.id}')">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
                     ${car.status === 'En Revision' ? `
-                        <button class="btn btn-danger" title="Rechazar publicación" onclick="rejectCarPrompt('${car.id}')">
+                        <button type="button" class="btn btn-danger" title="Rechazar publicación" onclick="rejectCarPrompt('${car.id}')">
                             <i class="fa fa-times"></i>
                         </button>
                     ` : ''}
-                    <button class="btn ${car.featured ? 'btn-warning' : 'btn-outline-warning'}" title="${car.featured ? 'Quitar de destacados' : 'Destacar en portada'}" onclick="toggleFeatureCar('${car.id}')">
+                    <button type="button" class="btn ${car.featured ? 'btn-warning' : 'btn-outline-warning'}" title="${car.featured ? 'Quitar de destacados' : 'Destacar en portada'}" onclick="toggleFeatureCar('${car.id}')">
                         <i class="fa fa-star"></i>
                     </button>
-                    <button class="btn btn-outline-danger" title="Eliminar definitivamente" onclick="deleteCarAdmin('${car.id}')">
+                    <button type="button" class="btn btn-outline-danger" title="Eliminar definitivamente" onclick="deleteCarAdmin('${car.id}')">
                         <i class="fa fa-trash"></i>
                     </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 async function syncCarStatusSupabase(carId, status) {
@@ -593,6 +619,110 @@ window.changeBookingStatusAdmin = function (bookingId, status) {
         saveBookings(bookings);
         renderBookingsAndDisputes();
         renderFinancialOverview();
+    }
+};
+
+/** ================= NEGOCIACIÓN DE TARIFAS, FEEDBACK Y ALERTAS A PROPIETARIOS ================= **/
+function getOwnerContactInfo(car) {
+    const users = getUsers();
+    const owner = users.find(u => u.id === car.ownerId) || {};
+    const rawPhone = (car.ownerPhone || owner.phone || '573162357871').replace(/\D/g, '');
+    const waPhone = rawPhone.startsWith('57') ? rawPhone : (rawPhone.length === 10 ? '57' + rawPhone : rawPhone);
+    const email = car.ownerEmail || owner.email || '';
+    return { waPhone, email, name: car.ownerName || owner.name || 'Propietario' };
+}
+
+window.openSuggestPriceModal = function (carId) {
+    const cars = getCars();
+    const car = cars.find(c => c.id === carId);
+    if (!car) return;
+
+    document.getElementById('sp-car-id').value = car.id;
+    document.getElementById('sp-car-name').innerText = `${car.fullName} (${car.year})`;
+    document.getElementById('sp-owner-name').innerText = car.ownerName || 'Propietario';
+    document.getElementById('sp-current-price').innerText = `$${formatCop(car.pricePerDay)} COP/día`;
+    document.getElementById('sp-suggested-price').value = car.priceNegotiation?.suggestedPrice || Math.round((car.pricePerDay || 200000) * 0.85 / 5000) * 5000;
+    document.getElementById('sp-note').value = car.priceNegotiation?.adminNote || '';
+    document.getElementById('sp-notify-actions').style.display = 'none';
+
+    $('#modalSuggestPrice').modal('show');
+};
+
+window.acceptCounterOffer = function (carId) {
+    const cars = getCars();
+    const car = cars.find(c => c.id === carId);
+    if (!car || !car.priceNegotiation || !car.priceNegotiation.counterPrice) return;
+
+    const newPrice = Number(car.priceNegotiation.counterPrice);
+    car.pricePerDay = newPrice;
+    car.price = newPrice;
+    car.status = 'Activo';
+    car.priceNegotiation.status = 'accepted';
+    car.priceNegotiation.resolvedAt = new Date().toISOString();
+    saveCars(cars);
+    syncCarStatusSupabase(carId, 'Activo');
+    renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
+    renderFinancialOverview();
+    notifySaved(`Contraoferta aceptada ($${formatCop(newPrice)} COP/día). "${car.fullName}" ya está Activo.`);
+};
+
+window.openOwnerAlertModal = function (preselectCarId = '') {
+    const select = document.getElementById('oa-car-select');
+    const cars = getCars();
+    if (select) {
+        select.innerHTML = cars.map(c => `<option value="${c.id}" ${c.id === preselectCarId ? 'selected' : ''}>${c.fullName} — ${c.ownerName || 'Propietario'}</option>`).join('');
+    }
+    document.getElementById('oa-subject').value = '';
+    document.getElementById('oa-message').value = '';
+    document.getElementById('oa-notify-actions').style.display = 'none';
+    $('#modalOwnerAlert').modal('show');
+};
+
+function renderFeedbackAndAlertsAdmin() {
+    const tbody = document.getElementById('feedback-alerts-list');
+    if (!tbody) return;
+
+    let items = [];
+    try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
+
+    if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No hay quejas ni reportes de feedback registrados.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = items.map((f, idx) => `
+        <tr>
+            <td class="small text-muted">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('es-CO') : 'Reciente'}</td>
+            <td class="font-weight-bold text-dark">${f.carName || 'General'}</td>
+            <td>
+                <div class="small font-weight-bold">${f.reporterName || 'Usuario'}</div>
+                <small class="text-muted">${f.reporterPhone || ''}</small>
+            </td>
+            <td class="small">
+                <strong class="text-danger">${f.subject || 'Novedad'}</strong><br>
+                <span class="text-muted">${f.message || ''}</span>
+            </td>
+            <td>
+                <span class="badge ${f.status === 'Resuelto' ? 'badge-success' : 'badge-warning'} px-2 py-1">${f.status || 'Pendiente'}</span>
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-success" title="Avisar al propietario" onclick="openOwnerAlertModal('${f.carId || ''}')"><i class="fab fa-whatsapp"></i> Avisar Dueño</button>
+                    ${f.status !== 'Resuelto' ? `<button type="button" class="btn btn-outline-primary" title="Marcar resuelto" onclick="resolveFeedbackAdmin(${idx})"><i class="fa fa-check"></i></button>` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+window.resolveFeedbackAdmin = function (idx) {
+    let items = [];
+    try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
+    if (items[idx]) {
+        items[idx].status = 'Resuelto';
+        localStorage.setItem('rentcar_feedback', JSON.stringify(items));
+        renderFeedbackAndAlertsAdmin();
+        notifySaved('Reporte marcado como resuelto.');
     }
 };
 
@@ -1404,6 +1534,84 @@ function setupFormListeners() {
     if (fleetFilterSelect) {
         fleetFilterSelect.addEventListener('change', function () {
             renderFleetModeration(this.value);
+        });
+    }
+
+    // 6. Formulario de Sugerencia de Tarifa al Propietario
+    const formSuggestPrice = document.getElementById('form-suggest-price');
+    if (formSuggestPrice) {
+        formSuggestPrice.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const carId = document.getElementById('sp-car-id').value;
+            const suggestedPrice = parseInt(document.getElementById('sp-suggested-price').value, 10);
+            const note = document.getElementById('sp-note').value.trim();
+
+            const cars = getCars();
+            const car = cars.find(c => c.id === carId);
+            if (!car || !suggestedPrice) return;
+
+            car.status = 'Ajuste de Tarifa';
+            car.priceNegotiation = {
+                status: 'admin_proposed',
+                originalPrice: car.pricePerDay,
+                suggestedPrice: suggestedPrice,
+                adminNote: note,
+                updatedAt: new Date().toISOString()
+            };
+            saveCars(cars);
+            syncCarStatusSupabase(carId, 'Ajuste de Tarifa');
+            renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
+            renderFinancialOverview();
+
+            const owner = getOwnerContactInfo(car);
+            const panelUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'dashboard-propietario.html')}`;
+            const waMsg = `Hola ${owner.name}, te saludamos de *Rent Car Colombia*. Revisamos tu *${car.fullName}* y te enviamos una sugerencia de tarifa diaria de *$${formatCop(suggestedPrice)} COP* (${note}). Puedes aceptarla o enviarnos una contraoferta aquí: ${panelUrl}`;
+            document.getElementById('sp-wa-btn').href = `https://wa.me/${owner.waPhone}?text=${encodeURIComponent(waMsg)}`;
+            document.getElementById('sp-mail-btn').href = owner.email
+                ? `mailto:${owner.email}?subject=${encodeURIComponent('Sugerencia de tarifa para tu ' + car.fullName)}&body=${encodeURIComponent(waMsg)}`
+                : '#';
+            document.getElementById('sp-notify-actions').style.display = 'block';
+            notifySaved('Propuesta de tarifa enviada al panel del propietario.');
+        });
+    }
+
+    // 7. Formulario de Alerta / Feedback Directo al Propietario
+    const formOwnerAlert = document.getElementById('form-owner-alert');
+    if (formOwnerAlert) {
+        formOwnerAlert.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const carId = document.getElementById('oa-car-select').value;
+            const subject = document.getElementById('oa-subject').value.trim();
+            const message = document.getElementById('oa-message').value.trim();
+
+            const cars = getCars();
+            const car = cars.find(c => c.id === carId);
+            if (!car || !subject || !message) return;
+
+            let alerts = [];
+            try { alerts = JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (err) { alerts = []; }
+            alerts.unshift({
+                id: 'alert_' + Date.now(),
+                ownerId: car.ownerId,
+                carId: car.id,
+                carName: car.fullName,
+                subject: subject,
+                message: message,
+                read: false,
+                createdAt: new Date().toISOString()
+            });
+            localStorage.setItem('rentcar_owner_alerts', JSON.stringify(alerts));
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('owner_alert');
+
+            const owner = getOwnerContactInfo(car);
+            const panelUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'dashboard-propietario.html')}`;
+            const waMsg = `Hola ${owner.name}, mensaje de administración de *Rent Car Colombia* sobre tu *${car.fullName}* (${subject}): ${message}. Revisa tu panel: ${panelUrl}`;
+            document.getElementById('oa-wa-btn').href = `https://wa.me/${owner.waPhone}?text=${encodeURIComponent(waMsg)}`;
+            document.getElementById('oa-mail-btn').href = owner.email
+                ? `mailto:${owner.email}?subject=${encodeURIComponent(subject + ' - ' + car.fullName)}&body=${encodeURIComponent(waMsg)}`
+                : '#';
+            document.getElementById('oa-notify-actions').style.display = 'block';
+            notifySaved('Alerta enviada al panel del propietario.');
         });
     }
 }

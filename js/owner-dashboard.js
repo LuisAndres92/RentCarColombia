@@ -15,11 +15,13 @@ document.addEventListener('DOMContentLoaded', function () {
     initDefaultBookings();
 
     // 3. Renderizar vista inicial
+    renderOwnerAlertsAndProposals();
     renderDashboardStats();
     renderOwnerCars();
     renderBookingRequests();
     renderWalletStats();
     setupWorkflowModals();
+    setupMarketPriceHint();
 
     // 4. Manejo de cambio de imagen en tiempo real
     const selectImg = document.getElementById('car-template-img');
@@ -994,4 +996,173 @@ document.addEventListener('DOMContentLoaded', function () {
             localStorage.setItem('renteasy_bookings', JSON.stringify([]));
         }
     }
+
+    // ================= GUÍA DE PRECIO DE MERCADO AL PUBLICAR ================= //
+    function setupMarketPriceHint() {
+        const catSelect = document.getElementById('car-category');
+        const hintEl = document.getElementById('market-price-hint');
+        if (!catSelect || !hintEl) return;
+
+        const ranges = {
+            'Compacto': '$110.000 – $160.000 COP/día',
+            'Hatchback / Compacto': '$110.000 – $160.000 COP/día',
+            'Sedán': '$140.000 – $200.000 COP/día',
+            'SUV / Camioneta': '$190.000 – $280.000 COP/día',
+            'Pickup': '$260.000 – $360.000 COP/día',
+            'Van / Familiar': '$240.000 – $340.000 COP/día',
+            'Deportivo / Lujo': '$350.000 – $650.000 COP/día'
+        };
+
+        const updateHint = () => {
+            const val = catSelect.value;
+            const range = ranges[val] || '$140.000 – $240.000 COP/día';
+            hintEl.innerHTML = `<i class="fa fa-lightbulb mr-1"></i> Sugerencia de mercado (${val}): <strong>${range}</strong>`;
+        };
+        catSelect.addEventListener('change', updateHint);
+        updateHint();
+    }
+
+    // ================= BANDEJA DE ALERTAS Y PROPUESTAS DE TARIFA DEL ADMIN ================= //
+    function renderOwnerAlertsAndProposals() {
+        const banner = document.getElementById('owner-alerts-banner');
+        if (!banner) return;
+
+        const allCars = getAllCars();
+        const myCars = currentUser.role === 'admin' ? allCars : allCars.filter(c => c.ownerId === currentUser.id);
+        const proposals = myCars.filter(c => c.priceNegotiation && c.priceNegotiation.status === 'admin_proposed');
+
+        let alerts = [];
+        try { alerts = JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (e) { alerts = []; }
+        const myAlerts = alerts.filter(a => !a.read && (currentUser.role === 'admin' || a.ownerId === currentUser.id));
+
+        if (proposals.length === 0 && myAlerts.length === 0) {
+            banner.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        proposals.forEach(car => {
+            const neg = car.priceNegotiation;
+            html += `
+                <div class="alert alert-warning border-warning shadow-sm mb-3 p-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center">
+                        <div class="mb-2 mb-md-0">
+                            <h6 class="font-weight-bold text-dark mb-1"><i class="fa fa-tag text-primary mr-2"></i>Propuesta de Ajuste de Tarifa — ${car.fullName}</h6>
+                            <div class="small text-dark">
+                                Tarifa publicada: <del class="text-muted">$${formatCurrency(car.pricePerDay)} COP</del> &rarr;
+                                Tarifa sugerida: <strong class="text-success">$${formatCurrency(neg.suggestedPrice)} COP/día</strong>
+                            </div>
+                            <div class="small text-muted mt-1"><i class="fa fa-comment-alt mr-1"></i> "${neg.adminNote || ''}"</div>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-success font-weight-bold" onclick="acceptSuggestedPriceOwner('${car.id}')">
+                                <i class="fa fa-check mr-1"></i> Aceptar $${formatCurrency(neg.suggestedPrice)}
+                            </button>
+                            <button type="button" class="btn btn-outline-dark font-weight-bold" onclick="openCounterOfferModal('${car.id}')">
+                                <i class="fa fa-exchange-alt mr-1"></i> Contraoferta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        myAlerts.forEach(a => {
+            html += `
+                <div class="alert alert-info border-info shadow-sm mb-3 p-3 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="font-weight-bold text-dark mb-1"><i class="fa fa-bell text-warning mr-2"></i>Mensaje de Administración (${a.carName || 'Plataforma'}): ${a.subject}</h6>
+                        <p class="small text-dark mb-0">${a.message}</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary ml-3 font-weight-bold" onclick="markOwnerAlertRead('${a.id}')">
+                        <i class="fa fa-check mr-1"></i> Entendido
+                    </button>
+                </div>
+            `;
+        });
+
+        banner.innerHTML = html;
+    }
+
+    window.acceptSuggestedPriceOwner = function (carId) {
+        const cars = getAllCars();
+        const car = cars.find(c => c.id === carId);
+        if (!car || !car.priceNegotiation) return;
+
+        const newPrice = Number(car.priceNegotiation.suggestedPrice);
+        car.pricePerDay = newPrice;
+        car.price = newPrice;
+        car.status = 'Activo';
+        car.priceNegotiation.status = 'accepted';
+        car.priceNegotiation.resolvedAt = new Date().toISOString();
+        localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+        if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
+
+        renderOwnerAlertsAndProposals();
+        renderOwnerCars();
+        renderDashboardStats();
+        alert(`¡Tarifa actualizada a $${formatCurrency(newPrice)} COP/día! Tu ${car.fullName} ya está Activo en el catálogo.`);
+    };
+
+    window.openCounterOfferModal = function (carId) {
+        const cars = getAllCars();
+        const car = cars.find(c => c.id === carId);
+        if (!car || !car.priceNegotiation) return;
+
+        document.getElementById('co-car-id').value = car.id;
+        document.getElementById('co-car-name').innerText = `${car.fullName} (${car.year})`;
+        document.getElementById('co-admin-price').innerText = `$${formatCurrency(car.priceNegotiation.suggestedPrice)} COP/día`;
+        document.getElementById('co-counter-price').value = car.pricePerDay || car.priceNegotiation.suggestedPrice;
+        document.getElementById('co-owner-note').value = '';
+        $('#modalOwnerCounterOffer').modal('show');
+    };
+
+    const formCounterOffer = document.getElementById('form-owner-counter-offer');
+    if (formCounterOffer) {
+        formCounterOffer.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const carId = document.getElementById('co-car-id').value;
+            const counterPrice = parseInt(document.getElementById('co-counter-price').value, 10);
+            const ownerNote = document.getElementById('co-owner-note').value.trim();
+
+            const cars = getAllCars();
+            const car = cars.find(c => c.id === carId);
+            if (!car || !counterPrice) return;
+
+            car.status = 'Contraoferta';
+            car.priceNegotiation = Object.assign({}, car.priceNegotiation, {
+                status: 'counter_offer',
+                counterPrice: counterPrice,
+                ownerNote: ownerNote,
+                updatedAt: new Date().toISOString()
+            });
+            localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
+
+            $('#modalOwnerCounterOffer').modal('hide');
+            renderOwnerAlertsAndProposals();
+            renderOwnerCars();
+            alert(`Contraoferta de $${formatCurrency(counterPrice)} COP/día enviada al Administrador para su revisión.`);
+        });
+    }
+
+    window.markOwnerAlertRead = function (alertId) {
+        let alerts = [];
+        try { alerts = JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (e) { alerts = []; }
+        const item = alerts.find(a => a.id === alertId);
+        if (item) {
+            item.read = true;
+            localStorage.setItem('rentcar_owner_alerts', JSON.stringify(alerts));
+            renderOwnerAlertsAndProposals();
+        }
+    };
+
+    // Sincronización en tiempo real si el admin envía una propuesta o alerta desde otra pestaña
+    window.addEventListener('storage', function (e) {
+        if (e.key === 'renteasy_cars' || e.key === 'rentcar_owner_alerts') {
+            renderOwnerAlertsAndProposals();
+            renderOwnerCars();
+            renderDashboardStats();
+        }
+    });
 });

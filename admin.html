@@ -695,9 +695,11 @@
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0 small font-weight-bold text-muted">Filtrar:</label>
                                 <select id="fleet-filter-status" class="form-control form-control-sm"
-                                    style="width: 170px;">
+                                    style="width: 210px;">
                                     <option value="all">Todos los Autos</option>
                                     <option value="En Revision">En Revisión (Pendientes)</option>
+                                    <option value="Ajuste de Tarifa">Ajuste de Tarifa</option>
+                                    <option value="Contraoferta">Contraoferta del Dueño</option>
                                     <option value="Activo">Activos / Aprobados</option>
                                     <option value="Pausado">Pausados</option>
                                     <option value="Rechazado">Rechazados</option>
@@ -798,6 +800,36 @@
                                     </tr>
                                 </thead>
                                 <tbody id="bookings-management-list">
+                                    <!-- Renderizado por js/admin-dashboard.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Buzón de Feedback, Quejas y Comunicación con Propietarios -->
+                    <div class="section-card mt-4">
+                        <div class="section-card-header">
+                            <div>
+                                <h5><i class="fa fa-bullhorn text-warning mr-2"></i> Quejas, Feedback de Conductores y Alertas a Propietarios</h5>
+                                <small class="text-muted">Revisa novedades reportadas por clientes y envía alertas internas o por WhatsApp/Correo al dueño del vehículo.</small>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm font-weight-bold" onclick="openOwnerAlertModal()">
+                                <i class="fa fa-paper-plane mr-1"></i> Enviar Alerta a Propietario
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Vehículo</th>
+                                        <th>Conductor / Reporta</th>
+                                        <th>Motivo y Detalle</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="feedback-alerts-list">
                                     <!-- Renderizado por js/admin-dashboard.js -->
                                 </tbody>
                             </table>
@@ -1859,6 +1891,86 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- Modal: Sugerir Tarifa al Propietario -->
+    <div class="modal fade" id="modalSuggestPrice" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-tag text-warning mr-2"></i> Sugerir Ajuste de Tarifa</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-suggest-price">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="sp-car-id">
+                        <div class="alert alert-light border mb-3">
+                            <div class="font-weight-bold text-dark" id="sp-car-name">Vehículo</div>
+                            <small class="text-muted">Propietario: <strong id="sp-owner-name"></strong> &bull; Tarifa actual: <strong class="text-danger" id="sp-current-price"></strong></small>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold small">Tarifa Diaria Sugerida (COP) *</label>
+                            <input type="number" id="sp-suggested-price" class="form-control font-weight-bold" min="50000" step="5000" required>
+                            <small class="text-muted">El propietario podrá aceptar esta tarifa o enviarte una contraoferta desde su panel.</small>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold small">Mensaje / Justificación para el Propietario *</label>
+                            <textarea id="sp-note" class="form-control" rows="3" required placeholder="Ej. Para lograr más reservas en tu ciudad, te sugerimos ajustar la tarifa diaria a este rango de mercado."></textarea>
+                        </div>
+                        <div id="sp-notify-actions" class="mt-3 p-3 bg-light border rounded" style="display: none;">
+                            <div class="small font-weight-bold text-success mb-2"><i class="fa fa-check-circle mr-1"></i> Propuesta guardada en el panel del propietario. Notifícale ahora mismo:</div>
+                            <div class="d-flex flex-wrap" style="gap: 8px;">
+                                <a id="sp-wa-btn" href="#" target="_blank" class="btn btn-success btn-sm font-weight-bold"><i class="fab fa-whatsapp mr-1"></i> Enviar por WhatsApp</a>
+                                <a id="sp-mail-btn" href="#" class="btn btn-outline-dark btn-sm font-weight-bold"><i class="fa fa-envelope mr-1"></i> Enviar por Correo</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4"><i class="fa fa-paper-plane mr-1"></i> Enviar Propuesta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Enviar Alerta / Feedback Directo a Propietario -->
+    <div class="modal fade" id="modalOwnerAlert" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-bell text-warning mr-2"></i> Enviar Alerta / Mensaje a Propietario</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-owner-alert">
+                    <div class="modal-body p-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold small">Vehículo / Propietario *</label>
+                            <select id="oa-car-select" class="form-control" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold small">Asunto o Tipo de Alerta *</label>
+                            <input type="text" id="oa-subject" class="form-control" required placeholder="Ej. Reporte de limpieza / Revisión de documentos">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold small">Mensaje para el Propietario *</label>
+                            <textarea id="oa-message" class="form-control" rows="3" required placeholder="Describe la novedad, queja o recomendación..."></textarea>
+                        </div>
+                        <div id="oa-notify-actions" class="mt-3 p-3 bg-light border rounded" style="display: none;">
+                            <div class="small font-weight-bold text-success mb-2"><i class="fa fa-check-circle mr-1"></i> Alerta guardada en su panel. Avísale al instante si no está conectado:</div>
+                            <div class="d-flex flex-wrap" style="gap: 8px;">
+                                <a id="oa-wa-btn" href="#" target="_blank" class="btn btn-success btn-sm font-weight-bold"><i class="fab fa-whatsapp mr-1"></i> Notificar por WhatsApp</a>
+                                <a id="oa-mail-btn" href="#" class="btn btn-outline-dark btn-sm font-weight-bold"><i class="fa fa-envelope mr-1"></i> Enviar Correo</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-warning text-dark btn-sm font-weight-bold px-4"><i class="fa fa-bell mr-1"></i> Enviar Alerta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Supabase SDK & Client -->
