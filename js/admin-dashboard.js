@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderUsersManagement();
     renderBookingsAndDisputes();
     loadPaymentsConfig();
+    syncFinancialLabels();
     loadCmsConfig();
     loadVisibilityConfig();
     renderTeamListAdmin();
@@ -121,11 +122,15 @@ function renderFinancialOverview() {
     const cars = getCars();
     const bookings = getBookings();
     const users = getUsers();
+    const cfg = getSiteConfig();
+    const commPct = (cfg.payments && cfg.payments.commissionPercent !== undefined) ? parseFloat(cfg.payments.commissionPercent) : 15;
+    const commRatio = commPct / 100;
+    const ownerRatio = 1 - commRatio;
 
     // Cálculos basados en transacciones y reservas reales
     const totalVolume = bookings.reduce((sum, b) => sum + (parseFloat(b.totalPrice) || 0), 0);
-    const platformEarnings = bookings.reduce((sum, b) => sum + (parseFloat(b.platformFee) || Math.round((parseFloat(b.totalPrice) || 0) * 0.15)), 0);
-    const ownerPayouts = bookings.reduce((sum, b) => sum + (parseFloat(b.ownerEarnings) || Math.round((parseFloat(b.totalPrice) || 0) * 0.85)), 0);
+    const platformEarnings = bookings.reduce((sum, b) => sum + (parseFloat(b.platformFee) || Math.round((parseFloat(b.totalPrice) || 0) * commRatio)), 0);
+    const ownerPayouts = bookings.reduce((sum, b) => sum + (parseFloat(b.ownerEarnings) || Math.round((parseFloat(b.totalPrice) || 0) * ownerRatio)), 0);
     const activeTrips = bookings.filter(b => b.status === 'En Curso' || b.status === 'Aceptada').length;
     const pendingApprovalCars = cars.filter(c => c.status === 'En Revision').length;
     const pendingDisputes = bookings.filter(b => b.status === 'Disputa').length;
@@ -137,6 +142,9 @@ function renderFinancialOverview() {
     setElemText('stat-fleet-total', `${cars.length} ${cars.length === 1 ? 'vehículo' : 'vehículos'}`);
     setElemText('stat-active-trips', `${activeTrips} ${activeTrips === 1 ? 'viaje' : 'viajes'}`);
     setElemText('stat-total-users', `${users.length} ${users.length === 1 ? 'usuario' : 'usuarios'}`);
+
+    // Sincronizar etiquetas de comisión y fianza
+    syncFinancialLabels();
 
     // Badges de alerta rápida en el menú lateral
     const badgeCarMod = document.getElementById('badge-cars-pending');
@@ -328,15 +336,27 @@ function renderFleetModeration(filterStatus = 'all') {
     `).join('');
 }
 
+async function syncCarStatusSupabase(carId, status) {
+    try {
+        if (typeof getSupabaseClient === 'function') {
+            const client = getSupabaseClient();
+            if (client) {
+                await client.from('vehiculos').update({ estado: status }).eq('id', carId);
+            }
+        }
+    } catch (e) { console.warn('Supabase sync car status:', e); }
+}
+
 window.approveCar = function (carId) {
     const cars = getCars();
     const car = cars.find(c => c.id === carId);
     if (car) {
         car.status = 'Activo';
         saveCars(cars);
-        renderFleetModeration();
+        syncCarStatusSupabase(carId, 'Activo');
+        renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
-        alert(`Vehículo "${car.fullName}" APROBADO. Ya es visible para todos los clientes en Rent Car Colombia.`);
+        notifySaved(`Vehículo "${car.fullName}" APROBADO. Ya es visible en el catálogo.`);
     }
 };
 
@@ -346,7 +366,10 @@ window.pauseCar = function (carId) {
     if (car) {
         car.status = car.status === 'Activo' ? 'Pausado' : 'Activo';
         saveCars(cars);
-        renderFleetModeration();
+        syncCarStatusSupabase(carId, car.status);
+        renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
+        renderFinancialOverview();
+        notifySaved(`Vehículo "${car.fullName}" cambiado a estado: ${car.status}.`);
     }
 };
 
@@ -359,9 +382,10 @@ window.rejectCarPrompt = function (carId) {
             car.status = 'Rechazado';
             car.rejectReason = reason;
             saveCars(cars);
-            renderFleetModeration();
+            syncCarStatusSupabase(carId, 'Rechazado');
+            renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
             renderFinancialOverview();
-            alert(`Vehículo rechazado con la nota: "${reason}".`);
+            notifySaved(`Vehículo rechazado con la nota: "${reason}".`);
         }
     }
 };
@@ -372,17 +396,25 @@ window.toggleFeatureCar = function (carId) {
     if (car) {
         car.featured = !car.featured;
         saveCars(cars);
-        renderFleetModeration();
+        renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
+        notifySaved(car.featured ? `"${car.fullName}" marcado como Destacado.` : `"${car.fullName}" quitado de Destacados.`);
     }
 };
 
-window.deleteCarAdmin = function (carId) {
+window.deleteCarAdmin = async function (carId) {
     if (confirm('¿Deseas eliminar permanentemente este auto de la plataforma?')) {
         let cars = getCars();
         cars = cars.filter(c => c.id !== carId);
         saveCars(cars);
-        renderFleetModeration();
+        try {
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client) await client.from('vehiculos').delete().eq('id', carId);
+            }
+        } catch (e) { console.warn('Supabase delete car:', e); }
+        renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
+        notifySaved('Vehículo eliminado de la plataforma.');
     }
 };
 
@@ -437,13 +469,20 @@ function renderUsersManagement(searchQuery = '') {
     `).join('');
 }
 
-window.toggleVerifyUser = function (userId) {
+window.toggleVerifyUser = async function (userId) {
     const users = getUsers();
     const u = users.find(item => item.id === userId);
     if (u) {
         u.verified = !u.verified;
         saveUsers(users);
-        renderUsersManagement();
+        try {
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client) await client.from('perfiles').update({ identidad_verificada: u.verified }).eq('id', userId);
+            }
+        } catch (e) { console.warn('Supabase verify user:', e); }
+        renderUsersManagement(document.getElementById('search-users-input')?.value || '');
+        notifySaved(u.verified ? `Identidad de ${u.name} VERIFICADA.` : `Verificación removida para ${u.name}.`);
     }
 };
 
@@ -526,15 +565,18 @@ function renderBookingsAndDisputes() {
 window.resolveDisputeAction = function (bookingId, winner) {
     const bookings = getBookings();
     const b = bookings.find(item => item.id === bookingId);
+    const cfg = getSiteConfig();
+    const defaultDep = (cfg.payments && cfg.payments.defaultDeposit !== undefined) ? Number(cfg.payments.defaultDeposit) : 200000;
     if (b) {
+        const dep = Number(b.deposit || defaultDep);
         if (winner === 'conductor') {
             b.status = 'Completada';
-            b.disputeResolution = 'Fianza de $200.000 reembolsada al conductor.';
-            alert(`Disputa resuelta: Depósito de garantía liberado a favor del conductor (${b.renterName}).`);
+            b.disputeResolution = `Fianza de $${formatCop(dep)} reembolsada al conductor.`;
+            alert(`Disputa resuelta: Depósito de garantía ($${formatCop(dep)} COP) liberado a favor del conductor (${b.renterName}).`);
         } else {
             b.status = 'Completada';
-            b.disputeResolution = 'Fianza de $200.000 transferida al propietario por daños reportados.';
-            alert(`Disputa resuelta: Depósito de garantía transferido al propietario (${b.ownerName}).`);
+            b.disputeResolution = `Fianza de $${formatCop(dep)} transferida al propietario por daños reportados.`;
+            alert(`Disputa resuelta: Depósito de garantía ($${formatCop(dep)} COP) transferido al propietario (${b.ownerName}).`);
         }
         saveBookings(bookings);
         renderBookingsAndDisputes();
@@ -588,6 +630,36 @@ function loadPaymentsConfig() {
     // Billeteras Digitales
     setVal('manual-nequi', payments.nequiAccount || '');
     setVal('manual-daviplata', payments.daviplataAccount || '');
+
+    syncFinancialLabels();
+}
+
+function syncFinancialLabels() {
+    const cfg = getSiteConfig();
+    const payments = cfg.payments || {};
+    const comm = (payments.commissionPercent !== undefined && payments.commissionPercent !== '') ? Number(payments.commissionPercent) : 15;
+    const ownerPct = Math.max(0, 100 - comm);
+    const deposit = (payments.defaultDeposit !== undefined && payments.defaultDeposit !== '') ? Number(payments.defaultDeposit) : 200000;
+
+    setElemText('label-platform-commission', `Ingresos Plataforma (${comm}%)`);
+    setElemText('label-owner-payout-pct', `Liquidaciones a Dueños (${ownerPct}%)`);
+
+    const commTitle = document.getElementById('overview-commission-title');
+    if (commTitle) {
+        commTitle.innerHTML = `<i class="fa fa-check-circle text-success mr-2"></i>Comisión Automática del ${comm}%`;
+    }
+    const commDesc = document.getElementById('overview-commission-desc');
+    if (commDesc) {
+        commDesc.innerText = `Cada vez que un cliente reserva, la plataforma retiene el ${comm}% de comisión de servicio y dispersa el ${ownerPct}% al anfitrión.`;
+    }
+    const depTitle = document.getElementById('overview-deposit-title');
+    if (depTitle) {
+        depTitle.innerHTML = `<i class="fa fa-lock text-warning mr-2"></i>Custodia de Fianza ($${formatCop(deposit)})`;
+    }
+    const bookingsBadge = document.getElementById('bookings-standard-deposit-badge');
+    if (bookingsBadge) {
+        bookingsBadge.innerHTML = `<i class="fa fa-shield-alt mr-1"></i> Fianza Estándar: $${formatCop(deposit)} COP`;
+    }
 }
 
 /** ================= MÓDULO 6: CMS, BANNERS Y PREGUNTAS FRECUENTES ================= **/
@@ -967,7 +1039,7 @@ function renderInquiriesAdmin() {
     }).join('');
 }
 
-function deleteInquiryAdmin(index) {
+window.deleteInquiryAdmin = function (index) {
     if (!confirm('¿Eliminar esta consulta del buzón?')) return;
     let inquiries = [];
     try {
@@ -976,7 +1048,8 @@ function deleteInquiryAdmin(index) {
     inquiries.splice(index, 1);
     localStorage.setItem('renteasy_inquiries', JSON.stringify(inquiries));
     renderInquiriesAdmin();
-}
+    notifySaved('Consulta eliminada del buzón.');
+};
 
 /** ================= MÓDULO 8: LEGAL Y CONTRATOS ================= **/
 function loadLegalTexts() {
@@ -991,84 +1064,6 @@ function loadLegalTexts() {
     setVal('legal-privacy', legal.privacy);
     setVal('legal-contract', legal.contractClauses);
 }
-
-/** ================= MANEJADORES DE GUARDADO ================= **/
-function setupFormListeners() {
-    // 1. Guardar Pasarelas y Finanzas
-    const formPay = document.getElementById('form-payments-config');
-    if (formPay) {
-        formPay.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const cfg = getSiteConfig();
-
-            const bankName = getVal('manual-bank-name') || 'Bancolombia';
-            const bankType = getVal('manual-bank-type') || 'Ahorros';
-            const bankNum = getVal('manual-bank-number');
-            const bankHolder = getVal('manual-bank-holder');
-
-            cfg.payments = {
-                commissionPercent: parseInt(getVal('pay-commission')) || 15,
-                defaultDeposit: parseInt(getVal('pay-deposit')) || 200000,
-                mercadoPagoKey: getVal('mp-public-key'),
-                mercadoPagoToken: getVal('mp-access-token'),
-                wompiPubKey: getVal('wompi-public-key'),
-                stripePubKey: getVal('stripe-public-key'),
-                bankName: bankName,
-                bankAccountType: bankType,
-                bankAccountNumber: bankNum,
-                bankAccountHolder: bankHolder,
-                bancolombiaAccount: `${bankName} ${bankType} ${bankNum}`, // Retrocompatibilidad
-                nequiAccount: getVal('manual-nequi'),
-                daviplataAccount: getVal('manual-daviplata')
-            };
-            saveSiteConfig(cfg);
-            notifySaved('¡Parámetros financieros, cuentas bancarias y pasarelas actualizados!');
-        });
-    }
-
-    // 2. Carrusel de Portada Dinámico (Añadir Diapositivas Ilimitadas)
-    setupImageUpload('new-slide-file', 'new-slide-label', 'new-slide-preview', 'new-slide-data', 'new-slide-url', 1280, 520);
-    const formAddSlide = document.getElementById('form-add-hero-slide');
-    if (formAddSlide) {
-        formAddSlide.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const title = document.getElementById('new-slide-title').value.trim();
-            const subtitle = document.getElementById('new-slide-subtitle').value.trim();
-            const btn1Text = document.getElementById('new-slide-btn1-text').value.trim();
-            const btn1Url = document.getElementById('new-slide-btn1-url').value.trim();
-            const btn2Text = document.getElementById('new-slide-btn2-text').value.trim();
-            const btn2Url = document.getElementById('new-slide-btn2-url').value.trim();
-            const image = document.getElementById('new-slide-data').value || document.getElementById('new-slide-url').value || 'img/carousel-1.jpg';
-
-            if (!title) return;
-
-            const cfg = getSiteConfig();
-            if (!cfg.cms) cfg.cms = {};
-            if (!cfg.cms.slides) cfg.cms.slides = [];
-
-            cfg.cms.slides.push({
-                id: 'slide_' + Date.now(),
-                title,
-                subtitle,
-                btn1Text,
-                btn1Url,
-                btn2Text,
-                btn2Url,
-                image
-            });
-
-            saveSiteConfig(cfg);
-            renderHeroSlidesAdmin();
-            formAddSlide.reset();
-            const prev = document.getElementById('new-slide-preview');
-            if (prev) prev.src = 'img/carousel-1.jpg';
-            const pData = document.getElementById('new-slide-data');
-            if (pData) pData.value = 'img/carousel-1.jpg';
-            const pLabel = document.getElementById('new-slide-label');
-            if (pLabel) pLabel.innerText = 'Subir foto desde PC o teléfono...';
-            notifySaved('¡Nueva diapositiva añadida al carrusel con éxito!');
-        });
-    }
 
 /** ================= CONTROL DINÁMICO DE ESTADO DEL CUPÓN Y BANNER ================= **/
 function updatePromoStatusPreview() {
@@ -1141,6 +1136,91 @@ function updatePromoStatusPreview() {
     if (countdown) countdown.textContent = '';
     desc.textContent = 'Selecciona una fecha de expiración en el calendario.';
 }
+
+/** ================= MANEJADORES DE GUARDADO ================= **/
+function setupFormListeners() {
+    // 1. Guardar Pasarelas y Finanzas
+    const formPay = document.getElementById('form-payments-config');
+    if (formPay) {
+        formPay.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const cfg = getSiteConfig();
+
+            const bankName = getVal('manual-bank-name') || 'Bancolombia';
+            const bankType = getVal('manual-bank-type') || 'Ahorros';
+            const bankNum = getVal('manual-bank-number');
+            const bankHolder = getVal('manual-bank-holder');
+
+            const parsedComm = parseFloat(getVal('pay-commission'));
+            const parsedDep = parseInt(getVal('pay-deposit').replace(/\D/g, ''), 10);
+
+            cfg.payments = {
+                commissionPercent: !isNaN(parsedComm) ? parsedComm : 15,
+                defaultDeposit: !isNaN(parsedDep) ? parsedDep : 200000,
+                mercadoPagoKey: getVal('mp-public-key'),
+                mercadoPagoToken: getVal('mp-access-token'),
+                wompiPubKey: getVal('wompi-public-key'),
+                stripePubKey: getVal('stripe-public-key'),
+                bankName: bankName,
+                bankAccountType: bankType,
+                bankAccountNumber: bankNum,
+                bankAccountHolder: bankHolder,
+                bancolombiaAccount: `${bankName} ${bankType} ${bankNum}`, // Retrocompatibilidad
+                nequiAccount: getVal('manual-nequi'),
+                daviplataAccount: getVal('manual-daviplata')
+            };
+            saveSiteConfig(cfg);
+            loadPaymentsConfig();
+            syncFinancialLabels();
+            renderFinancialOverview();
+            renderBookingsAndDisputes();
+            notifySaved(`¡Parámetros actualizados! Fianza estándar: $${formatCop(cfg.payments.defaultDeposit)} COP | Comisión: ${cfg.payments.commissionPercent}%`);
+        });
+    }
+
+    // 2. Carrusel de Portada Dinámico (Añadir Diapositivas Ilimitadas)
+    setupImageUpload('new-slide-file', 'new-slide-label', 'new-slide-preview', 'new-slide-data', 'new-slide-url', 1280, 520);
+    const formAddSlide = document.getElementById('form-add-hero-slide');
+    if (formAddSlide) {
+        formAddSlide.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const title = document.getElementById('new-slide-title').value.trim();
+            const subtitle = document.getElementById('new-slide-subtitle').value.trim();
+            const btn1Text = document.getElementById('new-slide-btn1-text').value.trim();
+            const btn1Url = document.getElementById('new-slide-btn1-url').value.trim();
+            const btn2Text = document.getElementById('new-slide-btn2-text').value.trim();
+            const btn2Url = document.getElementById('new-slide-btn2-url').value.trim();
+            const image = document.getElementById('new-slide-data').value || document.getElementById('new-slide-url').value || 'img/carousel-1.jpg';
+
+            if (!title) return;
+
+            const cfg = getSiteConfig();
+            if (!cfg.cms) cfg.cms = {};
+            if (!cfg.cms.slides) cfg.cms.slides = [];
+
+            cfg.cms.slides.push({
+                id: 'slide_' + Date.now(),
+                title,
+                subtitle,
+                btn1Text,
+                btn1Url,
+                btn2Text,
+                btn2Url,
+                image
+            });
+
+            saveSiteConfig(cfg);
+            renderHeroSlidesAdmin();
+            formAddSlide.reset();
+            const prev = document.getElementById('new-slide-preview');
+            if (prev) prev.src = 'img/carousel-1.jpg';
+            const pData = document.getElementById('new-slide-data');
+            if (pData) pData.value = 'img/carousel-1.jpg';
+            const pLabel = document.getElementById('new-slide-label');
+            if (pLabel) pLabel.innerText = 'Subir foto desde PC o teléfono...';
+            notifySaved('¡Nueva diapositiva añadida al carrusel con éxito!');
+        });
+    }
 
     // Configuración del Banner Promocional, Fecha y Cupón
     const formPromo = document.getElementById('form-promo-config');
