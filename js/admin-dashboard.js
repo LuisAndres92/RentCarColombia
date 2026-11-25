@@ -433,6 +433,13 @@ async function syncCarStatusSupabase(carId, status) {
     } catch (e) { console.warn('Supabase sync car status:', e); }
 }
 
+function recordAdminLog(modulo, accion, detalle = '') {
+    if (typeof window.logSystemEvent === 'function') {
+        window.logSystemEvent(modulo, accion, detalle);
+    }
+    renderAuditLogsAdmin();
+}
+
 window.approveCar = function (carId) {
     const cars = getCars();
     const car = cars.find(c => c.id === carId);
@@ -440,6 +447,7 @@ window.approveCar = function (carId) {
         car.status = 'Activo';
         saveCars(cars);
         syncCarStatusSupabase(carId, 'Activo');
+        recordAdminLog('Flota', 'Vehículo aprobado', `${car.fullName} (${car.city || ''})`);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved(`Vehículo "${car.fullName}" APROBADO. Ya es visible en el catálogo.`);
@@ -453,6 +461,7 @@ window.pauseCar = function (carId) {
         car.status = car.status === 'Activo' ? 'Pausado' : 'Activo';
         saveCars(cars);
         syncCarStatusSupabase(carId, car.status);
+        recordAdminLog('Flota', `Vehículo ${car.status.toLowerCase()}`, `${car.fullName}`);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved(`Vehículo "${car.fullName}" cambiado a estado: ${car.status}.`);
@@ -469,6 +478,7 @@ window.rejectCarPrompt = function (carId) {
             car.rejectReason = reason;
             saveCars(cars);
             syncCarStatusSupabase(carId, 'Rechazado');
+            recordAdminLog('Flota', 'Vehículo rechazado', `${car.fullName} — Motivo: ${reason}`);
             renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
             renderFinancialOverview();
             notifySaved(`Vehículo rechazado con la nota: "${reason}".`);
@@ -482,6 +492,7 @@ window.toggleFeatureCar = function (carId) {
     if (car) {
         car.featured = !car.featured;
         saveCars(cars);
+        recordAdminLog('Flota', car.featured ? 'Vehículo destacado' : 'Vehículo quitado de destacados', `${car.fullName}`);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         notifySaved(car.featured ? `"${car.fullName}" marcado como Destacado.` : `"${car.fullName}" quitado de Destacados.`);
     }
@@ -490,6 +501,7 @@ window.toggleFeatureCar = function (carId) {
 window.deleteCarAdmin = async function (carId) {
     if (confirm('¿Deseas eliminar permanentemente este auto de la plataforma?')) {
         let cars = getCars();
+        const target = cars.find(c => c.id === carId);
         cars = cars.filter(c => c.id !== carId);
         saveCars(cars);
         try {
@@ -498,6 +510,7 @@ window.deleteCarAdmin = async function (carId) {
                 if (client) await client.from('vehiculos').delete().eq('id', carId);
             }
         } catch (e) { console.warn('Supabase delete car:', e); }
+        recordAdminLog('Flota', 'Vehículo eliminado', target ? target.fullName : carId);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved('Vehículo eliminado de la plataforma.');
@@ -567,6 +580,7 @@ window.toggleVerifyUser = async function (userId) {
                 if (client) await client.from('perfiles').update({ identidad_verificada: u.verified }).eq('id', userId);
             }
         } catch (e) { console.warn('Supabase verify user:', e); }
+        recordAdminLog('KYC', u.verified ? 'Identidad verificada' : 'Verificación removida', `${u.name} (${u.email})`);
         renderUsersManagement(document.getElementById('search-users-input')?.value || '');
         notifySaved(u.verified ? `Identidad de ${u.name} VERIFICADA.` : `Verificación removida para ${u.name}.`);
     }
@@ -578,6 +592,7 @@ window.toggleBanUser = function (userId) {
     if (u) {
         u.banned = !u.banned;
         saveUsers(users);
+        recordAdminLog('KYC', u.banned ? 'Usuario bloqueado' : 'Usuario desbloqueado', `${u.name} (${u.email})`);
         renderUsersManagement();
         alert(u.banned ? `Usuario ${u.name} ha sido BLOQUEADO. No podrá realizar reservas.` : `Usuario ${u.name} ha sido desbloqueado.`);
     }
@@ -1512,6 +1527,7 @@ function setupFormListeners() {
             syncFinancialLabels();
             renderFinancialOverview();
             renderBookingsAndDisputes();
+            recordAdminLog('Finanzas', 'Parámetros financieros actualizados', `Comisión: ${cfg.payments.commissionPercent}% | Fianza: $${formatCop(cfg.payments.defaultDeposit)} COP`);
             notifySaved(`¡Parámetros actualizados! Fianza estándar: $${formatCop(cfg.payments.defaultDeposit)} COP | Comisión: ${cfg.payments.commissionPercent}%`);
         });
     }
@@ -1556,6 +1572,7 @@ function setupFormListeners() {
             if (pData) pData.value = 'img/carousel-1.jpg';
             const pLabel = document.getElementById('new-slide-label');
             if (pLabel) pLabel.innerText = 'Subir foto desde PC o teléfono...';
+            recordAdminLog('CMS', 'Diapositiva añadida al carrusel', title);
             notifySaved('¡Nueva diapositiva añadida al carrusel con éxito!');
         });
     }
@@ -1613,6 +1630,7 @@ function setupFormListeners() {
 
             saveSiteConfig(cfg);
             updatePromoStatusPreview();
+            recordAdminLog('CMS', 'Banner promocional y cupón actualizados', `Estado: ${isEnabled ? 'Activo' : 'Deshabilitado'} | Cupón: ${code || 'Sin código'}`);
             notifySaved('¡Banner de descuento, fecha de expiración y cupón guardados con éxito!');
         });
     }
@@ -1634,6 +1652,7 @@ function setupFormListeners() {
             saveSiteConfig(cfg);
             renderFaqList(cfg.cms.faqs);
             formAddFaq.reset();
+            recordAdminLog('CMS', 'Pregunta frecuente añadida', question);
             notifySaved('Nueva pregunta frecuente añadida.');
         });
     }
@@ -1656,6 +1675,7 @@ function setupFormListeners() {
             if (quickReviewToggle) quickReviewToggle.checked = testChecked;
 
             saveSiteConfig(cfg);
+            recordAdminLog('CMS', 'Visibilidad de secciones actualizada', `Equipo: ${cfg.visibility.team ? 'Sí' : 'No'} | Reseñas: ${cfg.visibility.testimonials ? 'Sí' : 'No'} | Marcas: ${cfg.visibility.vendors ? 'Sí' : 'No'} | Banners: ${cfg.visibility.promoBanner ? 'Sí' : 'No'} | Servicios: ${cfg.visibility.services ? 'Sí' : 'No'}`);
             notifySaved('¡Configuración de visibilidad guardada exitosamente!');
         });
     }
@@ -1672,6 +1692,7 @@ function setupFormListeners() {
             if (!cfg.visibility) cfg.visibility = {};
             cfg.visibility.testimonials = isChecked;
             saveSiteConfig(cfg);
+            recordAdminLog('CMS', isChecked ? 'Sección de reseñas activada' : 'Sección de reseñas desactivada', 'Cambio rápido en visibilidad de reseñas');
             notifySaved(isChecked ? 'Sección de opiniones activada en la web.' : 'Sección de opiniones oculta de la web.');
         });
     }
@@ -1700,6 +1721,7 @@ function setupFormListeners() {
             if (pData) pData.value = 'img/team-1.jpg';
             const pLabel = document.getElementById('team-file-label');
             if (pLabel) pLabel.innerText = 'Subir foto desde tu dispositivo...';
+            recordAdminLog('CMS', 'Integrante añadido al equipo', `${name} (${role})`);
             notifySaved(`¡"${name}" ha sido añadido con su foto al equipo!`);
         });
     }
@@ -1736,6 +1758,7 @@ function setupFormListeners() {
                 values: getVal('cfg-about-values')
             };
             saveSiteConfig(cfg);
+            recordAdminLog('Empresa', 'Información de empresa actualizada', `${cfg.brandName} | ${cfg.phoneDisplay} | ${cfg.emailMain}`);
             notifySaved('¡Información de empresa, historia, misión y redes guardada!');
         });
     }
@@ -1752,6 +1775,7 @@ function setupFormListeners() {
                 contractClauses: getVal('legal-contract')
             };
             saveSiteConfig(cfg);
+            recordAdminLog('Legal', 'Contratos y textos legales actualizados', 'Términos, Privacidad y Cláusulas');
             notifySaved('¡Contratos y textos legales actualizados!');
         });
     }

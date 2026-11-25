@@ -96,8 +96,13 @@ DROP POLICY IF EXISTS "Gestion total mensajes" ON public.mensajes_contacto;
 CREATE POLICY "Gestion total mensajes" ON public.mensajes_contacto FOR ALL USING (true) WITH CHECK (true);
 
 -- Limpiar testimonios ficticios iniciales si existían en la base de datos
-DELETE FROM public.testimonios
-WHERE nombre_autor IN ('Carlos Mendoza', 'Laura Gómez', 'Andrés Restrepo', 'Diana Paternina');
+DO $$
+BEGIN
+    DELETE FROM public.testimonios
+    WHERE nombre_cliente IN ('Carlos Mendoza', 'Laura Gómez', 'Andrés Restrepo', 'Diana Paternina');
+EXCEPTION
+    WHEN undefined_table OR undefined_column THEN NULL;
+END $$;
 
 -- 8. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
