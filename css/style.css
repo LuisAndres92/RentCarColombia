@@ -112,6 +112,42 @@ h6,
     color: var(--primary);
 }
 
+/* Barra de menú fija y compacta al hacer scroll hacia abajo */
+.nav-bar.navbar-sticky-compact {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1040 !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.24);
+    transition: all 0.25s ease;
+}
+
+.nav-bar.navbar-sticky-compact .navbar {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    min-height: 50px;
+}
+
+.nav-bar.navbar-sticky-compact .navbar-brand h1 {
+    font-size: 1.35rem !important;
+    margin: 0 !important;
+    transition: font-size 0.25s ease;
+}
+
+.nav-bar.navbar-sticky-compact .navbar-nav .nav-link {
+    padding: 12px 13px !important;
+    font-size: 13.5px !important;
+    transition: padding 0.25s ease, font-size 0.25s ease;
+}
+
+.nav-bar.navbar-sticky-compact .btn {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 12.5px !important;
+}
+
 @media (max-width: 991.98px) {
     .navbar-dark .navbar-nav .nav-link  {
         padding: 10px 15px;

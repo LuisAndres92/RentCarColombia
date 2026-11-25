@@ -305,6 +305,9 @@ function saveSiteConfig(newConfig) {
         localStorage.setItem('rentcar_global_config', JSON.stringify(newConfig));
         applyGlobalConfig();
         broadcastLiveSync('config_updated');
+        if (typeof dbSaveConfig === 'function') {
+            dbSaveConfig(newConfig);
+        }
         return true;
     } catch (e) {
         console.error("Error al guardar configuración:", e);
@@ -811,9 +814,49 @@ function populateSearchFilters() {
     }
 }
 
+// Barra de menú fija y compacta al hacer scroll en todas las páginas públicas
+function initStickyCompactNavbar() {
+    const navBar = document.querySelector('.nav-bar');
+    if (!navBar) return;
+
+    let spacer = document.getElementById('navbar-sticky-spacer');
+    if (!spacer) {
+        spacer = document.createElement('div');
+        spacer.id = 'navbar-sticky-spacer';
+        spacer.style.display = 'none';
+        navBar.parentNode.insertBefore(spacer, navBar.nextSibling);
+    }
+
+    const onScroll = () => {
+        if (window.scrollY > 45) {
+            if (!navBar.classList.contains('navbar-sticky-compact')) {
+                spacer.style.height = navBar.offsetHeight + 'px';
+                spacer.style.display = 'block';
+                navBar.classList.add('navbar-sticky-compact');
+            }
+        } else {
+            if (navBar.classList.contains('navbar-sticky-compact')) {
+                navBar.classList.remove('navbar-sticky-compact');
+                spacer.style.display = 'none';
+            }
+        }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+}
+
 // Ejecutar automáticamente al cargar la página
 function initGlobalConfigAndLiveCars() {
     applyGlobalConfig();
+    initStickyCompactNavbar();
+
+    if (typeof dbGetConfig === 'function') {
+        dbGetConfig().then(remoteCfg => {
+            if (remoteCfg) applyGlobalConfig();
+        }).catch(() => { });
+    }
+
     if (document.getElementById('featured-cars-row') && typeof dbGetVehiculos === 'function') {
         dbGetVehiculos().then(() => {
             try {

@@ -290,10 +290,19 @@ async function syncLiveDataFromSupabase() {
             }
         }
 
+        // 4. Consultar reportes de feedback y configuración global en Supabase
+        if (typeof dbGetFeedback === 'function') {
+            await dbGetFeedback();
+        }
+        if (typeof dbGetConfig === 'function') {
+            await dbGetConfig();
+        }
+
         // Refrescar vistas con datos en tiempo real de Supabase
         renderFinancialOverview();
         renderFleetModeration();
         renderBookingsAndDisputes();
+        renderFeedbackAndAlertsAdmin();
         renderUsersManagement();
     } catch (e) {
         console.warn("Sincronización en segundo plano con Supabase:", e);
@@ -697,7 +706,9 @@ window.acceptCounterOffer = function (carId) {
     car.priceNegotiation.status = 'accepted';
     car.priceNegotiation.resolvedAt = new Date().toISOString();
     saveCars(cars);
-    syncCarStatusSupabase(carId, 'Activo');
+    if (typeof dbUpdateVehiculoFields === 'function') {
+        dbUpdateVehiculoFields(carId, { precio_por_dia: newPrice, estado: 'Activo', negociacion_tarifa: car.priceNegotiation });
+    }
     renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
     renderFinancialOverview();
     notifySaved(`Contraoferta aceptada ($${formatCop(newPrice)} COP/día). "${car.fullName}" ya está Activo.`);
@@ -758,6 +769,9 @@ window.resolveFeedbackAdmin = function (idx) {
     if (items[idx]) {
         items[idx].status = 'Resuelto';
         localStorage.setItem('rentcar_feedback', JSON.stringify(items));
+        if (typeof dbResolveFeedback === 'function' && items[idx].id) {
+            dbResolveFeedback(items[idx].id);
+        }
         renderFeedbackAndAlertsAdmin();
         renderFinancialOverview();
         notifySaved('Reporte marcado como resuelto.');
@@ -1607,7 +1621,9 @@ function setupFormListeners() {
                 updatedAt: new Date().toISOString()
             };
             saveCars(cars);
-            syncCarStatusSupabase(carId, 'Ajuste de Tarifa');
+            if (typeof dbUpdateVehiculoFields === 'function') {
+                dbUpdateVehiculoFields(carId, { estado: 'Ajuste de Tarifa', negociacion_tarifa: car.priceNegotiation });
+            }
             renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
             renderFinancialOverview();
 
@@ -1638,7 +1654,7 @@ function setupFormListeners() {
 
             let alerts = [];
             try { alerts = JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (err) { alerts = []; }
-            alerts.unshift({
+            const newAlert = {
                 id: 'alert_' + Date.now(),
                 ownerId: car.ownerId,
                 carId: car.id,
@@ -1647,7 +1663,11 @@ function setupFormListeners() {
                 message: message,
                 read: false,
                 createdAt: new Date().toISOString()
-            });
+            };
+            if (typeof dbSaveOwnerAlert === 'function') {
+                dbSaveOwnerAlert(newAlert);
+            }
+            alerts.unshift(newAlert);
             localStorage.setItem('rentcar_owner_alerts', JSON.stringify(alerts));
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('owner_alert');
 

@@ -198,6 +198,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const cars = getAllCars();
             cars.unshift(newCar);
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof dbSaveVehiculo === 'function') {
+                dbSaveVehiculo(newCar);
+            }
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
             alert(`¡Excelente! Tu vehículo "${newCar.fullName}" ha sido publicado con ${finalGallery.length} ${finalGallery.length === 1 ? 'foto' : 'fotos'}.`);
@@ -1096,6 +1099,13 @@ document.addEventListener('DOMContentLoaded', function () {
         car.priceNegotiation.status = 'accepted';
         car.priceNegotiation.resolvedAt = new Date().toISOString();
         localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+        if (typeof dbUpdateVehiculoFields === 'function') {
+            dbUpdateVehiculoFields(carId, {
+                precio_por_dia: newPrice,
+                estado: 'Activo',
+                negociacion_tarifa: car.priceNegotiation
+            });
+        }
         if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
         renderOwnerAlertsAndProposals();
@@ -1137,6 +1147,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 updatedAt: new Date().toISOString()
             });
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof dbUpdateVehiculoFields === 'function') {
+                dbUpdateVehiculoFields(carId, {
+                    estado: 'Contraoferta',
+                    negociacion_tarifa: car.priceNegotiation
+                });
+            }
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
             $('#modalOwnerCounterOffer').modal('hide');
@@ -1153,9 +1169,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (item) {
             item.read = true;
             localStorage.setItem('rentcar_owner_alerts', JSON.stringify(alerts));
+            if (typeof dbMarkOwnerAlertRead === 'function') dbMarkOwnerAlertRead(alertId);
             renderOwnerAlertsAndProposals();
         }
     };
+
+    // Sincronizar alertas y vehículos desde Supabase en segundo plano
+    if (typeof dbGetVehiculos === 'function') {
+        dbGetVehiculos().then(() => { renderOwnerAlertsAndProposals(); renderOwnerCars(); renderDashboardStats(); }).catch(() => { });
+    }
+    if (typeof dbGetOwnerAlerts === 'function') {
+        dbGetOwnerAlerts().then(() => { renderOwnerAlertsAndProposals(); }).catch(() => { });
+    }
 
     // Sincronización en tiempo real si el admin envía una propuesta o alerta desde otra pestaña
     window.addEventListener('storage', function (e) {

@@ -67,6 +67,8 @@ async function dbGetVehiculos() {
                         desc: v.descripcion || v.description || '',
                         description: v.descripcion || v.description || '',
                         image: v.imagen_url || v.image || 'img/car-rent-1.png',
+                        images: Array.isArray(v.galeria_imagenes) && v.galeria_imagenes.length > 0 ? v.galeria_imagenes : [v.imagen_url || v.image || 'img/car-rent-1.png'],
+                        priceNegotiation: v.negociacion_tarifa || null,
                         status: v.estado || v.status || 'Activo',
                         ownerId: v.propietario_id || v.ownerId
                     };
@@ -95,17 +97,20 @@ async function dbSaveVehiculo(vehiculo) {
             const row = {
                 marca: vehiculo.brand,
                 modelo: vehiculo.model,
-                nombre_completo: vehiculo.name || `${vehiculo.brand} ${vehiculo.model}`,
+                nombre_completo: vehiculo.fullName || vehiculo.name || `${vehiculo.brand} ${vehiculo.model}`,
                 año: parseInt(vehiculo.year) || 2022,
-                categoria: vehiculo.type || 'Sedán',
+                categoria: vehiculo.category || vehiculo.type || 'Sedán',
                 transmision: vehiculo.transmission || 'Automático',
                 combustible: vehiculo.fuel || 'Gasolina',
                 puestos: parseInt(vehiculo.seats) || 5,
-                precio_por_dia: parseFloat(vehiculo.price) || 200000,
+                precio_por_dia: parseFloat(vehiculo.pricePerDay || vehiculo.price) || 200000,
                 ciudad: vehiculo.city || 'Valledupar',
                 kilometraje_limite: vehiculo.mileage || '200 km/día',
-                descripcion: vehiculo.desc || '',
+                descripcion: vehiculo.description || vehiculo.desc || '',
                 imagen_url: vehiculo.image || 'img/car-rent-1.png',
+                galeria_imagenes: Array.isArray(vehiculo.images) ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
+                negociacion_tarifa: vehiculo.priceNegotiation || null,
+                propietario_id: vehiculo.ownerId || null,
                 estado: vehiculo.status || 'Activo'
             };
 
@@ -335,5 +340,157 @@ async function seedInitialCarsIfEmpty() {
         }
     } catch (e) {
         console.warn("Verificación de flota inicial:", e);
+    }
+}
+
+/** ================= 7. CONFIGURACIÓN GLOBAL, FEEDBACK Y ALERTAS (SUPABASE) ================= **/
+async function dbSaveConfig(configObj) {
+    const client = getSupabaseClient();
+    if (!client) return false;
+    try {
+        await client.from('configuracion_sitio').upsert({
+            id: 'global',
+            config: configObj,
+            actualizado_en: new Date().toISOString()
+        });
+        return true;
+    } catch (e) {
+        console.warn("Error guardando configuración en Supabase:", e);
+        return false;
+    }
+}
+
+async function dbGetConfig() {
+    const client = getSupabaseClient();
+    if (!client) return null;
+    try {
+        const { data, error } = await client.from('configuracion_sitio').select('config').eq('id', 'global').single();
+        if (!error && data && data.config) {
+            localStorage.setItem('rentcar_global_config', JSON.stringify(data.config));
+            return data.config;
+        }
+    } catch (e) {
+        console.warn("Cargando config desde Supabase:", e.message || e);
+    }
+    return null;
+}
+
+async function dbUpdateVehiculoFields(carId, fields) {
+    const client = getSupabaseClient();
+    if (!client || !carId) return false;
+    try {
+        await client.from('vehiculos').update(fields).eq('id', carId);
+        return true;
+    } catch (e) {
+        console.warn("Error actualizando vehículo en Supabase:", e);
+        return false;
+    }
+}
+
+async function dbSaveFeedback(item) {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('reportes_feedback').insert([{
+                vehiculo_id: item.carId || null,
+                vehiculo_nombre: item.carName || 'General',
+                reporta_nombre: item.reporterName || 'Usuario',
+                reporta_telefono: item.reporterPhone || '',
+                motivo: item.subject || 'Feedback',
+                detalle: item.message || '',
+                estado: item.status || 'Pendiente'
+            }]).select();
+            if (!error && data && data[0]) item.id = data[0].id;
+        } catch (e) {
+            console.warn("Error guardando feedback en Supabase:", e);
+        }
+    }
+    return item;
+}
+
+async function dbGetFeedback() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('reportes_feedback').select('*').order('creado_en', { ascending: false });
+            if (!error && data) {
+                const mapped = data.map(f => ({
+                    id: f.id,
+                    carId: f.vehiculo_id,
+                    carName: f.vehiculo_nombre,
+                    reporterName: f.reporta_nombre,
+                    reporterPhone: f.reporta_telefono,
+                    subject: f.motivo,
+                    message: f.detalle,
+                    status: f.estado || 'Pendiente',
+                    createdAt: f.creado_en
+                }));
+                localStorage.setItem('rentcar_feedback', JSON.stringify(mapped));
+                return mapped;
+            }
+        } catch (e) {
+            console.warn("Cargando feedback desde Supabase:", e);
+        }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { return []; }
+}
+
+async function dbResolveFeedback(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('reportes_feedback').update({ estado: 'Resuelto' }).eq('id', id); } catch (e) { }
+    }
+}
+
+async function dbSaveOwnerAlert(alertItem) {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('alertas_propietarios').insert([{
+                propietario_id: alertItem.ownerId || null,
+                vehiculo_id: alertItem.carId || null,
+                vehiculo_nombre: alertItem.carName || '',
+                asunto: alertItem.subject || '',
+                mensaje: alertItem.message || '',
+                leida: false
+            }]).select();
+            if (!error && data && data[0]) alertItem.id = data[0].id;
+        } catch (e) {
+            console.warn("Error guardando alerta en Supabase:", e);
+        }
+    }
+    return alertItem;
+}
+
+async function dbGetOwnerAlerts() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('alertas_propietarios').select('*').order('creado_en', { ascending: false });
+            if (!error && data) {
+                const mapped = data.map(a => ({
+                    id: a.id,
+                    ownerId: a.propietario_id,
+                    carId: a.vehiculo_id,
+                    carName: a.vehiculo_nombre,
+                    subject: a.asunto,
+                    message: a.mensaje,
+                    read: !!a.leida,
+                    createdAt: a.creado_en
+                }));
+                localStorage.setItem('rentcar_owner_alerts', JSON.stringify(mapped));
+                return mapped;
+            }
+        } catch (e) {
+            console.warn("Cargando alertas desde Supabase:", e);
+        }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (e) { return []; }
+}
+
+async function dbMarkOwnerAlertRead(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('alertas_propietarios').update({ leida: true }).eq('id', id); } catch (e) { }
     }
 }
