@@ -69,8 +69,42 @@ ALTER TABLE public.logs_auditoria ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Gestion total logs" ON public.logs_auditoria;
 CREATE POLICY "Gestion total logs" ON public.logs_auditoria FOR ALL USING (true) WITH CHECK (true);
 
--- 6. Verificación rápida de tablas creadas
+-- 6. Completar tabla resenas para moderación real y vinculación por vehículo
+ALTER TABLE public.resenas
+  ADD COLUMN IF NOT EXISTS aprobada boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS vehiculo_nombre text,
+  ADD COLUMN IF NOT EXISTS ciudad text,
+  ADD COLUMN IF NOT EXISTS rol_autor text DEFAULT 'Conductor';
+
+ALTER TABLE public.resenas ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion total resenas" ON public.resenas;
+CREATE POLICY "Gestion total resenas" ON public.resenas FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. Asegurar tablas de mensajes de contacto y liquidaciones con RLS
+CREATE TABLE IF NOT EXISTS public.mensajes_contacto (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre text NOT NULL,
+    email text NOT NULL,
+    telefono text,
+    motivo text,
+    mensaje text NOT NULL,
+    estado text DEFAULT 'Pendiente',
+    creado_en timestamptz DEFAULT now()
+);
+ALTER TABLE public.mensajes_contacto ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion total mensajes" ON public.mensajes_contacto;
+CREATE POLICY "Gestion total mensajes" ON public.mensajes_contacto FOR ALL USING (true) WITH CHECK (true);
+
+-- Limpiar testimonios ficticios iniciales si existían en la base de datos
+DELETE FROM public.testimonios
+WHERE nombre_autor IN ('Carlos Mendoza', 'Laura Gómez', 'Andrés Restrepo', 'Diana Paternina');
+
+-- 8. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
+UNION ALL
+SELECT 'resenas', count(*) FROM public.resenas
+UNION ALL
+SELECT 'mensajes_contacto', count(*) FROM public.mensajes_contacto
 UNION ALL
 SELECT 'configuracion_sitio', count(*) FROM public.configuracion_sitio
 UNION ALL

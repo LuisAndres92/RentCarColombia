@@ -866,6 +866,14 @@ function initGlobalConfigAndLiveCars() {
             } catch (e) { }
         }).catch(() => { });
     }
+
+    if (typeof dbGetResenas === 'function') {
+        dbGetResenas().then(() => {
+            try {
+                if (document.getElementById('featured-cars-row')) renderFeaturedCarsOnHome();
+            } catch (e) { }
+        }).catch(() => { });
+    }
 }
 
 if (document.readyState === 'loading') {

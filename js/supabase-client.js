@@ -566,3 +566,97 @@ async function dbDeleteAuditLogsByDateRange(fromIso, toIso) {
         }
     }
 }
+
+/** ================= 9. RESEÑAS REALES Y MENSAJES DE CONTACTO ================= **/
+async function dbGetResenas() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('resenas').select('*').order('creado_en', { ascending: false });
+            if (!error && data) {
+                const mapped = data.map(r => ({
+                    id: r.id,
+                    carId: r.vehiculo_id || '',
+                    carRented: r.vehiculo_nombre || '',
+                    userName: r.autor_nombre || 'Conductor',
+                    userRole: r.rol_autor || 'Conductor',
+                    city: r.ciudad || 'Colombia',
+                    rating: parseInt(r.calificacion, 10) || 5,
+                    text: r.comentario || '',
+                    approved: r.aprobada !== false,
+                    date: r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : ''
+                }));
+                localStorage.setItem('rentcar_verified_reviews', JSON.stringify(mapped));
+                return mapped;
+            }
+        } catch (e) {
+            console.warn("Cargando reseñas desde Supabase:", e);
+        }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_verified_reviews')) || []; } catch (e) { return []; }
+}
+
+async function dbSaveResena(rev) {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('resenas').insert([{
+                vehiculo_id: rev.carId || null,
+                vehiculo_nombre: rev.carRented || '',
+                autor_nombre: rev.userName || 'Conductor',
+                rol_autor: rev.userRole || 'Conductor',
+                ciudad: rev.city || 'Colombia',
+                calificacion: parseInt(rev.rating, 10) || 5,
+                comentario: rev.text || '',
+                aprobada: rev.approved !== false
+            }]).select();
+            if (!error && data && data[0]) rev.id = data[0].id;
+        } catch (e) { console.warn("Error guardando reseña:", e); }
+    }
+    return rev;
+}
+
+async function dbUpdateResenaApproval(id, approved) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('resenas').update({ aprobada: !!approved }).eq('id', id); } catch (e) { }
+    }
+}
+
+async function dbDeleteResena(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('resenas').delete().eq('id', id); } catch (e) { }
+    }
+}
+
+async function dbGetMensajesContacto() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('mensajes_contacto').select('*').order('creado_en', { ascending: false });
+            if (!error && data) {
+                const mapped = data.map(m => ({
+                    id: m.id,
+                    name: m.nombre,
+                    email: m.email,
+                    phone: m.telefono,
+                    subject: m.motivo,
+                    message: m.mensaje,
+                    status: m.estado || 'Pendiente',
+                    createdAt: m.creado_en
+                }));
+                localStorage.setItem('renteasy_inquiries', JSON.stringify(mapped));
+                return mapped;
+            }
+        } catch (e) { console.warn("Cargando mensajes de contacto:", e); }
+    }
+    try { return JSON.parse(localStorage.getItem('renteasy_inquiries')) || []; } catch (e) { return []; }
+}
+
+async function dbDeleteMensajeContacto(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('mensajes_contacto').delete().eq('id', id); } catch (e) { }
+    }
+}

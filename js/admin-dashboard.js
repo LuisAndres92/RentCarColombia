@@ -291,9 +291,15 @@ async function syncLiveDataFromSupabase() {
             }
         }
 
-        // 4. Consultar reportes de feedback, logs y configuración global en Supabase
+        // 4. Consultar reportes de feedback, reseñas, mensajes, logs y configuración global en Supabase
         if (typeof dbGetFeedback === 'function') {
             await dbGetFeedback();
+        }
+        if (typeof dbGetResenas === 'function') {
+            await dbGetResenas();
+        }
+        if (typeof dbGetMensajesContacto === 'function') {
+            await dbGetMensajesContacto();
         }
         if (typeof dbGetConfig === 'function') {
             await dbGetConfig();
@@ -307,6 +313,8 @@ async function syncLiveDataFromSupabase() {
         renderFleetModeration();
         renderBookingsAndDisputes();
         renderFeedbackAndAlertsAdmin();
+        renderVerifiedReviewsModeration();
+        renderInquiriesAdmin();
         renderAuditLogsAdmin();
         renderUsersManagement();
     } catch (e) {
@@ -1255,7 +1263,14 @@ window.toggleReviewApproval = function(idx) {
     if (reviews[idx]) {
         reviews[idx].approved = !reviews[idx].approved;
         saveVerifiedReviews(reviews);
+        if (typeof dbUpdateResenaApproval === 'function' && reviews[idx].id) {
+            dbUpdateResenaApproval(reviews[idx].id, reviews[idx].approved);
+        }
+        if (typeof window.logSystemEvent === 'function') {
+            window.logSystemEvent('Reseñas', reviews[idx].approved ? 'Reseña aprobada' : 'Reseña oculta', `${reviews[idx].userName} — ${reviews[idx].carRented || ''}`);
+        }
         renderVerifiedReviewsModeration();
+        renderAuditLogsAdmin();
         notifySaved(reviews[idx].approved ? 'Reseña aprobada y visible en el sitio web.' : 'Reseña oculta de la web.');
     }
 };
@@ -1263,9 +1278,17 @@ window.toggleReviewApproval = function(idx) {
 window.deleteReviewAdmin = function(idx) {
     const reviews = getVerifiedReviews();
     if (reviews[idx] && confirm(`¿Deseas eliminar la opinión de "${reviews[idx].userName}"?`)) {
+        const target = reviews[idx];
         reviews.splice(idx, 1);
         saveVerifiedReviews(reviews);
+        if (typeof dbDeleteResena === 'function' && target.id) {
+            dbDeleteResena(target.id);
+        }
+        if (typeof window.logSystemEvent === 'function') {
+            window.logSystemEvent('Reseñas', 'Reseña eliminada', `${target.userName} — ${target.carRented || ''}`);
+        }
         renderVerifiedReviewsModeration();
+        renderAuditLogsAdmin();
         notifySaved('Reseña eliminada.');
     }
 };
@@ -1352,9 +1375,17 @@ window.deleteInquiryAdmin = function (index) {
     try {
         inquiries = JSON.parse(localStorage.getItem('renteasy_inquiries')) || [];
     } catch (e) { inquiries = []; }
+    const removed = inquiries[index];
     inquiries.splice(index, 1);
     localStorage.setItem('renteasy_inquiries', JSON.stringify(inquiries));
+    if (typeof dbDeleteMensajeContacto === 'function' && removed && removed.id) {
+        dbDeleteMensajeContacto(removed.id);
+    }
+    if (typeof window.logSystemEvent === 'function' && removed) {
+        window.logSystemEvent('Contacto', 'Mensaje de contacto eliminado', `${removed.name} (${removed.email})`);
+    }
     renderInquiriesAdmin();
+    renderAuditLogsAdmin();
     notifySaved('Consulta eliminada del buzón.');
 };
 
