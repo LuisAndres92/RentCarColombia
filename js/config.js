@@ -527,16 +527,16 @@ function applyGlobalConfig() {
     }
 
     // 10. Marcas de Autos Registradas en la Plataforma (Carrusel de Aliados Dinámico)
-    renderRegisteredBrandsCarousel();
+    try { renderRegisteredBrandsCarousel(); } catch (e) { console.warn('Brands carousel:', e); }
 
     // 11. Buscador Dinámico de Flota (Marcas, Modelos y Tipos de Auto Reales)
-    populateSearchFilters();
+    try { populateSearchFilters(); } catch (e) { console.warn('Search filters:', e); }
 
     // 12. Vehículos Destacados en Portada (Solo vehículos reales registrados)
-    renderFeaturedCarsOnHome();
+    try { renderFeaturedCarsOnHome(); } catch (e) { console.warn('Featured cars:', e); }
 
     // 13. Renumeración Dinámica y Secuencial de Secciones Visibles (01, 02, 03...)
-    renumberVisibleSections();
+    try { renumberVisibleSections(); } catch (e) { console.warn('Renumber sections:', e); }
 }
 
 /** ================= 12. AUTOS REALES EN PORTADA PRINCIPAL ================= **/
@@ -568,7 +568,7 @@ function getCleanActiveCars() {
             featured: true
         }];
     }
-    return cars.filter(c => c.status === 'Activo');
+    return cars.filter(c => !c.status || String(c.status).toLowerCase() === 'activo');
 }
 
 function renderFeaturedCarsOnHome() {
@@ -804,10 +804,23 @@ function populateSearchFilters() {
 }
 
 // Ejecutar automáticamente al cargar la página
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyGlobalConfig);
-} else {
+function initGlobalConfigAndLiveCars() {
     applyGlobalConfig();
+    if (document.getElementById('featured-cars-row') && typeof dbGetVehiculos === 'function') {
+        dbGetVehiculos().then(() => {
+            try {
+                renderFeaturedCarsOnHome();
+                renderRegisteredBrandsCarousel();
+                populateSearchFilters();
+            } catch (e) { }
+        }).catch(() => { });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGlobalConfigAndLiveCars);
+} else {
+    initGlobalConfigAndLiveCars();
 }
 
 // Sincronización en tiempo real sin necesidad de recargar (F5) cuando el Superadmin guarda cambios en otra pestaña
