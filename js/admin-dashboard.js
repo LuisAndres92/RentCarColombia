@@ -853,51 +853,22 @@ window.deleteTeamMember = function (idx) {
 };
 
 /** ================= MODERACIÓN DE RESEÑAS REALES (CERO RESEÑAS FALSAS) ================= **/
-const DEFAULT_VERIFIED_REVIEWS = [
-    {
-        id: "rev_1",
-        userName: "Carlos Mendoza",
-        userRole: "Propietario Verificado",
-        city: "Valledupar, Cesar",
-        carRented: "Renault Duster 2022",
-        rating: 5,
-        date: "18 Nov 2026",
-        approved: true,
-        text: "Tener mi camioneta trabajando con Rent Car Colombia ha sido una bendición. Recibo mis ganancias puntual y la fianza me da total tranquilidad."
-    },
-    {
-        id: "rev_2",
-        userName: "Laura Gómez",
-        userRole: "Conductora Turista",
-        city: "Bogotá D.C.",
-        carRented: "Mazda 3 Touring 2021",
-        rating: 5,
-        date: "15 Nov 2026",
-        approved: true,
-        text: "Alquilé un auto para recorrer el Cesar y La Guajira durante el Festival Vallenato. Trato directo, auto impecable y mucho más económico."
-    },
-    {
-        id: "rev_3",
-        userName: "Andrés Restrepo",
-        userRole: "Anfitrión / Propietario",
-        city: "Medellín, Antioquia",
-        carRented: "Toyota Hilux 4x4",
-        rating: 5,
-        date: "10 Nov 2026",
-        approved: true,
-        text: "Tengo dos autos publicados. El proceso de aprobación y verificación de clientes es muy estricto y profesional. Recomiendo 100% esta plataforma."
-    }
-];
-
 function getVerifiedReviews() {
     try {
         const stored = localStorage.getItem('rentcar_verified_reviews');
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+            const parsed = JSON.parse(stored) || [];
+            // Filtrar reseñas demo de ejemplo (rev_1, rev_2, rev_3) para mantener solo reseñas reales
+            const clean = parsed.filter(r => r && r.id !== 'rev_1' && r.id !== 'rev_2' && r.id !== 'rev_3');
+            if (clean.length !== parsed.length) {
+                localStorage.setItem('rentcar_verified_reviews', JSON.stringify(clean));
+            }
+            return clean;
+        }
     } catch (e) {
         console.error("Error al cargar reseñas:", e);
     }
-    localStorage.setItem('rentcar_verified_reviews', JSON.stringify(DEFAULT_VERIFIED_REVIEWS));
-    return DEFAULT_VERIFIED_REVIEWS;
+    return [];
 }
 
 function saveVerifiedReviews(reviews) {

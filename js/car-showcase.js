@@ -11,12 +11,16 @@
             .rent-card-premium {
                 position: relative;
                 overflow: hidden;
+                padding: 0 !important;
+                text-align: left !important;
+                background: #ffffff !important;
                 transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease !important;
-                border-radius: 12px !important;
+                border-radius: 14px !important;
             }
             .rent-card-premium:hover {
                 transform: translateY(-6px) scale(1.02);
                 box-shadow: 0 18px 36px rgba(28, 30, 50, 0.18) !important;
+                background: #ffffff !important;
                 z-index: 2;
             }
             /* Destello diagonal luminoso al pasar el cursor */
@@ -45,7 +49,8 @@
             }
             .rent-card-img-wrap {
                 position: relative;
-                height: 225px;
+                width: 100%;
+                height: 250px;
                 overflow: hidden;
                 background: #0f172a;
                 cursor: pointer;
@@ -188,7 +193,7 @@
 
         return `
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="rent-item rent-card-premium mb-4 shadow-sm border bg-white h-100 d-flex flex-column justify-content-between" data-car-id="${car.id}">
+                <div class="rent-card-premium mb-4 shadow-sm border bg-white h-100 d-flex flex-column justify-content-between" data-car-id="${car.id}">
                     <div>
                         <div class="rent-card-img-wrap" data-car-id="${car.id}" data-images='${JSON.stringify(images).replace(/'/g, "&apos;")}' data-index="0" onclick="openCarQuickView('${car.id}')">
                             <img class="car-card-slide-img" src="${images[0]}" alt="${displayName}" onerror="this.src='img/car-rent-1.png'">
@@ -210,27 +215,21 @@
                                 </div>
                             ` : ''}
                         </div>
-                        <div class="p-4 pb-2">
+                        <div class="px-3 pt-3 pb-1">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="text-uppercase font-weight-bold mb-0 text-dark" style="cursor:pointer;" onclick="openCarQuickView('${car.id}')">${displayName}</h5>
+                                <h5 class="text-uppercase font-weight-bold mb-0 text-dark" style="cursor:pointer; font-size: 1.05rem;" onclick="openCarQuickView('${car.id}')">${displayName}</h5>
                                 <span class="badge badge-light border text-primary font-weight-bold">${displayYear}</span>
                             </div>
-                            ${options.showOwner ? `
-                                <div class="small text-muted mb-3">
-                                    <i class="fa fa-user-check text-success mr-1"></i> Publicado por: <strong class="text-dark">${car.ownerName || 'Anfitrión Verificado'}</strong>
-                                    <span class="text-warning ml-1"><i class="fa fa-star"></i> 4.9</span>
-                                </div>
-                            ` : ''}
-                            <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
+                            <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-2 border">
                                 <div><i class="fa fa-cog text-primary"></i> ${displayTrans}</div>
                                 <div class="border-left border-right px-2"><i class="fa fa-gas-pump text-primary"></i> ${displayFuel}</div>
                                 <div><i class="fa fa-users text-primary"></i> ${displaySeats} Puestos</div>
                             </div>
                         </div>
                     </div>
-                    <div class="px-4 pb-4 pt-2 d-flex justify-content-between align-items-center">
+                    <div class="px-3 pb-3 pt-2 d-flex justify-content-between align-items-center">
                         <div>
-                            <span class="small text-muted d-block">Tarifa por día</span>
+                            <span class="small text-muted d-block" style="font-size: 11px;">Tarifa por día</span>
                             <h5 class="text-primary font-weight-bold mb-0">$${displayPrice} <small class="text-muted" style="font-size: 11px;">COP</small></h5>
                         </div>
                         <div class="btn-group">
@@ -448,7 +447,16 @@
         document.getElementById('qv-car-subtitle').textContent = `${car.brand || ''} • ${car.category || 'SUV / Camioneta'}`;
         document.getElementById('qv-city').innerHTML = `<i class="fa fa-map-marker-alt mr-1"></i> ${car.city || 'Valledupar'}`;
         document.getElementById('qv-category').textContent = car.category || car.type || 'SUV / Camioneta';
-        document.getElementById('qv-owner').innerHTML = `<i class="fa fa-user-check text-success mr-1"></i> Anfitrión: <strong>${car.ownerName || 'Anfitrión Verificado'}</strong>`;
+        const ownerEl = document.getElementById('qv-owner');
+        if (ownerEl) {
+            if (car.ownerName && car.ownerName !== 'Anfitrión Verificado') {
+                ownerEl.innerHTML = `<i class="fa fa-user mr-1 text-primary"></i> Propietario: <strong class="text-dark">${car.ownerName}</strong>`;
+                ownerEl.style.display = '';
+            } else {
+                ownerEl.innerHTML = '';
+                ownerEl.style.display = 'none';
+            }
+        }
         document.getElementById('qv-price').textContent = `$${displayPrice} COP`;
         document.getElementById('qv-trans').textContent = car.transmission || 'Automático';
         document.getElementById('qv-fuel').textContent = car.fuel || 'Gasolina';
