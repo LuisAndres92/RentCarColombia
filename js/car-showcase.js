@@ -185,7 +185,6 @@
         const valid = reviews.filter(r =>
             r &&
             r.approved === true &&
-            r.id !== 'rev_1' && r.id !== 'rev_2' && r.id !== 'rev_3' &&
             (
                 (r.carId && r.carId === carId) ||
                 (r.carRented && carName && r.carRented.toLowerCase().includes(carName.toLowerCase()))

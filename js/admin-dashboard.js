@@ -57,8 +57,9 @@ document.addEventListener('DOMContentLoaded', function () {
     renderInquiriesAdmin();
     loadLegalTexts();
 
-    // 3. Manejadores de Formularios y Acciones
+    // 3. Manejadores de Formularios, Observador Universal de Logs y Acciones
     setupFormListeners();
+    initUniversalAdminAuditObserver();
 
     // 4. Restauración y persistencia de pestaña activa (#fleet, #users, #bookings, #payments, etc.)
     restoreActiveTab();
@@ -434,10 +435,82 @@ async function syncCarStatusSupabase(carId, status) {
 }
 
 function recordAdminLog(modulo, accion, detalle = '') {
-    if (typeof window.logSystemEvent === 'function') {
-        window.logSystemEvent(modulo, accion, detalle);
+    let user = null;
+    try { user = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) { }
+    const entry = {
+        id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        usuario: user ? (user.name || user.email || 'Administrador') : 'Administrador',
+        rol: user ? (user.role || 'admin') : 'admin',
+        modulo: modulo || 'Admin',
+        accion: accion || 'Modificación',
+        detalle: detalle || '',
+        creado_en: new Date().toISOString()
+    };
+
+    try {
+        let logs = JSON.parse(localStorage.getItem('rentcar_audit_logs')) || [];
+        logs.unshift(entry);
+        if (logs.length > 500) logs = logs.slice(0, 500);
+        localStorage.setItem('rentcar_audit_logs', JSON.stringify(logs));
+    } catch (e) { }
+
+    if (typeof getSupabaseClient === 'function') {
+        try {
+            const client = getSupabaseClient();
+            if (client) {
+                client.from('logs_auditoria').insert([{
+                    usuario: entry.usuario,
+                    rol: entry.rol,
+                    modulo: entry.modulo,
+                    accion: entry.accion,
+                    detalle: entry.detalle,
+                    creado_en: entry.creado_en
+                }]).then(() => {}).catch(() => {});
+            }
+        } catch (e) { }
     }
+
     renderAuditLogsAdmin();
+}
+
+function initUniversalAdminAuditObserver() {
+    const tabContent = document.getElementById('admin-tabContent');
+    if (!tabContent) return;
+
+    const getPaneModule = (el) => {
+        const pane = el.closest('.tab-pane');
+        if (!pane) return 'Admin';
+        const map = {
+            'tab-overview': 'Resumen',
+            'tab-fleet': 'Flota',
+            'tab-users': 'KYC',
+            'tab-bookings': 'Reservas',
+            'tab-payments': 'Finanzas',
+            'tab-cms': 'CMS',
+            'tab-company': 'Empresa',
+            'tab-legal': 'Legal',
+            'tab-logs': 'Auditoría'
+        };
+        return map[pane.id] || 'Admin';
+    };
+
+    // Registrar automáticamente cualquier cambio en interruptores (switches/checkboxes)
+    tabContent.addEventListener('change', function (e) {
+        const target = e.target;
+        if (!target || target.type !== 'checkbox') return;
+        const labelEl = target.closest('.custom-control, .form-check, .d-flex')?.querySelector('label, strong, h6');
+        const controlName = labelEl ? labelEl.innerText.trim() : (target.id || 'Interruptor');
+        const stateText = target.checked ? 'Activado' : 'Desactivado';
+        recordAdminLog(getPaneModule(target), `${stateText}: ${controlName}`, `Control "${target.id || controlName}" cambiado a ${stateText}`);
+    });
+
+    // Refrescar tabla de logs al abrir la pestaña Logs & Auditoría
+    const logsPill = document.getElementById('tab-logs-pill');
+    if (logsPill) {
+        $(logsPill).on('shown.bs.tab', function () {
+            renderAuditLogsAdmin();
+        });
+    }
 }
 
 window.approveCar = function (carId) {
@@ -1214,13 +1287,7 @@ function getVerifiedReviews() {
     try {
         const stored = localStorage.getItem('rentcar_verified_reviews');
         if (stored) {
-            const parsed = JSON.parse(stored) || [];
-            // Filtrar reseñas demo de ejemplo (rev_1, rev_2, rev_3) para mantener solo reseñas reales
-            const clean = parsed.filter(r => r && r.id !== 'rev_1' && r.id !== 'rev_2' && r.id !== 'rev_3');
-            if (clean.length !== parsed.length) {
-                localStorage.setItem('rentcar_verified_reviews', JSON.stringify(clean));
-            }
-            return clean;
+            return JSON.parse(stored) || [];
         }
     } catch (e) {
         console.error("Error al cargar reseñas:", e);

@@ -95,14 +95,14 @@ ALTER TABLE public.mensajes_contacto ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Gestion total mensajes" ON public.mensajes_contacto;
 CREATE POLICY "Gestion total mensajes" ON public.mensajes_contacto FOR ALL USING (true) WITH CHECK (true);
 
--- Limpiar testimonios ficticios iniciales si existían en la base de datos
-DO $$
-BEGIN
-    DELETE FROM public.testimonios
-    WHERE nombre_cliente IN ('Carlos Mendoza', 'Laura Gómez', 'Andrés Restrepo', 'Diana Paternina');
-EXCEPTION
-    WHEN undefined_table OR undefined_column THEN NULL;
-END $$;
+-- Sembrar reseñas iniciales de ejemplo en public.resenas (solo si la tabla está vacía) para que puedas controlarlas o borrarlas desde Supabase
+INSERT INTO public.resenas (vehiculo_nombre, autor_nombre, rol_autor, ciudad, calificacion, comentario, aprobada)
+SELECT 'Renault Duster 4x4 Turbo', 'Carlos Mendoza', 'Propietario Verificado', 'Valledupar, Cesar', 5, 'Excelente camioneta para viajar por el Cesar y La Guajira. Entrega puntual y en perfecto estado.', true
+WHERE NOT EXISTS (SELECT 1 FROM public.resenas);
+
+INSERT INTO public.resenas (vehiculo_nombre, autor_nombre, rol_autor, ciudad, calificacion, comentario, aprobada)
+SELECT 'Renault Duster 4x4 Turbo', 'Laura Gómez', 'Conductora Turista', 'Bogotá D.C.', 5, 'Trato directo con el dueño, vehículo impecable y tarifa mucho mejor que una agencia tradicional.', true
+WHERE (SELECT count(*) FROM public.resenas) = 1;
 
 -- 8. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
