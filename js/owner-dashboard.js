@@ -28,55 +28,111 @@ document.addEventListener('DOMContentLoaded', function () {
     const carFileInput = document.getElementById('car-photo-file');
     const carFileLabel = document.getElementById('car-photo-label');
     const carRealData = document.getElementById('car-real-photo-data');
+    const galleryListEl = document.getElementById('car-gallery-preview-list');
+    const btnAddGalleryUrl = document.getElementById('btn-add-gallery-url');
+
+    let ownerGalleryImages = [];
+
+    function renderOwnerGalleryPreview() {
+        if (imgPreview) {
+            imgPreview.src = ownerGalleryImages[0] || (customUrl && customUrl.value.trim()) || (selectImg ? selectImg.value : 'img/car-rent-1.png');
+        }
+        if (carRealData) {
+            carRealData.value = ownerGalleryImages[0] || '';
+        }
+        if (!galleryListEl) return;
+        if (ownerGalleryImages.length === 0) {
+            galleryListEl.innerHTML = '';
+            return;
+        }
+        galleryListEl.innerHTML = ownerGalleryImages.map((src, idx) => `
+            <div class="position-relative border rounded p-1 bg-white shadow-sm" style="width: 96px;">
+                <img src="${src}" class="rounded" style="width: 86px; height: 60px; object-fit: cover;">
+                ${idx === 0
+                    ? '<span class="badge badge-primary d-block mt-1" style="font-size: 10px;">Principal</span>'
+                    : `<button type="button" class="btn btn-link btn-sm p-0 d-block w-100 text-center" style="font-size: 10px;" onclick="window._setPrimaryGalleryImg(${idx})">Hacer principal</button>`}
+                <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -6px; right: -6px; width: 20px; height: 20px; padding: 0; line-height: 1; border-radius: 50%;" onclick="window._removeGalleryImg(${idx})" title="Quitar foto">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    window._setPrimaryGalleryImg = function (idx) {
+        if (idx > 0 && ownerGalleryImages[idx]) {
+            const chosen = ownerGalleryImages.splice(idx, 1)[0];
+            ownerGalleryImages.unshift(chosen);
+            renderOwnerGalleryPreview();
+        }
+    };
+
+    window._removeGalleryImg = function (idx) {
+        ownerGalleryImages.splice(idx, 1);
+        renderOwnerGalleryPreview();
+    };
 
     if (carFileInput) {
         carFileInput.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
 
-            if (carFileLabel) carFileLabel.innerText = file.name;
+            if (carFileLabel) carFileLabel.innerText = files.length === 1 ? files[0].name : `${files.length} fotos seleccionadas`;
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const img = new Image();
-                img.onload = function () {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 640;
-                    const MAX_HEIGHT = 440;
-                    let width = img.width;
-                    let height = img.height;
+            files.slice(0, 6 - ownerGalleryImages.length).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.onload = function () {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 640;
+                        const MAX_HEIGHT = 440;
+                        let width = img.width;
+                        let height = img.height;
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height = Math.round((height * MAX_WIDTH) / width);
-                            width = MAX_WIDTH;
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height = Math.round((height * MAX_WIDTH) / width);
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width = Math.round((width * MAX_HEIGHT) / height);
+                                height = MAX_HEIGHT;
+                            }
                         }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width = Math.round((width * MAX_HEIGHT) / height);
-                            height = MAX_HEIGHT;
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+                        const optimizedData = canvas.toDataURL('image/jpeg', 0.85);
+                        if (ownerGalleryImages.length < 6) {
+                            ownerGalleryImages.push(optimizedData);
+                            renderOwnerGalleryPreview();
                         }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const optimizedData = canvas.toDataURL('image/jpeg', 0.85);
-                    if (imgPreview) imgPreview.src = optimizedData;
-                    if (carRealData) carRealData.value = optimizedData;
-                    if (customUrl) customUrl.value = '';
+                    };
+                    img.src = event.target.result;
                 };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
+    if (btnAddGalleryUrl && customUrl) {
+        btnAddGalleryUrl.addEventListener('click', function () {
+            const url = customUrl.value.trim();
+            if (!url) return;
+            if (ownerGalleryImages.length >= 6) {
+                alert('Puedes agregar máximo 6 fotografías por vehículo.');
+                return;
+            }
+            ownerGalleryImages.push(url);
+            customUrl.value = '';
+            renderOwnerGalleryPreview();
         });
     }
 
     if (selectImg && imgPreview) {
         selectImg.addEventListener('change', function () {
-            if (!customUrl.value.trim() && (!carRealData || !carRealData.value)) {
+            if (ownerGalleryImages.length === 0 && (!customUrl || !customUrl.value.trim())) {
                 imgPreview.src = this.value;
             }
         });
@@ -84,13 +140,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (customUrl && imgPreview) {
         customUrl.addEventListener('input', function () {
-            if (this.value.trim()) {
+            if (this.value.trim() && ownerGalleryImages.length === 0) {
                 imgPreview.src = this.value.trim();
-                if (carRealData) carRealData.value = '';
-                if (carFileLabel) carFileLabel.innerText = 'Elegir foto de tu vehículo...';
-            } else if (carRealData && carRealData.value) {
-                imgPreview.src = carRealData.value;
-            } else {
+            } else if (ownerGalleryImages.length === 0 && selectImg) {
                 imgPreview.src = selectImg.value;
             }
         });
@@ -113,8 +165,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const city = document.getElementById('car-city').value;
             const mileage = document.getElementById('car-mileage').value.trim();
             const description = document.getElementById('car-description').value.trim();
-            
-            const image = (carRealData && carRealData.value) ? carRealData.value : (customUrl.value.trim() ? customUrl.value.trim() : selectImg.value);
+
+            const fallbackImg = (customUrl && customUrl.value.trim()) ? customUrl.value.trim() : (selectImg ? selectImg.value : 'img/car-rent-1.png');
+            const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [fallbackImg];
+            const image = finalGallery[0];
 
             const newCar = {
                 id: 'car_' + Date.now(),
@@ -134,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 mileage: mileage,
                 description: description || 'Vehículo en óptimas condiciones mecánicas y estéticas para alquiler.',
                 image: image,
+                images: finalGallery,
                 status: 'Activo', // 'Activo', 'En Renta', 'Pausado'
                 createdAt: new Date().toISOString()
             };
@@ -141,14 +196,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const cars = getAllCars();
             cars.unshift(newCar);
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
-            alert(`¡Excelente! Tu vehículo "${newCar.fullName}" ha sido enviado a revisión en Rent Car Colombia. Una vez validado por el administrador, se publicará en el catálogo.`);
+            alert(`¡Excelente! Tu vehículo "${newCar.fullName}" ha sido publicado con ${finalGallery.length} ${finalGallery.length === 1 ? 'foto' : 'fotos'}.`);
 
             // Limpiar formulario y volver a la lista
             publishForm.reset();
-            if (carRealData) carRealData.value = '';
-            if (carFileLabel) carFileLabel.innerText = 'Elegir foto de tu vehículo...';
-            imgPreview.src = 'img/car-rent-1.png';
+            ownerGalleryImages = [];
+            renderOwnerGalleryPreview();
+            if (carFileLabel) carFileLabel.innerText = 'Elegir una o varias fotos de tu vehículo...';
             $('#tab-cars-btn').tab('show');
 
             renderDashboardStats();

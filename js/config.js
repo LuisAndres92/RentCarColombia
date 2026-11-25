@@ -587,6 +587,14 @@ function renderFeaturedCarsOnHome() {
     }
 
     const featured = activeCars.slice(0, 6);
+    if (typeof window.renderCarCardHTML === 'function') {
+        container.innerHTML = featured.map(car => window.renderCarCardHTML(car, { showOwner: false })).join('');
+        if (typeof window.initCarCardCarousels === 'function') {
+            window.initCarCardCarousels(container);
+        }
+        return;
+    }
+
     container.innerHTML = featured.map(car => {
         const displayName = car.fullName || car.name || `${car.brand || ''} ${car.model || ''}`.trim();
         const displayPrice = Number(car.pricePerDay || car.price || 220000).toLocaleString('es-CO');

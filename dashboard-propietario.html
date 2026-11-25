@@ -438,22 +438,23 @@
 
                             <hr class="my-4">
 
-                            <h6 class="font-weight-bold text-primary text-uppercase mb-3"><i class="fa fa-camera mr-1"></i> 3. Fotografía Principal del Vehículo</h6>
-                            <div class="row align-items-center">
+                            <h6 class="font-weight-bold text-primary text-uppercase mb-3"><i class="fa fa-camera mr-1"></i> 3. Galería y Fotografía Principal del Vehículo</h6>
+                            <div class="row align-items-start">
                                 <div class="col-md-4 mb-3">
                                     <div class="preview-img-box" id="preview-container">
-                                        <img id="car-img-preview" src="img/car-rent-1.png" alt="Vista previa">
+                                        <img id="car-img-preview" src="img/car-rent-1.png" alt="Vista previa principal">
                                     </div>
+                                    <small class="text-muted d-block text-center mt-1 font-weight-bold">Foto Principal (Portada)</small>
                                 </div>
                                 <div class="col-md-8 mb-3">
-                                    <label class="font-weight-semi-bold d-block"><i class="fa fa-upload text-primary mr-1"></i> Subir Foto Real desde tu Dispositivo</label>
+                                    <label class="font-weight-semi-bold d-block"><i class="fa fa-images text-primary mr-1"></i> Subir Varias Fotos desde tu Dispositivo (Máx. 6)</label>
                                     <div class="custom-file mb-2">
-                                        <input type="file" class="custom-file-input" id="car-photo-file" accept="image/*">
-                                        <label class="custom-file-label small" for="car-photo-file" id="car-photo-label">Elegir foto de tu vehículo...</label>
+                                        <input type="file" class="custom-file-input" id="car-photo-file" accept="image/*" multiple>
+                                        <label class="custom-file-label small" for="car-photo-file" id="car-photo-label">Elegir una o varias fotos de tu vehículo...</label>
                                     </div>
-                                    <small class="text-muted d-block mb-3">Sube una foto real desde tu teléfono o computador (JPG, PNG o WebP).</small>
+                                    <small class="text-muted d-block mb-3">La primera foto será la principal y las demás rotarán automáticamente cada 2 segundos en el catálogo.</small>
 
-                                    <label class="font-weight-semi-bold small text-muted">O seleccionar imagen de muestra o enlace URL:</label>
+                                    <label class="font-weight-semi-bold small text-muted">O agregar imagen de muestra / enlace URL a la galería:</label>
                                     <div class="input-group mb-2">
                                         <select id="car-template-img" class="custom-select">
                                             <option value="img/car-rent-1.png">Auto Sedán Deportivo (img/car-rent-1.png)</option>
@@ -464,8 +465,16 @@
                                             <option value="img/car-rent-6.png">Camioneta Compacta (img/car-rent-6.png)</option>
                                         </select>
                                     </div>
-                                    <input type="url" id="car-custom-url" class="form-control" placeholder="O pega el enlace URL de la foto (opcional)">
+                                    <div class="input-group mb-2">
+                                        <input type="url" id="car-custom-url" class="form-control" placeholder="O pega el enlace URL de una foto (opcional)">
+                                        <div class="input-group-append">
+                                            <button type="button" id="btn-add-gallery-url" class="btn btn-outline-primary font-weight-bold">+ Añadir a galería</button>
+                                        </div>
+                                    </div>
                                     <input type="hidden" id="car-real-photo-data" value="">
+
+                                    <!-- Tira de vista previa de galería múltiple -->
+                                    <div id="car-gallery-preview-list" class="d-flex flex-wrap mt-3" style="gap: 10px;"></div>
                                 </div>
                             </div>
 

@@ -87,6 +87,14 @@ function initCarCatalog() {
             return;
         }
 
+        if (typeof window.renderCarCardHTML === 'function') {
+            container.innerHTML = filtered.map(car => window.renderCarCardHTML(car, { showOwner: true })).join('');
+            if (typeof window.initCarCardCarousels === 'function') {
+                window.initCarCardCarousels(container);
+            }
+            return;
+        }
+
         container.innerHTML = filtered.map(car => {
             const displayCategory = (car.category && car.category !== 'undefined' && car.category !== 'null') ? car.category : 
                                    (car.type && car.type !== 'undefined' && car.type !== 'null' ? car.type : 'SUV / Camioneta');
