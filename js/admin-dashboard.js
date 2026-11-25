@@ -902,6 +902,7 @@ function getVerifiedReviews() {
 
 function saveVerifiedReviews(reviews) {
     localStorage.setItem('rentcar_verified_reviews', JSON.stringify(reviews));
+    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('reviews_updated');
 }
 
 function renderVerifiedReviewsModeration() {
@@ -1512,6 +1513,7 @@ function getCars() {
 function saveCars(cars) {
     const clean = (cars || []).filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
     localStorage.setItem('renteasy_cars', JSON.stringify(clean.length > 0 ? clean : [SINGLE_SAMPLE_CAR]));
+    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 }
 
 function getUsers() {

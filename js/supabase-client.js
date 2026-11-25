@@ -301,7 +301,7 @@ async function dbSaveActaEntrega(acta) {
     localStorage.setItem('renteasy_actas', JSON.stringify(actas));
 }
 
-/** ================= 6. SEMBRAR AUTOS INICIALES SI LA TABLA ESTÁ VACÍA ================= **/
+/** ================= 6. SEMBRAR AUTO INICIAL DE EJEMPLO SI LA TABLA ESTÁ VACÍA ================= **/
 async function seedInitialCarsIfEmpty() {
     const client = getSupabaseClient();
     if (!client) return;
@@ -309,108 +309,29 @@ async function seedInitialCarsIfEmpty() {
     try {
         const { count, error } = await client.from('vehiculos').select('*', { count: 'exact', head: true });
         if (!error && (count === 0 || count === null)) {
-            console.log("Sembrando flota inicial de vehículos en Supabase...");
+            console.log("Sembrando único vehículo inicial de ejemplo en Supabase...");
             const defaultCars = [
                 {
-                    marca: "Toyota",
-                    modelo: "Corolla Cross",
-                    nombre_completo: "Toyota Corolla Cross XEI Híbrida",
-                    año: 2023,
-                    categoria: "SUV / Camioneta",
-                    transmision: "Automático",
-                    combustible: "Híbrido",
-                    puestos: 5,
-                    precio_por_dia: 280000,
-                    ciudad: "Valledupar",
-                    kilometraje_limite: "250 km/día",
-                    descripcion: "Excelente camioneta híbrida, confort total y mínimo consumo para ciudad o carretera.",
-                    imagen_url: "img/car-rent-1.png",
-                    estado: "Activo"
-                },
-                {
-                    marca: "Mazda",
-                    modelo: "CX-30",
-                    nombre_completo: "Mazda CX-30 Grand Touring",
-                    año: 2022,
-                    categoria: "SUV / Camioneta",
-                    transmision: "Automático",
-                    combustible: "Gasolina",
-                    puestos: 5,
-                    precio_por_dia: 250000,
-                    ciudad: "Valledupar",
-                    kilometraje_limite: "200 km/día",
-                    descripcion: "Diseño elegante, sonido Bose, acabados en cuero y seguridad activa i-Activsense.",
-                    imagen_url: "img/car-rent-2.png",
-                    estado: "Activo"
-                },
-                {
                     marca: "Renault",
-                    modelo: "Duster",
+                    modelo: "Duster Iconic 4x4 Turbo",
                     nombre_completo: "Renault Duster 4x4 Turbo",
-                    año: 2023,
+                    año: 2024,
                     categoria: "SUV / Camioneta",
-                    transmision: "Mecánico",
+                    transmision: "Automático",
                     combustible: "Gasolina",
                     puestos: 5,
                     precio_por_dia: 220000,
                     ciudad: "Valledupar",
-                    kilometraje_limite: "200 km/día",
-                    descripcion: "Capacidad todoterreno, excelente espacio de baúl, ideal para turismo en el Cesar y Guajira.",
-                    imagen_url: "img/car-rent-3.png",
-                    estado: "Activo"
-                },
-                {
-                    marca: "Chevrolet",
-                    modelo: "Onix Sedan",
-                    nombre_completo: "Chevrolet Onix Turbo Premier",
-                    año: 2022,
-                    categoria: "Sedán",
-                    transmision: "Automático",
-                    combustible: "Gasolina",
-                    puestos: 5,
-                    precio_por_dia: 160000,
-                    ciudad: "Valledupar",
-                    kilometraje_limite: "200 km/día",
-                    descripcion: "Motor turbo eficiente, conectividad Wi-Fi y 6 airbags de seguridad.",
-                    imagen_url: "img/car-rent-4.png",
-                    estado: "Activo"
-                },
-                {
-                    marca: "Nissan",
-                    modelo: "Frontier",
-                    nombre_completo: "Nissan Frontier Doble Cabina 4x4",
-                    año: 2021,
-                    categoria: "Pickup",
-                    transmision: "Mecánico",
-                    combustible: "Diésel",
-                    puestos: 5,
-                    precio_por_dia: 320000,
-                    ciudad: "Valledupar",
                     kilometraje_limite: "250 km/día",
-                    descripcion: "Fuerza, tracción 4x4 y platón de carga para proyectos, fincas o viajes exigentes.",
-                    imagen_url: "img/car-rent-5.png",
-                    estado: "Activo"
-                },
-                {
-                    marca: "Kia",
-                    modelo: "Picanto",
-                    nombre_completo: "Kia Picanto GT Line",
-                    año: 2023,
-                    categoria: "Compacto",
-                    transmision: "Mecánico",
-                    combustible: "Gasolina",
-                    puestos: 5,
-                    precio_por_dia: 130000,
-                    ciudad: "Valledupar",
-                    kilometraje_limite: "200 km/día",
-                    descripcion: "El más económico para movilidad urbana, fácil de estacionar y aire acondicionado potente.",
-                    imagen_url: "img/car-rent-6.png",
-                    estado: "Activo"
+                    descripcion: "Camioneta todoterreno 4x4 turbo de demostración. Totalmente equipada, SOAT vigente, seguro todo riesgo y mantenimiento al día en Valledupar.",
+                    imagen_url: "img/car-rent-1.png",
+                    estado: "Activo",
+                    soat_vigente: true
                 }
             ];
 
             await client.from('vehiculos').insert(defaultCars);
-            console.log("Flota inicial sembrada con éxito en Supabase.");
+            console.log("Vehículo inicial de ejemplo sembrado en Supabase.");
         }
     } catch (e) {
         console.warn("Verificación de flota inicial:", e);

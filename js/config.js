@@ -289,11 +289,22 @@ function checkCouponStatus(inputCode) {
     };
 }
 
+// Canal de sincronización en vivo entre pestañas (sin recargar)
+const RENTCAR_SYNC_CHANNEL = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('rentcar_live_sync') : null;
+
+function broadcastLiveSync(type = 'config_updated') {
+    if (RENTCAR_SYNC_CHANNEL) {
+        try { RENTCAR_SYNC_CHANNEL.postMessage({ type, timestamp: Date.now() }); } catch (e) { }
+    }
+}
+window.broadcastLiveSync = broadcastLiveSync;
+
 // Guardar nueva configuración desde el panel de administración
 function saveSiteConfig(newConfig) {
     try {
         localStorage.setItem('rentcar_global_config', JSON.stringify(newConfig));
         applyGlobalConfig();
+        broadcastLiveSync('config_updated');
         return true;
     } catch (e) {
         console.error("Error al guardar configuración:", e);
@@ -520,6 +531,130 @@ function applyGlobalConfig() {
 
     // 11. Buscador Dinámico de Flota (Marcas, Modelos y Tipos de Auto Reales)
     populateSearchFilters();
+
+    // 12. Vehículos Destacados en Portada (Solo vehículos reales registrados)
+    renderFeaturedCarsOnHome();
+
+    // 13. Renumeración Dinámica y Secuencial de Secciones Visibles (01, 02, 03...)
+    renumberVisibleSections();
+}
+
+/** ================= 12. AUTOS REALES EN PORTADA PRINCIPAL ================= **/
+function getCleanActiveCars() {
+    let cars = [];
+    try {
+        cars = JSON.parse(localStorage.getItem('renteasy_cars')) || [];
+    } catch (e) {
+        cars = [];
+    }
+    cars = cars.filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
+    if (cars.length === 0) {
+        cars = [{
+            id: 'car_valledupar_01',
+            brand: 'Renault',
+            model: 'Duster Iconic 4x4 Turbo',
+            fullName: 'Renault Duster 4x4 Turbo',
+            name: 'Renault Duster 4x4 Turbo',
+            year: 2024,
+            category: 'SUV / Camioneta',
+            transmission: 'Automático',
+            fuel: 'Gasolina',
+            seats: 5,
+            price: 220000,
+            pricePerDay: 220000,
+            city: 'Valledupar',
+            image: 'img/car-rent-1.png',
+            status: 'Activo',
+            featured: true
+        }];
+    }
+    return cars.filter(c => c.status === 'Activo');
+}
+
+function renderFeaturedCarsOnHome() {
+    const container = document.getElementById('featured-cars-row');
+    if (!container) return;
+
+    const activeCars = getCleanActiveCars();
+    if (activeCars.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-4 text-muted">
+                <i class="fa fa-car fa-2x mb-2 text-primary"></i>
+                <p class="mb-0">Próximamente nuevos vehículos disponibles en el catálogo.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const featured = activeCars.slice(0, 6);
+    container.innerHTML = featured.map(car => {
+        const displayName = car.fullName || car.name || `${car.brand || ''} ${car.model || ''}`.trim();
+        const displayPrice = Number(car.pricePerDay || car.price || 220000).toLocaleString('es-CO');
+        const displayCat = car.category || car.type || 'SUV / Camioneta';
+        const displayCity = car.city || 'Valledupar';
+        const displayTrans = car.transmission || 'Automático';
+        const displayFuel = car.fuel || 'Gasolina';
+        const displaySeats = car.seats || 5;
+        const displayYear = car.year || 2024;
+        const displayImg = car.image || 'img/car-rent-1.png';
+
+        return `
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="rent-item mb-4 shadow-sm border rounded-lg overflow-hidden bg-white h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="position-relative">
+                            <img class="img-fluid w-100" src="${displayImg}" alt="${displayName}" style="height: 220px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
+                            <span class="badge badge-primary position-absolute px-3 py-2" style="top: 12px; left: 12px; font-size: 13px; border-radius: 20px;">
+                                <i class="fa fa-map-marker-alt mr-1"></i> ${displayCity}
+                            </span>
+                            <span class="badge badge-dark position-absolute px-2 py-1" style="top: 12px; right: 12px; font-size: 11px;">
+                                ${displayCat}
+                            </span>
+                        </div>
+                        <div class="p-4 pb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${displayName}</h5>
+                                <span class="badge badge-light border text-primary font-weight-bold">${displayYear}</span>
+                            </div>
+                            <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
+                                <div><i class="fa fa-cog text-primary"></i> ${displayTrans}</div>
+                                <div class="border-left border-right px-2"><i class="fa fa-gas-pump text-primary"></i> ${displayFuel}</div>
+                                <div><i class="fa fa-users text-primary"></i> ${displaySeats} Puestos</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-4 pt-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="small text-muted d-block">Tarifa por día</span>
+                            <h5 class="text-primary font-weight-bold mb-0">$${displayPrice} <small class="text-muted" style="font-size: 11px;">COP</small></h5>
+                        </div>
+                        <div class="btn-group">
+                            <a class="btn btn-outline-secondary btn-sm px-2" href="detail.html?id=${car.id}">Detalles</a>
+                            <a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/** ================= 13. RENUMERACIÓN SECUENCIAL DE SECCIONES VISIBLES ================= **/
+function renumberVisibleSections() {
+    const sections = document.querySelectorAll('.site-numbered-section');
+    if (!sections || sections.length === 0) return;
+
+    let seq = 1;
+    sections.forEach(sec => {
+        const isHidden = sec.style.display === 'none' || window.getComputedStyle(sec).display === 'none';
+        if (!isHidden) {
+            const numEl = sec.querySelector('.site-section-number');
+            if (numEl) {
+                numEl.textContent = String(seq).padStart(2, '0');
+            }
+            seq++;
+        }
+    });
 }
 
 /** ================= 10. MARCAS DE CARROS REGISTRADAS DINÁMICAMENTE ================= **/
@@ -673,4 +808,27 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', applyGlobalConfig);
 } else {
     applyGlobalConfig();
+}
+
+// Sincronización en tiempo real sin necesidad de recargar (F5) cuando el Superadmin guarda cambios en otra pestaña
+function handleLiveConfigSync() {
+    applyGlobalConfig();
+    if (typeof window.renderMarketplaceCars === 'function') {
+        try { window.renderMarketplaceCars(); } catch (e) { }
+    }
+    if (typeof window.refreshBookingSummary === 'function') {
+        try { window.refreshBookingSummary(); } catch (e) { }
+    }
+}
+
+window.addEventListener('storage', function (e) {
+    if (e.key === 'rentcar_global_config' || e.key === 'renteasy_cars' || e.key === 'rentcar_verified_reviews') {
+        handleLiveConfigSync();
+    }
+});
+
+if (RENTCAR_SYNC_CHANNEL) {
+    RENTCAR_SYNC_CHANNEL.onmessage = function () {
+        handleLiveConfigSync();
+    };
 }
