@@ -435,10 +435,17 @@ async function dbGetFeedback() {
     try { return JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { return []; }
 }
 
-async function dbResolveFeedback(id) {
+async function dbResolveFeedback(id, newStatus = 'Resuelto') {
     const client = getSupabaseClient();
     if (client && id) {
-        try { await client.from('reportes_feedback').update({ estado: 'Resuelto' }).eq('id', id); } catch (e) { }
+        try { await client.from('reportes_feedback').update({ estado: newStatus }).eq('id', id); } catch (e) { }
+    }
+}
+
+async function dbDeleteFeedback(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('reportes_feedback').delete().eq('id', id); } catch (e) { }
     }
 }
 
@@ -492,5 +499,70 @@ async function dbMarkOwnerAlertRead(id) {
     const client = getSupabaseClient();
     if (client && id) {
         try { await client.from('alertas_propietarios').update({ leida: true }).eq('id', id); } catch (e) { }
+    }
+}
+
+/** ================= 8. LOGS DE AUDITORÍA DEL SISTEMA ================= **/
+async function logSystemEvent(modulo, accion, detalle = '') {
+    let user = null;
+    try { user = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) { }
+    const entry = {
+        id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        usuario: user ? `${user.name || user.email}` : 'Visitante / Sistema',
+        rol: user ? (user.role || 'usuario') : 'publico',
+        modulo: modulo || 'Sistema',
+        accion: accion || 'Actividad',
+        detalle: detalle || '',
+        creado_en: new Date().toISOString()
+    };
+
+    try {
+        let logs = JSON.parse(localStorage.getItem('rentcar_audit_logs')) || [];
+        logs.unshift(entry);
+        if (logs.length > 500) logs = logs.slice(0, 500);
+        localStorage.setItem('rentcar_audit_logs', JSON.stringify(logs));
+    } catch (e) { }
+
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            await client.from('logs_auditoria').insert([{
+                usuario: entry.usuario,
+                rol: entry.rol,
+                modulo: entry.modulo,
+                accion: entry.accion,
+                detalle: entry.detalle,
+                creado_en: entry.creado_en
+            }]);
+        } catch (e) { }
+    }
+}
+window.logSystemEvent = logSystemEvent;
+
+async function dbGetAuditLogs() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('logs_auditoria').select('*').order('creado_en', { ascending: false }).limit(500);
+            if (!error && data) {
+                localStorage.setItem('rentcar_audit_logs', JSON.stringify(data));
+                return data;
+            }
+        } catch (e) { }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_audit_logs')) || []; } catch (e) { return []; }
+}
+
+async function dbDeleteAuditLogsByDateRange(fromIso, toIso) {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            let query = client.from('logs_auditoria').delete();
+            if (fromIso) query = query.gte('creado_en', fromIso);
+            if (toIso) query = query.lte('creado_en', toIso);
+            await query;
+        } catch (e) {
+            console.warn("Error depurando logs en Supabase:", e);
+        }
     }
 }

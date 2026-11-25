@@ -462,6 +462,13 @@
                         <i class="fa fa-file-contract"></i>
                         <span>Marco Legal & Contratos</span>
                     </a>
+
+                    <!-- 9. Logs y Auditoría -->
+                    <a class="admin-nav-item nav-link" id="tab-logs-pill" data-toggle="pill" href="#tab-logs"
+                        role="tab">
+                        <i class="fa fa-history"></i>
+                        <span>Logs & Auditoría</span>
+                    </a>
                 </nav>
             </div>
 
@@ -821,14 +828,21 @@
 
                     <!-- Buzón de Feedback, Quejas y Comunicación con Propietarios -->
                     <div class="section-card mt-4">
-                        <div class="section-card-header">
+                        <div class="section-card-header flex-wrap">
                             <div>
                                 <h5><i class="fa fa-bullhorn text-warning mr-2"></i> Quejas, Feedback de Conductores y Alertas a Propietarios</h5>
-                                <small class="text-muted">Revisa novedades reportadas por clientes y envía alertas internas o por WhatsApp/Correo al dueño del vehículo.</small>
+                                <small class="text-muted">Gestiona novedades por estado. Los casos marcados como Resueltos pasan a su pestaña para mantener limpia tu bandeja.</small>
                             </div>
-                            <button type="button" class="btn btn-primary btn-sm font-weight-bold" onclick="openOwnerAlertModal()">
-                                <i class="fa fa-paper-plane mr-1"></i> Enviar Alerta a Propietario
-                            </button>
+                            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0" style="gap: 8px;">
+                                <div class="btn-group btn-group-sm" role="group" id="feedback-filter-group">
+                                    <button type="button" class="btn btn-primary font-weight-bold active" onclick="setFeedbackFilter('pending', this)">Pendientes / Activos</button>
+                                    <button type="button" class="btn btn-outline-secondary font-weight-bold" onclick="setFeedbackFilter('resolved', this)">Resueltos</button>
+                                    <button type="button" class="btn btn-outline-secondary font-weight-bold" onclick="setFeedbackFilter('all', this)">Todos</button>
+                                </div>
+                                <button type="button" class="btn btn-warning text-dark btn-sm font-weight-bold" onclick="openOwnerAlertModal()">
+                                    <i class="fa fa-paper-plane mr-1"></i> Enviar Alerta a Propietario
+                                </button>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table class="table custom-table">
@@ -1902,6 +1916,66 @@
                     </form>
                 </div>
 
+                <!-- ================= MÓDULO 9: LOGS Y AUDITORÍA DEL SISTEMA ================= -->
+                <div class="tab-pane fade" id="tab-logs" role="tabpanel">
+                    <div class="section-card">
+                        <div class="section-card-header flex-wrap">
+                            <div>
+                                <h5><i class="fa fa-history text-primary mr-2"></i> Historial de Auditoría y Logs del Sitio</h5>
+                                <small class="text-muted">Registro cronológico de acciones realizadas por usuarios, propietarios y administración.</small>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold mt-2 mt-md-0" data-toggle="modal" data-target="#modalPurgeLogs">
+                                <i class="fa fa-shield-alt mr-1"></i> Depurar Logs por Fecha
+                            </button>
+                        </div>
+                        <div class="p-3 bg-light border-bottom">
+                            <div class="row">
+                                <div class="col-md-4 mb-2 mb-md-0">
+                                    <input type="text" id="logs-search-input" class="form-control form-control-sm" placeholder="Buscar usuario, acción o detalle...">
+                                </div>
+                                <div class="col-md-3 mb-2 mb-md-0">
+                                    <select id="logs-module-filter" class="form-control form-control-sm">
+                                        <option value="all">Todos los módulos</option>
+                                        <option value="Flota">Flota</option>
+                                        <option value="Tarifas">Tarifas</option>
+                                        <option value="Feedback">Feedback / Quejas</option>
+                                        <option value="Alertas">Alertas a Propietarios</option>
+                                        <option value="Finanzas">Finanzas</option>
+                                        <option value="KYC">Usuarios & KYC</option>
+                                        <option value="Reservas">Reservas & Disputas</option>
+                                        <option value="Auditoría">Auditoría</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2 mb-md-0">
+                                    <input type="date" id="logs-date-from" class="form-control form-control-sm" title="Desde">
+                                </div>
+                                <div class="col-md-2 mb-2 mb-md-0">
+                                    <input type="date" id="logs-date-to" class="form-control form-control-sm" title="Hasta">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-block" onclick="clearLogsFilters()" title="Limpiar filtros"><i class="fa fa-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>Usuario / Rol</th>
+                                        <th>Módulo</th>
+                                        <th>Acción</th>
+                                        <th>Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-logs-list">
+                                    <!-- Renderizado por js/admin-dashboard.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -1963,7 +2037,15 @@
                         </div>
                         <div class="form-group">
                             <label class="font-weight-bold small">Asunto o Tipo de Alerta *</label>
-                            <input type="text" id="oa-subject" class="form-control" required placeholder="Ej. Reporte de limpieza / Revisión de documentos">
+                            <select id="oa-subject-select" class="form-control mb-2" required>
+                                <option value="Limpieza / Estado del vehículo">Limpieza / Estado del vehículo</option>
+                                <option value="Precio elevado o tarifa">Precio elevado o tarifa</option>
+                                <option value="Atención del propietario">Atención del propietario</option>
+                                <option value="Revisión de documentos / SOAT">Revisión de documentos / SOAT</option>
+                                <option value="Otro comentario / Sugerencia">Otro comentario / Sugerencia</option>
+                                <option value="__custom__">Otro (Escribir asunto personalizado...)</option>
+                            </select>
+                            <input type="text" id="oa-subject-custom" class="form-control" style="display: none;" placeholder="Escribe el asunto personalizado...">
                         </div>
                         <div class="form-group mb-0">
                             <label class="font-weight-bold small">Mensaje para el Propietario *</label>
@@ -1986,17 +2068,54 @@
         </div>
     </div>
 
+    <!-- Modal: Depurar Logs por Fecha (Protegido con Contraseña Superadmin) -->
+    <div class="modal fade" id="modalPurgeLogs" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-lock mr-2"></i> Depurar Logs de Auditoría</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-purge-logs">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning small">
+                            <i class="fa fa-exclamation-triangle mr-1"></i> Esta acción eliminará permanentemente los registros del rango de fechas seleccionado. Solo el <strong>Superadmin</strong> puede ejecutarla.
+                        </div>
+                        <div class="row">
+                            <div class="col-6 form-group">
+                                <label class="small font-weight-bold">Desde (Fecha) *</label>
+                                <input type="date" id="purge-date-from" class="form-control" required>
+                            </div>
+                            <div class="col-6 form-group">
+                                <label class="small font-weight-bold">Hasta (Fecha) *</label>
+                                <input type="date" id="purge-date-to" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold text-danger">Contraseña del Superadmin *</label>
+                            <input type="password" id="purge-admin-password" class="form-control" required placeholder="Ingresa tu contraseña de administrador">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger btn-sm font-weight-bold px-4"><i class="fa fa-trash-alt mr-1"></i> Confirmar Eliminación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js"></script>
+    <script src="js/supabase-client.js?v=20261125_6"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <!-- Motor de Configuración y Panel de Administración -->
-    <script src="js/config.js"></script>
-    <script src="js/admin-dashboard.js"></script>
+    <script src="js/config.js?v=20261125_6"></script>
+    <script src="js/admin-dashboard.js?v=20261125_6"></script>
 </body>
 
 </html>

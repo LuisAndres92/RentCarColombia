@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderUsersManagement();
     renderBookingsAndDisputes();
     renderFeedbackAndAlertsAdmin();
+    renderAuditLogsAdmin();
     loadPaymentsConfig();
     syncFinancialLabels();
     loadCmsConfig();
@@ -290,12 +291,15 @@ async function syncLiveDataFromSupabase() {
             }
         }
 
-        // 4. Consultar reportes de feedback y configuración global en Supabase
+        // 4. Consultar reportes de feedback, logs y configuración global en Supabase
         if (typeof dbGetFeedback === 'function') {
             await dbGetFeedback();
         }
         if (typeof dbGetConfig === 'function') {
             await dbGetConfig();
+        }
+        if (typeof dbGetAuditLogs === 'function') {
+            await dbGetAuditLogs();
         }
 
         // Refrescar vistas con datos en tiempo real de Supabase
@@ -303,6 +307,7 @@ async function syncLiveDataFromSupabase() {
         renderFleetModeration();
         renderBookingsAndDisputes();
         renderFeedbackAndAlertsAdmin();
+        renderAuditLogsAdmin();
         renderUsersManagement();
     } catch (e) {
         console.warn("Sincronización en segundo plano con Supabase:", e);
@@ -714,14 +719,61 @@ window.acceptCounterOffer = function (carId) {
     notifySaved(`Contraoferta aceptada ($${formatCop(newPrice)} COP/día). "${car.fullName}" ya está Activo.`);
 };
 
-window.openOwnerAlertModal = function (preselectCarId = '') {
+let currentFeedbackFilter = 'pending';
+
+window.setFeedbackFilter = function (filterMode, btnEl) {
+    currentFeedbackFilter = filterMode || 'pending';
+    const group = document.getElementById('feedback-filter-group');
+    if (group) {
+        group.querySelectorAll('button').forEach(b => {
+            b.classList.remove('btn-primary', 'active');
+            b.classList.add('btn-outline-secondary');
+        });
+        if (btnEl) {
+            btnEl.classList.remove('btn-outline-secondary');
+            btnEl.classList.add('btn-primary', 'active');
+        }
+    }
+    renderFeedbackAndAlertsAdmin();
+};
+
+window.openOwnerAlertModal = function (preselectCarId = '', feedbackId = '') {
     const select = document.getElementById('oa-car-select');
     const cars = getCars();
     if (select) {
         select.innerHTML = cars.map(c => `<option value="${c.id}" ${c.id === preselectCarId ? 'selected' : ''}>${c.fullName} — ${c.ownerName || 'Propietario'}</option>`).join('');
     }
-    document.getElementById('oa-subject').value = '';
-    document.getElementById('oa-message').value = '';
+
+    const subjSelect = document.getElementById('oa-subject-select');
+    const subjCustom = document.getElementById('oa-subject-custom');
+    const msgBox = document.getElementById('oa-message');
+
+    let fbItem = null;
+    if (feedbackId) {
+        try {
+            const items = JSON.parse(localStorage.getItem('rentcar_feedback')) || [];
+            fbItem = items.find(i => i && i.id === feedbackId);
+        } catch (e) { }
+    }
+
+    if (fbItem && subjSelect) {
+        const hasOpt = Array.from(subjSelect.options).some(o => o.value === fbItem.subject);
+        if (hasOpt) {
+            subjSelect.value = fbItem.subject;
+            if (subjCustom) { subjCustom.style.display = 'none'; subjCustom.value = ''; }
+        } else {
+            subjSelect.value = '__custom__';
+            if (subjCustom) { subjCustom.style.display = 'block'; subjCustom.value = fbItem.subject || ''; }
+        }
+        if (msgBox) {
+            msgBox.value = `Hola, recibimos un reporte sobre "${fbItem.subject}": "${fbItem.message}". Por favor ayúdanos a revisarlo para mantener la calidad en Rent Car Colombia.`;
+        }
+    } else if (subjSelect) {
+        subjSelect.selectedIndex = 0;
+        if (subjCustom) { subjCustom.style.display = 'none'; subjCustom.value = ''; }
+        if (msgBox) msgBox.value = '';
+    }
+
     document.getElementById('oa-notify-actions').style.display = 'none';
     $('#modalOwnerAlert').modal('show');
 };
@@ -730,15 +782,31 @@ function renderFeedbackAndAlertsAdmin() {
     const tbody = document.getElementById('feedback-alerts-list');
     if (!tbody) return;
 
-    let items = [];
-    try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
+    let allItems = [];
+    try { allItems = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { allItems = []; }
+
+    const items = allItems.filter(f => {
+        if (!f) return false;
+        const st = f.status || 'Pendiente';
+        if (currentFeedbackFilter === 'pending') return st !== 'Resuelto';
+        if (currentFeedbackFilter === 'resolved') return st === 'Resuelto';
+        return true;
+    });
 
     if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No hay quejas ni reportes de feedback registrados.</td></tr>`;
+        const emptyMsg = currentFeedbackFilter === 'pending'
+            ? 'No hay quejas ni reportes pendientes en este momento.'
+            : currentFeedbackFilter === 'resolved'
+            ? 'No hay reportes en el historial de resueltos.'
+            : 'No hay quejas ni reportes de feedback registrados.';
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">${emptyMsg}</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = items.map((f, idx) => `
+    tbody.innerHTML = items.map(f => {
+        const st = f.status || 'Pendiente';
+        const badgeCls = st === 'Resuelto' ? 'badge-success' : st === 'En Seguimiento' ? 'badge-info' : 'badge-warning';
+        return `
         <tr>
             <td class="small text-muted">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('es-CO') : 'Reciente'}</td>
             <td class="font-weight-bold text-dark">${f.carName || 'General'}</td>
@@ -751,40 +819,114 @@ function renderFeedbackAndAlertsAdmin() {
                 <span class="text-muted">${f.message || ''}</span>
             </td>
             <td>
-                <span class="badge ${f.status === 'Resuelto' ? 'badge-success' : 'badge-warning'} px-2 py-1">${f.status || 'Pendiente'}</span>
+                <span class="badge ${badgeCls} px-2 py-1">${st}</span>
             </td>
             <td>
-                <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-success" title="Avisar al propietario" onclick="openOwnerAlertModal('${f.carId || ''}')"><i class="fab fa-whatsapp"></i> Avisar Dueño</button>
-                    ${f.status !== 'Resuelto' ? `<button type="button" class="btn btn-outline-primary" title="Marcar resuelto" onclick="resolveFeedbackAdmin(${idx})"><i class="fa fa-check"></i></button>` : ''}
+                <div class="btn-group btn-group-sm flex-wrap">
+                    <button type="button" class="btn btn-outline-success" title="Avisar al propietario con el asunto del reporte" onclick="openOwnerAlertModal('${f.carId || ''}', '${f.id}')"><i class="fab fa-whatsapp"></i> Avisar Dueño</button>
+                    ${st === 'Pendiente' ? `<button type="button" class="btn btn-outline-info" title="Marcar En Seguimiento" onclick="updateFeedbackStatusAdmin('${f.id}', 'En Seguimiento')"><i class="fa fa-eye"></i></button>` : ''}
+                    ${st !== 'Resuelto' ? `<button type="button" class="btn btn-outline-primary" title="Marcar Resuelto (mover a Resueltos)" onclick="updateFeedbackStatusAdmin('${f.id}', 'Resuelto')"><i class="fa fa-check"></i></button>` : ''}
+                    ${st === 'Resuelto' ? `<button type="button" class="btn btn-outline-danger" title="Eliminar definitivamente" onclick="deleteFeedbackAdmin('${f.id}')"><i class="fa fa-trash"></i></button>` : ''}
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
-window.resolveFeedbackAdmin = function (idx) {
+window.updateFeedbackStatusAdmin = function (feedbackId, newStatus) {
     let items = [];
     try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
-    if (items[idx]) {
-        items[idx].status = 'Resuelto';
+    const item = items.find(i => i && i.id === feedbackId);
+    if (item) {
+        item.status = newStatus;
         localStorage.setItem('rentcar_feedback', JSON.stringify(items));
-        if (typeof dbResolveFeedback === 'function' && items[idx].id) {
-            dbResolveFeedback(items[idx].id);
-        }
+        if (typeof dbResolveFeedback === 'function') dbResolveFeedback(feedbackId, newStatus);
+        if (typeof window.logSystemEvent === 'function') window.logSystemEvent('Feedback', `Estado cambiado a ${newStatus}`, `${item.carName || ''} - ${item.subject || ''}`);
         renderFeedbackAndAlertsAdmin();
         renderFinancialOverview();
-        notifySaved('Reporte marcado como resuelto.');
+        renderAuditLogsAdmin();
+        notifySaved(`Reporte actualizado a estado: ${newStatus}.`);
     }
+};
+
+window.deleteFeedbackAdmin = function (feedbackId) {
+    if (!confirm('¿Eliminar permanentemente este reporte resuelto?')) return;
+    let items = [];
+    try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
+    const removed = items.find(i => i && i.id === feedbackId);
+    items = items.filter(i => i && i.id !== feedbackId);
+    localStorage.setItem('rentcar_feedback', JSON.stringify(items));
+    if (typeof dbDeleteFeedback === 'function') dbDeleteFeedback(feedbackId);
+    if (typeof window.logSystemEvent === 'function' && removed) window.logSystemEvent('Feedback', 'Reporte eliminado', `${removed.carName || ''} - ${removed.subject || ''}`);
+    renderFeedbackAndAlertsAdmin();
+    renderFinancialOverview();
+    renderAuditLogsAdmin();
+    notifySaved('Reporte eliminado del historial.');
+};
+
+/** ================= MÓDULO 9: LOGS Y AUDITORÍA DEL SISTEMA ================= **/
+function renderAuditLogsAdmin() {
+    const tbody = document.getElementById('audit-logs-list');
+    if (!tbody) return;
+
+    let logs = [];
+    try { logs = JSON.parse(localStorage.getItem('rentcar_audit_logs')) || []; } catch (e) { logs = []; }
+
+    const q = (document.getElementById('logs-search-input')?.value || '').trim().toLowerCase();
+    const mod = document.getElementById('logs-module-filter')?.value || 'all';
+    const dFrom = document.getElementById('logs-date-from')?.value || '';
+    const dTo = document.getElementById('logs-date-to')?.value || '';
+
+    const filtered = logs.filter(l => {
+        if (!l) return false;
+        if (mod !== 'all' && l.modulo !== mod) return false;
+        if (q) {
+            const hay = `${l.usuario || ''} ${l.modulo || ''} ${l.accion || ''} ${l.detalle || ''}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+        }
+        if (dFrom && l.creado_en && l.creado_en.slice(0, 10) < dFrom) return false;
+        if (dTo && l.creado_en && l.creado_en.slice(0, 10) > dTo) return false;
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No hay registros de auditoría que coincidan con el filtro.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.slice(0, 200).map(l => {
+        const dt = l.creado_en ? new Date(l.creado_en).toLocaleString('es-CO') : '';
+        return `
+            <tr>
+                <td class="small text-muted" style="white-space: nowrap;">${dt}</td>
+                <td class="small">
+                    <strong class="text-dark">${l.usuario || 'Sistema'}</strong>
+                    <span class="badge badge-light border ml-1 text-uppercase" style="font-size: 10px;">${l.rol || ''}</span>
+                </td>
+                <td><span class="badge badge-primary px-2 py-1">${l.modulo || 'Sistema'}</span></td>
+                <td class="small font-weight-bold text-dark">${l.accion || ''}</td>
+                <td class="small text-muted">${l.detalle || ''}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+window.clearLogsFilters = function () {
+    setVal('logs-search-input', '');
+    setVal('logs-module-filter', 'all');
+    setVal('logs-date-from', '');
+    setVal('logs-date-to', '');
+    renderAuditLogsAdmin();
 };
 
 // Sincronización en vivo de alertas y pendientes cuando llegan desde otras pestañas
 window.addEventListener('storage', function (e) {
-    if (e.key === 'rentcar_feedback' || e.key === 'renteasy_cars' || e.key === 'renteasy_bookings') {
+    if (e.key === 'rentcar_feedback' || e.key === 'renteasy_cars' || e.key === 'renteasy_bookings' || e.key === 'rentcar_audit_logs') {
         renderFinancialOverview();
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderBookingsAndDisputes();
         renderFeedbackAndAlertsAdmin();
+        renderAuditLogsAdmin();
     }
 });
 
@@ -1624,6 +1766,10 @@ function setupFormListeners() {
             if (typeof dbUpdateVehiculoFields === 'function') {
                 dbUpdateVehiculoFields(carId, { estado: 'Ajuste de Tarifa', negociacion_tarifa: car.priceNegotiation });
             }
+            if (typeof window.logSystemEvent === 'function') {
+                window.logSystemEvent('Tarifas', 'Sugerencia de tarifa enviada', `${car.fullName} — $${suggestedPrice}/día`);
+            }
+            renderAuditLogsAdmin();
             renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
             renderFinancialOverview();
 
@@ -1640,17 +1786,31 @@ function setupFormListeners() {
     }
 
     // 7. Formulario de Alerta / Feedback Directo al Propietario
+    const oaSubjSelect = document.getElementById('oa-subject-select');
+    const oaSubjCustom = document.getElementById('oa-subject-custom');
+    if (oaSubjSelect && oaSubjCustom) {
+        oaSubjSelect.addEventListener('change', function () {
+            oaSubjCustom.style.display = this.value === '__custom__' ? 'block' : 'none';
+            if (this.value === '__custom__') oaSubjCustom.focus();
+        });
+    }
+
     const formOwnerAlert = document.getElementById('form-owner-alert');
     if (formOwnerAlert) {
         formOwnerAlert.addEventListener('submit', function (e) {
             e.preventDefault();
             const carId = document.getElementById('oa-car-select').value;
-            const subject = document.getElementById('oa-subject').value.trim();
+            const selVal = document.getElementById('oa-subject-select').value;
+            const customVal = document.getElementById('oa-subject-custom').value.trim();
+            const subject = selVal === '__custom__' ? customVal : selVal;
             const message = document.getElementById('oa-message').value.trim();
 
             const cars = getCars();
             const car = cars.find(c => c.id === carId);
-            if (!car || !subject || !message) return;
+            if (!car || !subject || !message) {
+                alert('Por favor completa el asunto y el mensaje para el propietario.');
+                return;
+            }
 
             let alerts = [];
             try { alerts = JSON.parse(localStorage.getItem('rentcar_owner_alerts')) || []; } catch (err) { alerts = []; }
@@ -1670,6 +1830,8 @@ function setupFormListeners() {
             alerts.unshift(newAlert);
             localStorage.setItem('rentcar_owner_alerts', JSON.stringify(alerts));
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('owner_alert');
+            if (typeof window.logSystemEvent === 'function') window.logSystemEvent('Alertas', 'Alerta enviada al propietario', `${car.fullName} — ${subject}`);
+            renderAuditLogsAdmin();
 
             const owner = getOwnerContactInfo(car);
             const panelUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'dashboard-propietario.html')}`;
@@ -1680,6 +1842,58 @@ function setupFormListeners() {
                 : '#';
             document.getElementById('oa-notify-actions').style.display = 'block';
             notifySaved('Alerta enviada al panel del propietario.');
+        });
+    }
+
+    // 8. Filtros y Depuración Protegida de Logs de Auditoría
+    ['logs-search-input', 'logs-module-filter', 'logs-date-from', 'logs-date-to'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', renderAuditLogsAdmin);
+            el.addEventListener('change', renderAuditLogsAdmin);
+        }
+    });
+
+    const formPurgeLogs = document.getElementById('form-purge-logs');
+    if (formPurgeLogs) {
+        formPurgeLogs.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const dFrom = document.getElementById('purge-date-from').value;
+            const dTo = document.getElementById('purge-date-to').value;
+            const pwd = document.getElementById('purge-admin-password').value;
+
+            // Validar contraseña contra la cuenta Superadmin registrada
+            const users = getUsers();
+            const adminAcc = users.find(u => u.role === 'admin' || u.id === 'usr_admin') || { password: 'admin' };
+            const validPwd = adminAcc.password || 'admin';
+
+            if (pwd !== validPwd) {
+                alert('Contraseña de Superadmin incorrecta. No se eliminó ningún registro.');
+                return;
+            }
+
+            let logs = [];
+            try { logs = JSON.parse(localStorage.getItem('rentcar_audit_logs')) || []; } catch (err) { logs = []; }
+            const beforeCount = logs.length;
+            logs = logs.filter(l => {
+                const day = (l.creado_en || '').slice(0, 10);
+                if (!day) return true;
+                return day < dFrom || day > dTo;
+            });
+            const removedCount = beforeCount - logs.length;
+            localStorage.setItem('rentcar_audit_logs', JSON.stringify(logs));
+
+            if (typeof dbDeleteAuditLogsByDateRange === 'function') {
+                await dbDeleteAuditLogsByDateRange(`${dFrom}T00:00:00.000Z`, `${dTo}T23:59:59.999Z`);
+            }
+            if (typeof window.logSystemEvent === 'function') {
+                await window.logSystemEvent('Auditoría', 'Depuración de logs por fecha', `Eliminados ${removedCount} registros entre ${dFrom} y ${dTo}`);
+            }
+
+            formPurgeLogs.reset();
+            $('#modalPurgeLogs').modal('hide');
+            renderAuditLogsAdmin();
+            notifySaved(`Depuración completada: ${removedCount} registros eliminados entre ${dFrom} y ${dTo}.`);
         });
     }
 }

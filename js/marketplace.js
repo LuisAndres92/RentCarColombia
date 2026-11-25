@@ -276,6 +276,9 @@ function initCarDetail() {
             if (typeof dbSaveFeedback === 'function') {
                 await dbSaveFeedback(newItem);
             }
+            if (typeof window.logSystemEvent === 'function') {
+                window.logSystemEvent('Feedback', 'Nuevo reporte enviado', `${newItem.carName} — ${newItem.subject}`);
+            }
             items.unshift(newItem);
             localStorage.setItem('rentcar_feedback', JSON.stringify(items));
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('feedback_updated');

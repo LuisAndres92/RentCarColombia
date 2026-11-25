@@ -54,6 +54,21 @@ ALTER TABLE public.alertas_propietarios ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Gestion total alertas" ON public.alertas_propietarios;
 CREATE POLICY "Gestion total alertas" ON public.alertas_propietarios FOR ALL USING (true) WITH CHECK (true);
 
+-- 5. Tabla de Logs de Auditoría del Sistema
+CREATE TABLE IF NOT EXISTS public.logs_auditoria (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    usuario text,
+    rol text,
+    modulo text NOT NULL,
+    accion text NOT NULL,
+    detalle text,
+    creado_en timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.logs_auditoria ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion total logs" ON public.logs_auditoria;
+CREATE POLICY "Gestion total logs" ON public.logs_auditoria FOR ALL USING (true) WITH CHECK (true);
+
 -- 6. Verificación rápida de tablas creadas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
 UNION ALL
@@ -61,4 +76,6 @@ SELECT 'configuracion_sitio', count(*) FROM public.configuracion_sitio
 UNION ALL
 SELECT 'reportes_feedback', count(*) FROM public.reportes_feedback
 UNION ALL
-SELECT 'alertas_propietarios', count(*) FROM public.alertas_propietarios;
+SELECT 'alertas_propietarios', count(*) FROM public.alertas_propietarios
+UNION ALL
+SELECT 'logs_auditoria', count(*) FROM public.logs_auditoria;

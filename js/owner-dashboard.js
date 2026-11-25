@@ -201,6 +201,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (typeof dbSaveVehiculo === 'function') {
                 dbSaveVehiculo(newCar);
             }
+            if (typeof window.logSystemEvent === 'function') {
+                window.logSystemEvent('Flota', 'Vehículo publicado por propietario', `${newCar.fullName} ($${newCar.pricePerDay}/día)`);
+            }
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
             alert(`¡Excelente! Tu vehículo "${newCar.fullName}" ha sido publicado con ${finalGallery.length} ${finalGallery.length === 1 ? 'foto' : 'fotos'}.`);
@@ -1106,6 +1109,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 negociacion_tarifa: car.priceNegotiation
             });
         }
+        if (typeof window.logSystemEvent === 'function') {
+            window.logSystemEvent('Tarifas', 'Propietario aceptó tarifa sugerida', `${car.fullName} — $${newPrice}/día`);
+        }
         if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
         renderOwnerAlertsAndProposals();
@@ -1152,6 +1158,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     estado: 'Contraoferta',
                     negociacion_tarifa: car.priceNegotiation
                 });
+            }
+            if (typeof window.logSystemEvent === 'function') {
+                window.logSystemEvent('Tarifas', 'Propietario envió contraoferta', `${car.fullName} — $${counterPrice}/día`);
             }
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
