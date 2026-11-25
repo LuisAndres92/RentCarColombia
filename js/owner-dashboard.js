@@ -904,66 +904,28 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!localStorage.getItem('renteasy_cars')) {
             const initialCars = [
                 {
-                    id: 'car_1',
-                    ownerId: 'usr_demo_host',
-                    ownerName: 'Carlos Mendoza',
+                    id: 'car_valledupar_01',
+                    ownerId: 'usr_admin',
+                    ownerName: 'Rent Car Colombia',
                     ownerPhone: '+57 316 235 7871',
-                    brand: 'Mazda',
-                    model: 'CX-30 Touring',
-                    fullName: 'Mazda CX-30',
-                    year: 2023,
-                    category: 'SUV / Camioneta',
-                    transmission: 'Automático',
-                    fuel: 'Gasolina',
-                    seats: 5,
-                    pricePerDay: 220000,
-                    city: 'Bogotá',
-                    mileage: '250 km/día',
-                    description: 'Excelente camioneta familiar, bajo consumo, cámara de reversa y conectividad Apple CarPlay / Android Auto.',
-                    image: 'img/car-rent-1.png',
-                    status: 'Activo',
-                    createdAt: new Date().toISOString()
-                },
-                {
-                    id: 'car_2',
-                    ownerId: 'usr_demo_host',
-                    ownerName: 'Carlos Mendoza',
-                    ownerPhone: '+57 316 235 7871',
-                    brand: 'Toyota',
-                    model: 'Corolla Cross Híbrido',
-                    fullName: 'Toyota Corolla Cross',
+                    brand: 'Renault',
+                    model: 'Duster Iconic 4x4 Turbo',
+                    fullName: 'Renault Duster 4x4 Turbo',
+                    name: 'Renault Duster 4x4 Turbo',
                     year: 2024,
                     category: 'SUV / Camioneta',
+                    type: 'SUV / Camioneta',
                     transmission: 'Automático',
-                    fuel: 'Híbrido',
-                    seats: 5,
-                    pricePerDay: 260000,
-                    city: 'Medellín',
-                    mileage: 'Ilimitado',
-                    description: 'Sin pico y placa por ser híbrido. Máximo confort, seguridad Toyota Safety Sense y baúl espacioso.',
-                    image: 'img/car-rent-2.png',
-                    status: 'Activo',
-                    createdAt: new Date().toISOString()
-                },
-                {
-                    id: 'car_3',
-                    ownerId: 'usr_other_host',
-                    ownerName: 'Mariana Silva',
-                    ownerPhone: '+57 310 555 8899',
-                    brand: 'Chevrolet',
-                    model: 'Onix RS Turbo',
-                    fullName: 'Chevrolet Onix Turbo',
-                    year: 2023,
-                    category: 'Compacto',
-                    transmission: 'Mecánico',
                     fuel: 'Gasolina',
                     seats: 5,
-                    pricePerDay: 150000,
-                    city: 'Cali',
-                    mileage: '200 km/día',
-                    description: 'Económico en combustible, perfecto para ciudad y carretera, aire acondicionado y pantalla táctil.',
-                    image: 'img/car-rent-3.png',
+                    price: 220000,
+                    pricePerDay: 220000,
+                    city: 'Valledupar',
+                    mileage: '250 km/día',
+                    description: 'Camioneta todoterreno 4x4 turbo de demostración. Totalmente equipada, SOAT vigente, seguro todo riesgo y mantenimiento al día en Valledupar.',
+                    image: 'img/car-rent-1.png',
                     status: 'Activo',
+                    featured: true,
                     createdAt: new Date().toISOString()
                 }
             ];
@@ -973,28 +935,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initDefaultBookings() {
         if (!localStorage.getItem('renteasy_bookings')) {
-            const initialBookings = [
-                {
-                    id: 'book_101',
-                    carId: 'car_1',
-                    carName: 'Mazda CX-30 (2023)',
-                    carCity: 'Bogotá',
-                    ownerId: 'usr_demo_host',
-                    renterName: 'Laura Gómez',
-                    renterPhone: '+57 311 987 6543',
-                    renterEmail: 'conductor@ejemplo.com',
-                    startDate: '2026-11-28',
-                    endDate: '2026-12-01',
-                    totalDays: 3,
-                    dailyRate: 220000,
-                    totalPrice: 660000,
-                    platformFee: 99000, // 15%
-                    ownerEarnings: 561000, // 85%
-                    status: 'Pendiente',
-                    createdAt: new Date().toISOString()
-                }
-            ];
-            localStorage.setItem('renteasy_bookings', JSON.stringify(initialBookings));
+            localStorage.setItem('renteasy_bookings', JSON.stringify([]));
         }
     }
 });

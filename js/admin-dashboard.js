@@ -3,15 +3,44 @@
  * Gestión integral: Finanzas, Moderación de Flota, KYC de Usuarios, Disputas, Pasarelas y CMS
  */
 
+// Único vehículo inicial oficial de ejemplo (Base Valledupar)
+const SINGLE_SAMPLE_CAR = {
+    id: 'car_valledupar_01',
+    ownerId: 'usr_admin',
+    ownerName: 'Rent Car Colombia',
+    ownerPhone: '+57 316 235 7871',
+    brand: 'Renault',
+    model: 'Duster Iconic 4x4 Turbo',
+    fullName: 'Renault Duster 4x4 Turbo',
+    name: 'Renault Duster 4x4 Turbo',
+    year: 2024,
+    category: 'SUV / Camioneta',
+    type: 'SUV / Camioneta',
+    transmission: 'Automático',
+    fuel: 'Gasolina',
+    seats: 5,
+    price: 220000,
+    pricePerDay: 220000,
+    city: 'Valledupar',
+    mileage: '250 km/día',
+    description: 'Camioneta todoterreno 4x4 turbo de demostración. Totalmente equipada, SOAT vigente, seguro todo riesgo y mantenimiento al día en Valledupar.',
+    image: 'img/car-rent-1.png',
+    status: 'Activo',
+    featured: true,
+    soat: true,
+    soat_vigente: true,
+    createdAt: new Date().toISOString()
+};
+
 document.addEventListener('DOMContentLoaded', function () {
     // 1. Verificación de Seguridad y Sesión
     const currentAdmin = checkAdminSession();
     if (!currentAdmin) return;
 
-    // Inicializar colecciones de prueba si no existen
+    // Inicializar datos limpios de producción (1 solo auto de ejemplo, 0 reservas de prueba)
     initAdminData();
 
-    // 2. Renderizar todas las vistas del Backoffice
+    // 2. Renderizar todas las vistas del Backoffice con datos reales
     renderFinancialOverview();
     renderFleetModeration();
     renderUsersManagement();
@@ -28,7 +57,30 @@ document.addEventListener('DOMContentLoaded', function () {
     // 3. Manejadores de Formularios y Acciones
     setupFormListeners();
 
-    // 4. Cerrar Sesión
+    // 4. Soporte para navegación directa por hash (#fleet, #users, #bookings, #payments)
+    const initialHash = (window.location.hash || '').replace('#', '');
+    if (initialHash) {
+        const targetPill = document.getElementById(`tab-${initialHash}-pill`);
+        if (targetPill) {
+            $(targetPill).tab('show');
+        }
+    }
+
+    // Al cambiar manualmente de pestaña en el menú lateral, actualizar hash
+    $('#admin-pills-tab a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+        const targetHref = $(e.target).attr('href');
+        if (targetHref && targetHref.startsWith('#tab-')) {
+            const h = targetHref.replace('#tab-', '');
+            if (history.replaceState) {
+                history.replaceState(null, null, `#${h}`);
+            }
+        }
+    });
+
+    // 5. Sincronizar en segundo plano con base de datos real en Supabase
+    syncLiveDataFromSupabase();
+
+    // 6. Cerrar Sesión
     document.querySelectorAll('.btn-admin-logout').forEach(btn => {
         btn.addEventListener('click', async function (e) {
             e.preventDefault();
@@ -67,21 +119,21 @@ function renderFinancialOverview() {
     const bookings = getBookings();
     const users = getUsers();
 
-    // Cálculos
-    const totalVolume = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
-    const platformEarnings = bookings.reduce((sum, b) => sum + (b.platformFee || Math.round((b.totalPrice || 0) * 0.15)), 0);
-    const ownerPayouts = bookings.reduce((sum, b) => sum + (b.ownerEarnings || Math.round((b.totalPrice || 0) * 0.85)), 0);
+    // Cálculos basados en transacciones y reservas reales
+    const totalVolume = bookings.reduce((sum, b) => sum + (parseFloat(b.totalPrice) || 0), 0);
+    const platformEarnings = bookings.reduce((sum, b) => sum + (parseFloat(b.platformFee) || Math.round((parseFloat(b.totalPrice) || 0) * 0.15)), 0);
+    const ownerPayouts = bookings.reduce((sum, b) => sum + (parseFloat(b.ownerEarnings) || Math.round((parseFloat(b.totalPrice) || 0) * 0.85)), 0);
     const activeTrips = bookings.filter(b => b.status === 'En Curso' || b.status === 'Aceptada').length;
     const pendingApprovalCars = cars.filter(c => c.status === 'En Revision').length;
     const pendingDisputes = bookings.filter(b => b.status === 'Disputa').length;
 
-    // Inyectar en el DOM
+    // Inyectar en el DOM métricas 100% reales
     setElemText('stat-gmv-volume', `$${formatCop(totalVolume)} COP`);
     setElemText('stat-platform-profit', `$${formatCop(platformEarnings)} COP`);
     setElemText('stat-owner-payouts', `$${formatCop(ownerPayouts)} COP`);
-    setElemText('stat-fleet-total', `${cars.length} vehículos`);
-    setElemText('stat-active-trips', `${activeTrips} viajes`);
-    setElemText('stat-total-users', `${users.length} usuarios`);
+    setElemText('stat-fleet-total', `${cars.length} ${cars.length === 1 ? 'vehículo' : 'vehículos'}`);
+    setElemText('stat-active-trips', `${activeTrips} ${activeTrips === 1 ? 'viaje' : 'viajes'}`);
+    setElemText('stat-total-users', `${users.length} ${users.length === 1 ? 'usuario' : 'usuarios'}`);
 
     // Badges de alerta rápida en el menú lateral
     const badgeCarMod = document.getElementById('badge-cars-pending');
@@ -91,6 +143,108 @@ function renderFinancialOverview() {
     }
 
     const badgeDisputes = document.getElementById('badge-disputes-pending');
+    if (badgeDisputes) {
+        badgeDisputes.innerText = pendingDisputes;
+        badgeDisputes.style.display = pendingDisputes > 0 ? 'inline-block' : 'none';
+    }
+}
+
+/** Sincronización en vivo con base de datos Supabase en segundo plano **/
+async function syncLiveDataFromSupabase() {
+    if (typeof getSupabaseClient !== 'function') return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+        // 1. Consultar vehículos registrados en Supabase
+        const { data: dbCars, error: errCars } = await client.from('vehiculos').select('*').order('creado_en', { ascending: false });
+        if (!errCars && dbCars && dbCars.length > 0) {
+            const mappedCars = dbCars.map(v => {
+                const rawCat = v.categoria || v.category || v.tipo || v.type;
+                const cleanCat = (rawCat && rawCat !== 'undefined' && rawCat !== 'null') ? rawCat : 'SUV / Camioneta';
+                const rawPrice = parseFloat(v.precio_por_dia || v.precio || 220000);
+                const cleanCity = (v.ciudad && v.ciudad !== 'undefined') ? v.ciudad : 'Valledupar';
+                const cleanTransmission = (v.transmision && v.transmision !== 'undefined') ? v.transmision : 'Automático';
+                const cleanFuel = (v.combustible && v.combustible !== 'undefined') ? v.combustible : 'Gasolina';
+                const cleanSeats = parseInt(v.puestos || v.seats) || 5;
+                const cleanYear = parseInt(v.año || v.anio || v.year) || 2024;
+                const cleanName = v.nombre_completo || `${v.marca || ''} ${v.modelo || ''}`.trim() || 'Vehículo en Alquiler';
+
+                return {
+                    id: v.id,
+                    brand: v.marca || 'Vehículo',
+                    model: v.modelo || '',
+                    name: cleanName,
+                    fullName: cleanName,
+                    year: cleanYear,
+                    type: cleanCat,
+                    category: cleanCat,
+                    transmission: cleanTransmission,
+                    fuel: cleanFuel,
+                    seats: cleanSeats,
+                    price: rawPrice,
+                    pricePerDay: rawPrice,
+                    city: cleanCity,
+                    mileage: v.kilometraje_limite || '250 km/día',
+                    description: v.descripcion || '',
+                    image: v.imagen_url || 'img/car-rent-1.png',
+                    status: v.estado || 'Activo',
+                    ownerId: v.propietario_id,
+                    createdAt: v.creado_en
+                };
+            });
+            saveCars(mappedCars);
+        }
+
+        // 2. Consultar reservas registradas en Supabase
+        const { data: dbBookings, error: errBookings } = await client.from('reservas').select('*').order('creado_en', { ascending: false });
+        if (!errBookings && dbBookings) {
+            const mappedBookings = dbBookings.map(r => ({
+                id: r.id,
+                carId: r.vehiculo_id,
+                ownerId: r.propietario_id,
+                driverId: r.conductor_id,
+                startDate: r.fecha_inicio,
+                endDate: r.fecha_fin,
+                totalDays: r.total_dias,
+                dailyRate: parseFloat(r.tarifa_diaria),
+                totalPrice: parseFloat(r.total_cobrado || r.subtotal_alquiler || 0),
+                platformFee: parseFloat(r.comision_plataforma_15 || 0),
+                ownerEarnings: parseFloat(r.ganancia_propietario_85 || 0),
+                deposit: parseFloat(r.deposito_garantia || 200000),
+                status: r.estado_reserva || 'Pendiente',
+                paymentStatus: r.estado_pago || 'Autorizado',
+                createdAt: r.creado_en
+            }));
+            saveBookings(mappedBookings);
+        }
+
+        // 3. Consultar perfiles registrados en Supabase
+        const { data: dbProfiles, error: errProfiles } = await client.from('perfiles').select('*');
+        if (!errProfiles && dbProfiles && dbProfiles.length > 0) {
+            const mappedUsers = dbProfiles.map(p => ({
+                id: p.id,
+                name: p.nombre_completo || p.email.split('@')[0],
+                email: p.email,
+                phone: p.telefono || '',
+                role: p.rol || 'conductor',
+                city: p.ciudad || 'Valledupar',
+                verified: p.identidad_verificada || false,
+                banned: false,
+                createdAt: p.creado_en
+            }));
+            saveUsers(mappedUsers);
+        }
+
+        // Refrescar vistas con datos en tiempo real de Supabase
+        renderFinancialOverview();
+        renderFleetModeration();
+        renderBookingsAndDisputes();
+        renderUsersManagement();
+    } catch (e) {
+        console.warn("Sincronización en segundo plano con Supabase:", e);
+    }
+}
     if (badgeDisputes) {
         badgeDisputes.innerText = pendingDisputes;
         badgeDisputes.style.display = pendingDisputes > 0 ? 'inline-block' : 'none';
@@ -1310,58 +1464,83 @@ function notifySaved(msg) {
 }
 
 function initAdminData() {
-    // Si la flota tiene solo autos activos, agregamos un auto en revisión para probar moderación
-    const cars = getCars();
-    if (!cars.some(c => c.status === 'En Revision')) {
-        cars.push({
-            id: 'car_mod_demo',
-            ownerId: 'usr_demo_host_2',
-            ownerName: 'Felipe Daza',
-            ownerPhone: '+57 318 444 7788',
-            brand: 'Renault',
-            model: 'Duster Iconic 4x4',
-            fullName: 'Renault Duster 4x4',
-            year: 2023,
-            category: 'SUV / Camioneta',
-            transmission: 'Mecánico',
-            fuel: 'Gasolina',
-            seats: 5,
-            pricePerDay: 210000,
-            city: 'Valledupar',
-            mileage: '200 km/día',
-            description: 'Camioneta lista para estrenar, SOAT al día, ideal para carretera o viajes a la sierra.',
-            image: 'img/car-rent-4.png',
-            status: 'En Revision', // Pendiente de aprobación por el admin
-            featured: false,
-            createdAt: new Date().toISOString()
-        });
+    // Migración única a datos limpios de producción: 1 solo auto de ejemplo, 0 reservas/disputas ficticias
+    const MIGRATION_KEY = 'renteasy_clean_prod_v2';
+    if (localStorage.getItem(MIGRATION_KEY) !== 'true') {
+        localStorage.setItem('renteasy_cars', JSON.stringify([SINGLE_SAMPLE_CAR]));
+        localStorage.setItem('renteasy_bookings', JSON.stringify([]));
+        localStorage.setItem(MIGRATION_KEY, 'true');
+    }
+
+    // Asegurar que si renteasy_cars no existe o está vacío, conserve el único auto de ejemplo
+    let cars = getCars();
+    if (!Array.isArray(cars) || cars.length === 0) {
+        cars = [SINGLE_SAMPLE_CAR];
         saveCars(cars);
     }
 
-    // Si no hay disputas de prueba, aseguramos una
-    const bookings = getBookings();
-    if (!bookings.some(b => b.status === 'Disputa')) {
-        bookings.push({
-            id: 'book_dispute_demo',
-            carId: 'car_1',
-            carName: 'Mazda CX-30 (2023)',
-            carCity: 'Bogotá',
-            ownerId: 'usr_demo_host',
-            ownerName: 'Carlos Mendoza',
-            renterName: 'Roberto Silva',
-            renterPhone: '+57 312 333 4455',
-            renterEmail: 'roberto@ejemplo.com',
-            startDate: '2026-11-20',
-            endDate: '2026-11-23',
-            totalDays: 3,
-            totalPrice: 660000,
-            platformFee: 99000,
-            ownerEarnings: 561000,
-            deposit: 200000,
-            status: 'Disputa', // Requiere arbitraje del admin
-            createdAt: new Date().toISOString()
-        });
-        saveBookings(bookings);
+    // Asegurar que renteasy_bookings exista como arreglo limpio
+    let bookings = getBookings();
+    if (!Array.isArray(bookings)) {
+        saveBookings([]);
     }
 }
+
+/** ================= NAVEGACIÓN Y ACCESOS RÁPIDOS CONSISTENTES ================= **/
+function goToAdminTab(tabId, subAction) {
+    const pill = document.getElementById(`${tabId}-pill`);
+    if (pill) {
+        $(pill).tab('show');
+        const hash = tabId.replace('tab-', '');
+        if (history.replaceState) {
+            history.replaceState(null, null, `#${hash}`);
+        } else {
+            window.location.hash = hash;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (typeof subAction === 'function') {
+        setTimeout(subAction, 100);
+    }
+}
+
+function quickAccessFleet(filter = 'En Revision') {
+    goToAdminTab('tab-fleet', function () {
+        const filterSelect = document.getElementById('fleet-filter-status');
+        if (filterSelect) {
+            const cars = getCars();
+            const hasPending = cars.some(c => c.status === filter);
+            filterSelect.value = hasPending ? filter : 'all';
+            renderFleetModeration(filterSelect.value);
+        }
+    });
+}
+
+function quickAccessUsers() {
+    goToAdminTab('tab-users', function () {
+        const searchInput = document.getElementById('search-user-input');
+        if (searchInput) {
+            searchInput.value = '';
+            renderUsersManagement('');
+        }
+    });
+}
+
+function quickAccessDisputes() {
+    goToAdminTab('tab-bookings', function () {
+        renderBookingsAndDisputes();
+    });
+}
+
+function quickAccessPayments() {
+    goToAdminTab('tab-payments', function () {
+        loadPaymentsConfig();
+    });
+}
+
+window.goToAdminTab = goToAdminTab;
+window.quickAccessFleet = quickAccessFleet;
+window.quickAccessUsers = quickAccessUsers;
+window.quickAccessDisputes = quickAccessDisputes;
+window.quickAccessPayments = quickAccessPayments;
 
