@@ -138,12 +138,10 @@
         if (car && Array.isArray(car.images) && car.images.length > 0) {
             return car.images.filter(Boolean);
         }
-        const mainImg = (car && car.image) ? car.image : 'img/car-rent-1.png';
-        // Para el vehículo de demostración, incluir galería de vistas
-        if (car && (car.id === 'car_valledupar_01' || (car.fullName && car.fullName.includes('Duster')))) {
-            return [mainImg, 'img/car-rent-2.png', 'img/car-rent-3.png'].filter((v, i, a) => a.indexOf(v) === i);
+        if (car && car.image) {
+            return [car.image];
         }
-        return [mainImg];
+        return [];
     }
 
     function getAllShowcaseCars() {
@@ -171,7 +169,7 @@
                 city: 'Valledupar',
                 description: 'Camioneta todoterreno 4x4 turbo de demostración. Totalmente equipada, SOAT vigente, seguro todo riesgo y mantenimiento al día en Valledupar.',
                 image: 'img/car-rent-1.png',
-                images: ['img/car-rent-1.png', 'img/car-rent-2.png', 'img/car-rent-3.png'],
+                images: ['img/car-rent-1.png'],
                 status: 'Activo'
             }];
         }
@@ -373,7 +371,7 @@
                         <div class="modal-body p-0">
                             <!-- Galería Grande -->
                             <div class="position-relative bg-dark text-center" id="qv-gallery-stage" style="height: 360px; overflow: hidden;">
-                                <img id="qv-main-img" src="img/car-rent-1.png" alt="Vehículo" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img id="qv-main-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Vehículo" style="width: 100%; height: 100%; object-fit: cover;">
                                 <button type="button" class="car-slide-arrow prev" id="qv-prev-btn" style="width:38px; height:38px;">
                                     <i class="fa fa-chevron-left"></i>
                                 </button>
