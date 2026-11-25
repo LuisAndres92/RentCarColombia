@@ -134,8 +134,13 @@ function renderFinancialOverview() {
     const platformEarnings = bookings.reduce((sum, b) => sum + (parseFloat(b.platformFee) || Math.round((parseFloat(b.totalPrice) || 0) * commRatio)), 0);
     const ownerPayouts = bookings.reduce((sum, b) => sum + (parseFloat(b.ownerEarnings) || Math.round((parseFloat(b.totalPrice) || 0) * ownerRatio)), 0);
     const activeTrips = bookings.filter(b => b.status === 'En Curso' || b.status === 'Aceptada').length;
-    const pendingApprovalCars = cars.filter(c => c.status === 'En Revision').length;
+    const pendingApprovalCars = cars.filter(c => c.status === 'En Revision' || c.status === 'Contraoferta' || (c.priceNegotiation && c.priceNegotiation.status === 'counter_offer')).length;
     const pendingDisputes = bookings.filter(b => b.status === 'Disputa').length;
+
+    let feedbackItems = [];
+    try { feedbackItems = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { feedbackItems = []; }
+    const pendingFeedback = feedbackItems.filter(f => f && f.status !== 'Resuelto').length;
+    const totalBookingsTabAlerts = pendingDisputes + pendingFeedback;
 
     // Inyectar en el DOM métricas 100% reales
     setElemText('stat-gmv-volume', `$${formatCop(totalVolume)} COP`);
@@ -157,9 +162,41 @@ function renderFinancialOverview() {
 
     const badgeDisputes = document.getElementById('badge-disputes-pending');
     if (badgeDisputes) {
-        badgeDisputes.innerText = pendingDisputes;
-        badgeDisputes.style.display = pendingDisputes > 0 ? 'inline-block' : 'none';
+        badgeDisputes.innerText = totalBookingsTabAlerts;
+        badgeDisputes.style.display = totalBookingsTabAlerts > 0 ? 'inline-block' : 'none';
     }
+
+    // Campanita global del encabezado
+    renderAdminNotificationBell({ pendingApprovalCars, pendingDisputes, pendingFeedback });
+}
+
+function renderAdminNotificationBell(counts) {
+    const badge = document.getElementById('admin-topbar-bell-badge');
+    const totalLabel = document.getElementById('admin-bell-total-label');
+    const list = document.getElementById('admin-bell-dropdown-list');
+    if (!badge || !list) return;
+
+    const total = (counts.pendingApprovalCars || 0) + (counts.pendingDisputes || 0) + (counts.pendingFeedback || 0);
+    badge.innerText = total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+    if (totalLabel) totalLabel.innerText = total;
+
+    if (total === 0) {
+        list.innerHTML = `<div class="text-center text-muted py-3"><i class="fa fa-check-circle text-success mr-1"></i> ¡Todo al día! No tienes pendientes.</div>`;
+        return;
+    }
+
+    let html = '';
+    if (counts.pendingFeedback > 0) {
+        html += `<a href="javascript:void(0);" class="dropdown-item rounded py-2 d-flex justify-content-between align-items-center" onclick="goToAdminTab('tab-bookings')"><span><i class="fa fa-bullhorn text-danger mr-2"></i>Quejas / Feedback</span><span class="badge badge-danger">${counts.pendingFeedback}</span></a>`;
+    }
+    if (counts.pendingDisputes > 0) {
+        html += `<a href="javascript:void(0);" class="dropdown-item rounded py-2 d-flex justify-content-between align-items-center" onclick="goToAdminTab('tab-bookings')"><span><i class="fa fa-balance-scale text-warning mr-2"></i>Disputas abiertas</span><span class="badge badge-warning text-dark">${counts.pendingDisputes}</span></a>`;
+    }
+    if (counts.pendingApprovalCars > 0) {
+        html += `<a href="javascript:void(0);" class="dropdown-item rounded py-2 d-flex justify-content-between align-items-center" onclick="goToAdminTab('tab-fleet')"><span><i class="fa fa-car text-primary mr-2"></i>Autos / Contraofertas</span><span class="badge badge-primary">${counts.pendingApprovalCars}</span></a>`;
+    }
+    list.innerHTML = html;
 }
 
 /** Sincronización en vivo con base de datos Supabase en segundo plano **/
@@ -722,9 +759,20 @@ window.resolveFeedbackAdmin = function (idx) {
         items[idx].status = 'Resuelto';
         localStorage.setItem('rentcar_feedback', JSON.stringify(items));
         renderFeedbackAndAlertsAdmin();
+        renderFinancialOverview();
         notifySaved('Reporte marcado como resuelto.');
     }
 };
+
+// Sincronización en vivo de alertas y pendientes cuando llegan desde otras pestañas
+window.addEventListener('storage', function (e) {
+    if (e.key === 'rentcar_feedback' || e.key === 'renteasy_cars' || e.key === 'renteasy_bookings') {
+        renderFinancialOverview();
+        renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
+        renderBookingsAndDisputes();
+        renderFeedbackAndAlertsAdmin();
+    }
+});
 
 /** ================= MÓDULO 5: PASARELAS DE PAGO Y COMISIONES ================= **/
 function loadPaymentsConfig() {

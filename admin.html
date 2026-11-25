@@ -360,6 +360,19 @@
             </div>
 
             <div class="d-flex align-items-center">
+                <div class="dropdown mr-3">
+                    <button type="button" class="btn btn-dark btn-sm position-relative border-secondary" id="admin-bell-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Notificaciones y pendientes">
+                        <i class="fa fa-bell text-warning"></i>
+                        <span id="admin-topbar-bell-badge" class="badge badge-danger badge-pill position-absolute" style="top: -6px; right: -8px; font-size: 10px; display: none;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 p-0" style="min-width: 295px;" aria-labelledby="admin-bell-btn">
+                        <div class="px-3 py-2 bg-dark text-white font-weight-bold small d-flex justify-content-between align-items-center">
+                            <span><i class="fa fa-bell text-warning mr-1"></i> Pendientes y Alertas</span>
+                            <span id="admin-bell-total-label" class="badge badge-warning text-dark">0</span>
+                        </div>
+                        <div id="admin-bell-dropdown-list" class="p-2 small"></div>
+                    </div>
+                </div>
                 <span class="text-light mr-3 small d-none d-md-inline">
                     <i class="fa fa-user-circle text-primary mr-1"></i> Administrador: <strong
                         class="admin-display-name text-white">Superadmin</strong>
