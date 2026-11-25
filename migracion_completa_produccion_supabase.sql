@@ -62,8 +62,12 @@ CREATE TABLE IF NOT EXISTS public.logs_auditoria (
     modulo text NOT NULL,
     accion text NOT NULL,
     detalle text,
+    detalle_cambios jsonb DEFAULT NULL,
     creado_en timestamptz DEFAULT now()
 );
+
+ALTER TABLE public.logs_auditoria
+  ADD COLUMN IF NOT EXISTS detalle_cambios jsonb DEFAULT NULL;
 
 ALTER TABLE public.logs_auditoria ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Gestion total logs" ON public.logs_auditoria;

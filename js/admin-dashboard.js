@@ -434,7 +434,7 @@ async function syncCarStatusSupabase(carId, status) {
     } catch (e) { console.warn('Supabase sync car status:', e); }
 }
 
-function recordAdminLog(modulo, accion, detalle = '') {
+function recordAdminLog(modulo, accion, detalle = '', cambios = null) {
     let user = null;
     try { user = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) { }
     const entry = {
@@ -444,6 +444,7 @@ function recordAdminLog(modulo, accion, detalle = '') {
         modulo: modulo || 'Admin',
         accion: accion || 'Modificación',
         detalle: detalle || '',
+        detalle_cambios: (Array.isArray(cambios) && cambios.length > 0) ? cambios : null,
         creado_en: new Date().toISOString()
     };
 
@@ -464,6 +465,7 @@ function recordAdminLog(modulo, accion, detalle = '') {
                     modulo: entry.modulo,
                     accion: entry.accion,
                     detalle: entry.detalle,
+                    detalle_cambios: entry.detalle_cambios,
                     creado_en: entry.creado_en
                 }]).then(() => {}).catch(() => {});
             }
@@ -494,6 +496,33 @@ function initUniversalAdminAuditObserver() {
         return map[pane.id] || 'Admin';
     };
 
+    const getFieldLabel = (el) => {
+        const group = el.closest('.form-group, .custom-control, .mb-3, .col-md-6, .col-md-4, .col-md-12');
+        const lbl = group ? group.querySelector('label, strong, h6') : null;
+        if (lbl && lbl.innerText.trim()) return lbl.innerText.replace(/\*/g, '').trim();
+        return el.placeholder || el.id || 'Campo';
+    };
+
+    const snapshotFields = (scope) => {
+        (scope || tabContent).querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.type === 'hidden' || el.type === 'file' || el.type === 'password') return;
+            if (el.id === 'logs-search-input' || el.id === 'logs-module-filter' || el.id === 'logs-date-from' || el.id === 'logs-date-to' || el.id === 'search-users-input' || el.id === 'fleet-filter-status') return;
+            el.dataset.auditLastVal = (el.type === 'checkbox') ? String(el.checked) : String(el.value || '');
+        });
+    };
+
+    // Tomar foto inicial de todos los campos tras cargar configuraciones
+    setTimeout(() => snapshotFields(tabContent), 200);
+
+    tabContent.addEventListener('focusin', function (e) {
+        const el = e.target;
+        if (!el || !el.matches('input, textarea, select')) return;
+        if (el.type === 'hidden' || el.type === 'file' || el.type === 'password') return;
+        if (el.dataset.auditLastVal === undefined) {
+            el.dataset.auditLastVal = (el.type === 'checkbox') ? String(el.checked) : String(el.value || '');
+        }
+    });
+
     // Registrar automáticamente cualquier cambio en interruptores (switches/checkboxes)
     tabContent.addEventListener('change', function (e) {
         const target = e.target;
@@ -501,7 +530,45 @@ function initUniversalAdminAuditObserver() {
         const labelEl = target.closest('.custom-control, .form-check, .d-flex')?.querySelector('label, strong, h6');
         const controlName = labelEl ? labelEl.innerText.trim() : (target.id || 'Interruptor');
         const stateText = target.checked ? 'Activado' : 'Desactivado';
-        recordAdminLog(getPaneModule(target), `${stateText}: ${controlName}`, `Control "${target.id || controlName}" cambiado a ${stateText}`);
+        const prevText = target.checked ? 'Desactivado' : 'Activado';
+        target.dataset.auditLastVal = String(target.checked);
+        recordAdminLog(
+            getPaneModule(target),
+            `${stateText}: ${controlName}`,
+            `Interruptor cambiado de ${prevText} a ${stateText}`,
+            [{ field: controlName, before: prevText, after: stateText }]
+        );
+    });
+
+    // Al guardar cualquier formulario en el panel, capturar todos los campos modificados (Antes vs Después)
+    tabContent.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+        const changes = [];
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.type === 'hidden' || el.type === 'file' || el.type === 'password' || el.type === 'checkbox') return;
+            const prev = el.dataset.auditLastVal !== undefined ? el.dataset.auditLastVal : '';
+            const curr = String(el.value || '');
+            if (prev !== curr) {
+                changes.push({
+                    field: getFieldLabel(el),
+                    before: prev,
+                    after: curr
+                });
+                el.dataset.auditLastVal = curr;
+            }
+        });
+
+        if (changes.length > 0) {
+            const mod = getPaneModule(form);
+            const summary = changes.map(c => c.field).join(', ');
+            recordAdminLog(
+                mod,
+                changes.length === 1 ? `Editado: ${changes[0].field}` : `${changes.length} campos editados`,
+                `Campos modificados: ${summary}`,
+                changes
+            );
+        }
     });
 
     // Refrescar tabla de logs al abrir la pestaña Logs & Auditoría
@@ -992,20 +1059,131 @@ function renderAuditLogsAdmin() {
 
     tbody.innerHTML = filtered.slice(0, 200).map(l => {
         const dt = l.creado_en ? new Date(l.creado_en).toLocaleString('es-CO') : '';
+        const hasDiff = Array.isArray(l.detalle_cambios) && l.detalle_cambios.length > 0;
         return `
-            <tr>
+            <tr style="cursor: pointer;" onclick="openAuditLogDetail('${l.id}')" title="Clic para ver detalle completo">
                 <td class="small text-muted" style="white-space: nowrap;">${dt}</td>
                 <td class="small">
                     <strong class="text-dark">${l.usuario || 'Sistema'}</strong>
                     <span class="badge badge-light border ml-1 text-uppercase" style="font-size: 10px;">${l.rol || ''}</span>
                 </td>
                 <td><span class="badge badge-primary px-2 py-1">${l.modulo || 'Sistema'}</span></td>
-                <td class="small font-weight-bold text-dark">${l.accion || ''}</td>
-                <td class="small text-muted">${l.detalle || ''}</td>
+                <td class="small font-weight-bold text-dark">
+                    ${l.accion || ''}
+                    ${hasDiff ? `<span class="badge badge-warning text-dark ml-1"><i class="fa fa-exchange-alt mr-1"></i>Antes / Después</span>` : ''}
+                </td>
+                <td class="small text-muted">
+                    ${l.detalle || ''}
+                    <span class="text-primary font-weight-bold ml-1"><i class="fa fa-search-plus"></i></span>
+                </td>
             </tr>
         `;
     }).join('');
 }
+
+function escapeHtmlSafe(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function buildWordDiffHtml(beforeStr, afterStr) {
+    const a = String(beforeStr || '').split(/(\s+)/);
+    const b = String(afterStr || '').split(/(\s+)/);
+
+    // Si son textos muy extensos (>350 tokens), comparar directo por bloque para máxima fluidez
+    if (a.length > 350 || b.length > 350) {
+        return {
+            beforeHtml: `<del style="background:#FEE2E2; color:#991B1B; text-decoration:line-through; padding:2px 4px; border-radius:3px;">${escapeHtmlSafe(beforeStr || '(Vacío)')}</del>`,
+            afterHtml: `<ins style="background:#BBF7D0; color:#065F46; text-decoration:none; font-weight:600; padding:2px 4px; border-radius:3px;">${escapeHtmlSafe(afterStr || '(Vacío)')}</ins>`
+        };
+    }
+
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+    for (let i = m - 1; i >= 0; i--) {
+        for (let j = n - 1; j >= 0; j--) {
+            dp[i][j] = (a[i] === b[j]) ? (dp[i + 1][j + 1] + 1) : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+    }
+
+    let beforeParts = [];
+    let afterParts = [];
+    let i = 0, j = 0;
+    while (i < m && j < n) {
+        if (a[i] === b[j]) {
+            const esc = escapeHtmlSafe(a[i]);
+            beforeParts.push(esc);
+            afterParts.push(esc);
+            i++; j++;
+        } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+            const tok = escapeHtmlSafe(a[i]);
+            beforeParts.push(a[i].trim() ? `<del style="background:#FEE2E2; color:#991B1B; text-decoration:line-through; padding:0 2px; border-radius:2px;">${tok}</del>` : tok);
+            i++;
+        } else {
+            const tok = escapeHtmlSafe(b[j]);
+            afterParts.push(b[j].trim() ? `<ins style="background:#BBF7D0; color:#065F46; text-decoration:none; font-weight:600; padding:0 2px; border-radius:2px;">${tok}</ins>` : tok);
+            j++;
+        }
+    }
+    while (i < m) {
+        const tok = escapeHtmlSafe(a[i]);
+        beforeParts.push(a[i].trim() ? `<del style="background:#FEE2E2; color:#991B1B; text-decoration:line-through; padding:0 2px; border-radius:2px;">${tok}</del>` : tok);
+        i++;
+    }
+    while (j < n) {
+        const tok = escapeHtmlSafe(b[j]);
+        afterParts.push(b[j].trim() ? `<ins style="background:#BBF7D0; color:#065F46; text-decoration:none; font-weight:600; padding:0 2px; border-radius:2px;">${tok}</ins>` : tok);
+        j++;
+    }
+
+    return {
+        beforeHtml: beforeParts.join('') || '<span class="text-muted font-italic">(Vacío)</span>',
+        afterHtml: afterParts.join('') || '<span class="text-muted font-italic">(Vacío)</span>'
+    };
+}
+
+window.openAuditLogDetail = function (logId) {
+    let logs = [];
+    try { logs = JSON.parse(localStorage.getItem('rentcar_audit_logs')) || []; } catch (e) { logs = []; }
+    const l = logs.find(item => item && String(item.id) === String(logId));
+    if (!l) return;
+
+    const dt = l.creado_en ? new Date(l.creado_en).toLocaleString('es-CO') : '';
+    document.getElementById('log-detail-meta').innerText = `${dt} • ${l.usuario || 'Sistema'} (${l.rol || ''})`;
+    document.getElementById('log-detail-module').innerText = l.modulo || 'Sistema';
+    document.getElementById('log-detail-action').innerText = l.accion || '';
+    document.getElementById('log-detail-summary').innerText = l.detalle || 'Sin descripción adicional.';
+
+    const container = document.getElementById('log-detail-diff-container');
+    if (Array.isArray(l.detalle_cambios) && l.detalle_cambios.length > 0) {
+        container.innerHTML = l.detalle_cambios.map(c => {
+            const diff = buildWordDiffHtml(c.before, c.after);
+            return `
+                <div class="card border mb-3">
+                    <div class="card-header bg-light py-2 font-weight-bold small text-dark">
+                        <i class="fa fa-edit text-primary mr-1"></i> ${escapeHtmlSafe(c.field)}
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="mb-2">
+                            <span class="badge badge-danger mb-1">Texto Original (Antes)</span>
+                            <div class="p-2 rounded border small" style="background: #FEF2F2; color: #7F1D1D; white-space: pre-wrap; line-height: 1.6;">${diff.beforeHtml}</div>
+                        </div>
+                        <div>
+                            <span class="badge badge-success mb-1">Texto Nuevo (Después)</span>
+                            <div class="p-2 rounded border small" style="background: #ECFDF5; color: #064E3B; white-space: pre-wrap; line-height: 1.6;">${diff.afterHtml}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        container.innerHTML = `<div class="text-muted small text-center py-2">Este evento no modificó campos de texto.</div>`;
+    }
+
+    $('#modalAuditLogDetail').modal('show');
+};
 
 window.clearLogsFilters = function () {
     setVal('logs-search-input', '');

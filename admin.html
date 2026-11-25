@@ -2073,6 +2073,32 @@
         </div>
     </div>
 
+    <!-- Modal: Detalle de Log y Comparación Antes / Después -->
+    <div class="modal fade" id="modalAuditLogDetail" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <div>
+                        <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-search-plus text-warning mr-2"></i> Detalle del Cambio en Auditoría</h5>
+                        <small class="text-light" id="log-detail-meta"></small>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <span class="badge badge-primary px-2 py-1 mr-2" id="log-detail-module">Módulo</span>
+                        <strong class="text-dark" id="log-detail-action">Acción</strong>
+                    </div>
+                    <p class="small text-muted bg-light p-2 rounded border mb-3" id="log-detail-summary"></p>
+                    <div id="log-detail-diff-container"></div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Depurar Logs por Fecha (Protegido con Contraseña Superadmin) -->
     <div class="modal fade" id="modalPurgeLogs" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -2112,15 +2138,15 @@
 
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_7"></script>
+    <script src="js/supabase-client.js?v=20261125_8"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <!-- Motor de Configuración y Panel de Administración -->
-    <script src="js/config.js?v=20261125_7"></script>
-    <script src="js/admin-dashboard.js?v=20261125_7"></script>
+    <script src="js/config.js?v=20261125_8"></script>
+    <script src="js/admin-dashboard.js?v=20261125_8"></script>
 </body>
 
 </html>
