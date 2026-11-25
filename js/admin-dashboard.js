@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.hash = h;
             }
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     window.addEventListener('hashchange', restoreActiveTab);

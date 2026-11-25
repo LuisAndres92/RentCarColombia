@@ -98,6 +98,7 @@
             background-color: var(--admin-darker);
             border-bottom: 2px solid var(--admin-accent);
             padding: 12px 25px;
+            min-height: 62px;
             color: #ffffff;
             position: sticky;
             top: 0;
@@ -107,7 +108,7 @@
         /* Layout Principal con Barra Lateral */
         .admin-layout {
             display: flex;
-            min-height: calc(100vh - 65px);
+            min-height: calc(100vh - 62px);
         }
 
         .admin-sidebar {
@@ -120,6 +121,11 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            position: sticky;
+            top: 62px;
+            height: calc(100vh - 62px);
+            overflow-y: auto;
+            align-self: flex-start;
         }
 
         .admin-sidebar-header {
@@ -167,9 +173,9 @@
 
         .admin-content {
             flex-grow: 1;
+            min-width: 0;
             padding: 30px 40px;
             background: #F8FAFC;
-            overflow-y: auto;
         }
 
         /* Tarjetas */
@@ -323,6 +329,9 @@
 
             .admin-sidebar {
                 width: 100%;
+                position: static;
+                height: auto;
+                overflow-y: visible;
             }
 
             .admin-content {
