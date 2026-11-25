@@ -178,6 +178,31 @@
         return cars;
     }
 
+    function getCarRealRatingStats(carId, carName) {
+        let reviews = [];
+        try {
+            reviews = JSON.parse(localStorage.getItem('rentcar_verified_reviews')) || [];
+        } catch (e) { reviews = []; }
+
+        const valid = reviews.filter(r =>
+            r &&
+            r.approved === true &&
+            r.id !== 'rev_1' && r.id !== 'rev_2' && r.id !== 'rev_3' &&
+            (
+                (r.carId && r.carId === carId) ||
+                (r.carRented && carName && r.carRented.toLowerCase().includes(carName.toLowerCase()))
+            )
+        );
+        if (valid.length === 0) return null;
+
+        const total = valid.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+        return {
+            avg: (total / valid.length).toFixed(1),
+            count: valid.length,
+            reviews: valid
+        };
+    }
+
     function renderCarCardHTML(car, options = {}) {
         injectShowcaseStyles();
         const images = getCarImages(car);
@@ -190,6 +215,7 @@
         const displaySeats = car.seats || 5;
         const displayYear = car.year || 2024;
         const hasMultiple = images.length > 1;
+        const ratingStats = getCarRealRatingStats(car.id, displayName);
 
         return `
             <div class="col-lg-4 col-md-6 mb-4">
@@ -220,6 +246,12 @@
                                 <h5 class="text-uppercase font-weight-bold mb-0 text-dark" style="cursor:pointer; font-size: 1.05rem;" onclick="openCarQuickView('${car.id}')">${displayName}</h5>
                                 <span class="badge badge-light border text-primary font-weight-bold">${displayYear}</span>
                             </div>
+                            ${ratingStats ? `
+                                <div class="small font-weight-bold mb-2">
+                                    <span class="text-warning"><i class="fa fa-star mr-1"></i>${ratingStats.avg}</span>
+                                    <span class="text-muted font-weight-normal ml-1">(${ratingStats.count} ${ratingStats.count === 1 ? 'reseña' : 'reseñas'})</span>
+                                </div>
+                            ` : ''}
                             <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-2 border">
                                 <div><i class="fa fa-cog text-primary"></i> ${displayTrans}</div>
                                 <div class="border-left border-right px-2"><i class="fa fa-gas-pump text-primary"></i> ${displayFuel}</div>
@@ -394,6 +426,12 @@
                                 </div>
 
                                 <p class="text-muted small mb-0" id="qv-desc" style="line-height: 1.6;"></p>
+
+                                <!-- Reseñas reales del vehículo (solo visible si existen) -->
+                                <div id="qv-reviews-section" class="mt-3 pt-3 border-top" style="display: none;">
+                                    <h6 class="font-weight-bold text-dark mb-2" id="qv-reviews-title"></h6>
+                                    <div id="qv-reviews-list"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer bg-light d-flex justify-content-between px-4 py-3">
@@ -448,13 +486,43 @@
         document.getElementById('qv-city').innerHTML = `<i class="fa fa-map-marker-alt mr-1"></i> ${car.city || 'Valledupar'}`;
         document.getElementById('qv-category').textContent = car.category || car.type || 'SUV / Camioneta';
         const ownerEl = document.getElementById('qv-owner');
+        const ratingStats = getCarRealRatingStats(car.id, displayName);
         if (ownerEl) {
+            const parts = [];
             if (car.ownerName && car.ownerName !== 'Anfitrión Verificado') {
-                ownerEl.innerHTML = `<i class="fa fa-user mr-1 text-primary"></i> Propietario: <strong class="text-dark">${car.ownerName}</strong>`;
+                parts.push(`<i class="fa fa-user mr-1 text-primary"></i> Propietario: <strong class="text-dark">${car.ownerName}</strong>`);
+            }
+            if (ratingStats) {
+                parts.push(`<span class="text-warning font-weight-bold"><i class="fa fa-star mr-1"></i>${ratingStats.avg}</span> <span class="text-muted">(${ratingStats.count} ${ratingStats.count === 1 ? 'reseña' : 'reseñas'})</span>`);
+            }
+            if (parts.length > 0) {
+                ownerEl.innerHTML = parts.join(' &bull; ');
                 ownerEl.style.display = '';
             } else {
                 ownerEl.innerHTML = '';
                 ownerEl.style.display = 'none';
+            }
+        }
+
+        const revSection = document.getElementById('qv-reviews-section');
+        const revTitle = document.getElementById('qv-reviews-title');
+        const revList = document.getElementById('qv-reviews-list');
+        if (revSection && revTitle && revList) {
+            if (ratingStats && ratingStats.reviews.length > 0) {
+                revSection.style.display = '';
+                revTitle.innerHTML = `<i class="fa fa-star text-warning mr-1"></i> Opiniones Reales (${ratingStats.avg} / 5 &bull; ${ratingStats.count})`;
+                revList.innerHTML = ratingStats.reviews.slice(0, 3).map(r => `
+                    <div class="p-2 bg-light rounded border mb-2 small">
+                        <div class="d-flex justify-content-between">
+                            <strong class="text-dark">${r.userName || 'Conductor'}</strong>
+                            <span class="text-warning">${'<i class="fa fa-star"></i>'.repeat(r.rating || 5)}</span>
+                        </div>
+                        <div class="text-muted mt-1">"${r.text}"</div>
+                    </div>
+                `).join('');
+            } else {
+                revSection.style.display = 'none';
+                revList.innerHTML = '';
             }
         }
         document.getElementById('qv-price').textContent = `$${displayPrice} COP`;
@@ -507,6 +575,7 @@
     };
 
     window.getCarImages = getCarImages;
+    window.getCarRealRatingStats = getCarRealRatingStats;
     window.renderCarCardHTML = renderCarCardHTML;
     window.initCarCardCarousels = initCarCardCarousels;
 })();
