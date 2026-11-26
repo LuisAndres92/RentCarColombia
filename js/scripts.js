@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 4. Manejo del Registro
     if (formRegister) {
-        formRegister.addEventListener('submit', function (e) {
+        formRegister.addEventListener('submit', async function (e) {
             e.preventDefault();
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
