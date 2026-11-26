@@ -107,6 +107,30 @@ document.addEventListener('DOMContentLoaded', function () {
     initDefaultCars();
     initDefaultBookings();
 
+    // Persistir pestaña activa del panel de propietario al recargar
+    (function setupOwnerTabPersistence() {
+        const tabs = document.querySelectorAll('#ownerTabs .nav-link');
+        if (!tabs.length) return;
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function () {
+                const href = this.getAttribute('href') || '';
+                if (href.startsWith('#')) {
+                    try { sessionStorage.setItem('rentcar_owner_active_tab', href); } catch (_) { }
+                    if (history.replaceState) history.replaceState(null, '', href);
+                }
+            });
+        });
+        const saved = (window.location.hash && document.querySelector(`#ownerTabs a[href="${window.location.hash}"]`))
+            ? window.location.hash
+            : (sessionStorage.getItem('rentcar_owner_active_tab') || '');
+        if (saved && typeof window.jQuery === 'function') {
+            const targetTab = document.querySelector(`#ownerTabs a[href="${saved}"]`);
+            if (targetTab) {
+                setTimeout(() => window.jQuery(targetTab).tab('show'), 30);
+            }
+        }
+    })();
+
     // 3. Renderizar vista inicial
     renderOwnerAlertsAndProposals();
     renderDashboardStats();
@@ -2335,35 +2359,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.updateBookingStatus = function (bookingId, newStatus) {
         const bookings = getAllBookings();
-        const b = bookings.find(item => item.id === bookingId);
-        if (b) {
-            const isWompi = String(b.paymentMethod || '').toLowerCase().includes('wompi') || String(b.paymentMethod || '').toLowerCase().includes('tarjeta');
-            if (newStatus === 'Aceptada' && !isWompi && !b.paymentReceipt) {
-                if (!confirm('Esta reserva por transferencia NO tiene comprobante adjunto.\n\n¿Confirmas que ya verificaste el pago con el conductor (por ejemplo por WhatsApp) antes de aceptar?')) {
-                    return;
-                }
-            }
+        const b = bookings.find(item => String(item.id) === String(bookingId));
+        if (!b) return;
+
+        const applyStatusUpdate = async () => {
             b.status = newStatus;
             localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
-            if (typeof dbUpdateReservaStatus === 'function') {
-                dbUpdateReservaStatus(b.id, newStatus);
+            if (typeof dbUpdateReservaEstado === 'function') {
+                await dbUpdateReservaEstado(b.id, newStatus);
             }
-            
-            // Si se acepta la reserva, el auto pasa a estado 'En Renta'
-            if (newStatus === 'Aceptada') {
+
+            // Si se acepta la reserva, el auto pasa a estado 'En Renta'; si finaliza, vuelve a 'Activo'
+            if (newStatus === 'Aceptada' || newStatus === 'Finalizada') {
                 const cars = getAllCars();
-                const car = cars.find(c => c.id === b.carId);
+                const car = cars.find(c => String(c.id) === String(b.carId));
                 if (car) {
-                    car.status = 'En Renta';
+                    car.status = newStatus === 'Aceptada' ? 'En Renta' : 'Activo';
                     localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+                    if (typeof dbUpdateVehiculo === 'function') {
+                        dbUpdateVehiculo(car).catch(() => {});
+                    }
                 }
             }
-            
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('bookings_updated');
+
             renderDashboardStats();
             renderOwnerCars();
             renderBookingRequests();
             renderWalletStats();
+        };
+
+        const isWompi = String(b.paymentMethod || '').toLowerCase().includes('wompi') || String(b.paymentMethod || '').toLowerCase().includes('tarjeta');
+        if (newStatus === 'Aceptada' && !isWompi && !b.paymentReceipt) {
+            if (typeof window.openAppConfirmModal === 'function') {
+                window.openAppConfirmModal({
+                    title: 'Transferencia sin comprobante',
+                    message: 'Esta reserva por transferencia NO tiene comprobante adjunto.<br><br>¿Confirmas que ya verificaste el pago con el conductor (por ejemplo por WhatsApp) antes de aceptar?',
+                    confirmText: 'Sí, aceptar reserva',
+                    confirmClass: 'btn-success',
+                    onConfirm: applyStatusUpdate
+                });
+                return;
+            }
         }
+        applyStatusUpdate();
     };
 
     window.openCheckInModal = function (bookingId) {
