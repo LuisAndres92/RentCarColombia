@@ -260,6 +260,7 @@ async function syncLiveDataFromSupabase() {
                     plate: v.placa || '',
                     soatExpiry: v.soat_vencimiento || '',
                     soatStatus: v.soat_estado || 'Pendiente',
+                    platePhoto: v.foto_placa_privada || '',
                     createdAt: v.creado_en
                 };
             });
@@ -402,6 +403,7 @@ function renderFleetModeration(filterStatus = 'all') {
                         return `<span class="badge ${cls}" style="font-size:10px;">SOAT: ${st}${car.soatExpiry ? ` (${car.soatExpiry})` : ''}</span>`;
                     })()}
                     ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
+                    ${car.platePhoto ? `<button type="button" class="badge badge-warning text-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.platePhoto.replace(/"/g, '&quot;')}">Ver Placa</button>` : ''}
                     ${car.policyImage ? `<button type="button" class="badge badge-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
                     ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}')" title="Copiar placa y abrir RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
                 </div>

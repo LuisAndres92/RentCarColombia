@@ -492,6 +492,15 @@
 
                                     <!-- Tira de vista previa de galería múltiple -->
                                     <div id="car-gallery-preview-list" class="d-flex flex-wrap mt-3" style="gap: 10px;"></div>
+
+                                    <!-- Foto privada #7: Verificación frontal con placa legible -->
+                                    <div class="mt-3 p-3 bg-light border rounded">
+                                        <label class="small font-weight-bold text-dark d-block mb-1">
+                                            <i class="fa fa-shield-alt text-primary mr-1"></i> Foto Delantera de Verificación con Placa Legible * <span class="badge badge-secondary ml-1">Privada (No pública)</span>
+                                        </label>
+                                        <input type="file" id="car-plate-photo-file" accept="image/*" class="form-control-file small" required>
+                                        <small id="car-plate-photo-status" class="text-muted d-block mt-1">Toma una foto de frente donde se lea claramente la placa. Solo la ve Administración para validar que coincide con el SOAT.</small>
+                                    </div>
                                 </div>
                             </div>
 
@@ -803,7 +812,7 @@
 
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_31"></script>
+    <script src="js/supabase-client.js?v=20261125_38"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -812,7 +821,7 @@
     <script src="js/main.js?v=20261125_25"></script>
     <script src="js/config.js?v=20261125_33"></script>
     <script src="js/car-catalog.js?v=20261125_26"></script>
-    <script src="js/owner-dashboard.js?v=20261125_37"></script>
+    <script src="js/owner-dashboard.js?v=20261125_38"></script>
 </body>
 
 </html>

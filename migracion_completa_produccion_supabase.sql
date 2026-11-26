@@ -192,6 +192,7 @@ ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS tipo_anfitrion text DEFAUL
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS placa text;
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS soat_vencimiento date;
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS soat_estado text DEFAULT 'Pendiente';
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS foto_placa_privada text;
 
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_nombre text;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_licencia text;

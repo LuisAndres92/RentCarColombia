@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let uploadedSoatImg = '';
     let uploadedPolicyImg = '';
+    let uploadedPlatePhoto = '';
     let detectedSoatPlate = '';
     let detectedSoatExpiry = '';
     function processDocFile(file, callback) {
@@ -96,18 +97,52 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Vigente';
     }
 
-    function extractPlateFromText(rawText) {
+    function extractPlateFromText(rawText, preferredPlate) {
         if (!rawText) return '';
         const upper = String(rawText).toUpperCase();
-        // 1. Buscar primero junto a la palabra PLACA (ej. PLACA: LQL58H o PLACA KLM 123)
-        const nearLabel = upper.match(/PLACA[\s:.\-#]*([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])/);
+        const compact = upper.replace(/[\s\-:]+/g, '');
+        const cleanPref = String(preferredPlate || '').replace(/[\s\-]/g, '').toUpperCase();
+        if (cleanPref && cleanPref.length >= 5 && compact.includes(cleanPref)) {
+            return cleanPref;
+        }
+        // 1. Buscar primero junto a la palabra PLACA o MATRICULA
+        const nearLabel = upper.match(/(?:PLACA|MATRICULA)[\s:.\-#A-Z]{0,12}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
         if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
-        // 2. Placa carro Colombia (ABC123) o moto (ABC12D)
-        const carMatch = upper.match(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{3})(?:[^A-Z0-9]|$)/);
-        if (carMatch) return `${carMatch[1]}${carMatch[2]}`;
-        const motoMatch = upper.match(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{2}[A-Z])(?:[^A-Z0-9]|$)/);
-        if (motoMatch) return `${motoMatch[1]}${motoMatch[2]}`;
+        // 2. Buscar todas las candidatas aisladas descartando códigos largos o prefijos comunes
+        const ignorePrefixes = new Set(['NIT', 'SOA', 'POL', 'TEL', 'FAX', 'COD', 'REF', 'NRO', 'NUM', 'RUT', 'VER']);
+        const matches = [...upper.matchAll(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{3}|\d{2}[A-Z])(?:[^A-Z0-9]|$)/g)];
+        for (const m of matches) {
+            if (!ignorePrefixes.has(m[1])) return `${m[1]}${m[2]}`;
+        }
         return '';
+    }
+
+    function extractAllDatesFromText(rawText) {
+        const upper = String(rawText || '').toUpperCase();
+        const dates = [];
+        const pushDate = (y, m, d) => {
+            const yr = parseInt(y, 10), mo = parseInt(m, 10), da = parseInt(d, 10);
+            if (yr < 2015 || yr > 2040 || mo < 1 || mo > 12 || da < 1 || da > 31) return;
+            const iso = `${yr}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
+            if (!isNaN(Date.parse(iso))) dates.push(iso);
+        };
+
+        for (const m of upper.matchAll(/(\d{2})\s*[\/\-\.]\s*(\d{2})\s*[\/\-\.]\s*(20\d{2})/g)) {
+            pushDate(m[3], m[2], m[1]);
+        }
+        for (const m of upper.matchAll(/(20\d{2})\s*[\/\-\.]\s*(\d{2})\s*[\/\-\.]\s*(\d{2})/g)) {
+            pushDate(m[1], m[2], m[3]);
+        }
+        const monthMap = {
+            ENE: 1, ENERO: 1, JAN: 1, FEB: 2, FEBRERO: 2, MAR: 3, MARZO: 3,
+            ABR: 4, ABRIL: 4, APR: 4, MAY: 5, MAYO: 5, JUN: 6, JUNIO: 6,
+            JUL: 7, JULIO: 7, AGO: 8, AGOSTO: 8, AUG: 8, SEP: 9, SEPT: 9, SEPTIEMBRE: 9,
+            OCT: 10, OCTUBRE: 10, NOV: 11, NOVIEMBRE: 11, DIC: 12, DICIEMBRE: 12, DEC: 12
+        };
+        for (const m of upper.matchAll(/(\d{1,2})\s*(?:DE\s+|[\-\/\s])\s*([A-Z]{3,10})\s*(?:DE\s+|[\-\/\s])\s*(20\d{2})/g)) {
+            if (monthMap[m[2]]) pushDate(m[3], monthMap[m[2]], m[1]);
+        }
+        return Array.from(new Set(dates)).sort();
     }
 
     function parseSoatTextAndFill(rawText, targets) {
@@ -118,8 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
 
         const upper = String(rawText).toUpperCase();
-        // 1. Detectar placa colombiana (ABC123 o ABC12D)
-        const foundPlate = extractPlateFromText(upper);
+        const preferred = (plateEl && plateEl.value.trim()) ? plateEl.value.trim() : (t.preferredPlate || '');
+        const foundPlate = extractPlateFromText(upper, preferred);
         if (foundPlate) {
             if (typeof t.onPlate === 'function') t.onPlate(foundPlate);
             else detectedSoatPlate = foundPlate;
@@ -128,32 +163,33 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // 2. Detectar fechas (DD/MM/YYYY, YYYY/MM/DD, YYYY-MM-DD, DD-MM-YYYY) y tomar la fecha futura más lejana (fin de vigencia)
-        const dates = [];
-        const dmy = upper.matchAll(/\b(\d{2})[\/\-](\d{2})[\/\-](20\d{2})\b/g);
-        for (const m of dmy) {
-            const iso = `${m[3]}-${m[2]}-${m[1]}`;
-            if (!isNaN(Date.parse(iso))) dates.push(iso);
+        // Priorizar fecha junto a palabras de vencimiento/vigencia
+        let chosenDate = '';
+        const expiryCtx = upper.match(/(?:VENCIMIENTO|VIGENCIA\s*HASTA|FIN\s*DE\s*VIGENCIA|HASTA)[\s:.\-A-Z]{0,25}?([^\n]{6,22})/);
+        if (expiryCtx) {
+            const nearDates = extractAllDatesFromText(expiryCtx[1]);
+            if (nearDates.length > 0) chosenDate = nearDates[nearDates.length - 1];
         }
-        const ymd = upper.matchAll(/\b(20\d{2})[\/\-](\d{2})[\/\-](\d{2})\b/g);
-        for (const m of ymd) {
-            const iso = `${m[1]}-${m[2]}-${m[3]}`;
-            if (!isNaN(Date.parse(iso))) dates.push(iso);
+        if (!chosenDate) {
+            const allDates = extractAllDatesFromText(upper);
+            if (allDates.length > 0) chosenDate = allDates[allDates.length - 1];
         }
 
-        if (dates.length > 0 && expiryEl) {
-            dates.sort();
-            const latest = dates[dates.length - 1];
-            if (!t.expiryInputId) detectedSoatExpiry = latest;
-            expiryEl.value = latest;
-            const st = computeSoatStatus(latest);
+        if (chosenDate && expiryEl) {
+            if (!t.expiryInputId) detectedSoatExpiry = chosenDate;
+            expiryEl.value = chosenDate;
+            expiryEl.readOnly = true;
+            const st = computeSoatStatus(chosenDate);
             if (hintEl) {
-                hintEl.innerHTML = `<i class="fa fa-magic mr-1"></i>Detectado del SOAT: <strong>${st}</strong> (vence ${latest})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}`;
+                hintEl.innerHTML = `<i class="fa fa-check-circle text-success mr-1"></i>Leído del SOAT: <strong>${st}</strong> (vence ${chosenDate})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}`;
             }
-        } else if (hintEl) {
-            hintEl.textContent = foundPlate
-                ? `Placa detectada en SOAT: ${foundPlate}. Ingresa manualmente la fecha de vencimiento.`
-                : 'Verifica o ingresa manualmente la fecha de vencimiento del SOAT.';
+        } else {
+            if (expiryEl) expiryEl.readOnly = false;
+            if (hintEl) {
+                hintEl.textContent = foundPlate
+                    ? `Placa detectada en SOAT: ${foundPlate}. Ingresa manualmente la fecha de vencimiento.`
+                    : 'Verifica o ingresa manualmente la fecha de vencimiento del SOAT.';
+            }
         }
     }
 
@@ -173,15 +209,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function detectPlateInVehiclePhotos(galleryUrls) {
+    async function preprocessPlateForOcr(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(1.5, 1200 / Math.max(img.width, img.height, 1));
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.filter = 'grayscale(100%) contrast(170%) brightness(110%)';
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.92));
+            };
+            img.onerror = function () { resolve(dataUrl); };
+            img.src = dataUrl;
+        });
+    }
+
+    async function detectPlateInVehiclePhotos(galleryUrls, preferredPlate) {
         const list = (galleryUrls || []).filter(src => src && String(src).startsWith('data:image'));
         if (list.length === 0) return '';
         const ok = await ensureTesseractLoaded();
         if (!ok) return '';
         for (let i = 0; i < Math.min(3, list.length); i++) {
             try {
-                const res = await window.Tesseract.recognize(list[i], 'eng');
-                const found = extractPlateFromText(res?.data?.text || '');
+                const prepped = await preprocessPlateForOcr(list[i]);
+                const res = await window.Tesseract.recognize(prepped, 'eng', {
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- '
+                });
+                const found = extractPlateFromText(res?.data?.text || '', preferredPlate);
                 if (found) return found;
             } catch (_) { }
         }
@@ -359,6 +416,22 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     bindDocUpload('car-soat-file', 'car-soat-status', v => { uploadedSoatImg = v; }, true);
     bindDocUpload('car-policy-file', 'car-policy-status', v => { uploadedPolicyImg = v; }, false);
+    const platePhotoInp = document.getElementById('car-plate-photo-file');
+    const platePhotoSt = document.getElementById('car-plate-photo-status');
+    if (platePhotoInp) {
+        platePhotoInp.addEventListener('change', function (e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) {
+                uploadedPlatePhoto = '';
+                if (platePhotoSt) platePhotoSt.textContent = 'Toma una foto de frente donde se lea claramente la placa. Solo la ve Administración para validar que coincide con el SOAT.';
+                return;
+            }
+            processDocFile(file, function (dataUrl) {
+                uploadedPlatePhoto = dataUrl;
+                if (platePhotoSt) platePhotoSt.innerHTML = renderDocPreviewHtml(dataUrl, 'Foto privada de placa cargada', true);
+            });
+        });
+    }
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -520,6 +593,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Por favor sube al menos una fotografía de tu vehículo (o agrega un enlace URL) para elegir la imagen principal.');
                 return;
             }
+            if (!uploadedPlatePhoto) {
+                alert('Por seguridad, debes subir la foto delantera privada donde se vea claramente la placa del vehículo.');
+                return;
+            }
             if (!uploadedSoatImg) {
                 alert('Por ley en Colombia, debes adjuntar la foto o PDF del SOAT vigente antes de publicar el vehículo.');
                 return;
@@ -558,9 +635,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // 2. Validación rápida por OCR de placas visibles en las fotografías del vehículo
+            // 2. Validación rápida por OCR priorizando la foto frontal de verificación de placa
             const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [typedUrl];
-            const photoPlate = await detectPlateInVehiclePhotos(finalGallery);
+            const photoPlate = await detectPlateInVehiclePhotos([uploadedPlatePhoto].concat(finalGallery), plate);
             if (photoPlate && photoPlate !== plate) {
                 restorePublishBtn();
                 alert(`La placa detectada en las fotografías del vehículo (${photoPlate}) NO coincide con la placa ingresada (${plate}).\n\nAsegúrate de subir fotos reales de este mismo vehículo y su SOAT correspondiente.`);
@@ -606,6 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 hasGps: hasGps,
                 soatImage: uploadedSoatImg || '',
                 policyImage: uploadedPolicyImg || '',
+                platePhoto: uploadedPlatePhoto || '',
                 plate: plate,
                 soatExpiry: soatExpiry,
                 soatStatus: soatStatus,
@@ -639,8 +717,11 @@ document.addEventListener('DOMContentLoaded', function () {
             ownerGalleryImages = [];
             uploadedSoatImg = '';
             uploadedPolicyImg = '';
+            uploadedPlatePhoto = '';
             detectedSoatPlate = '';
             detectedSoatExpiry = '';
+            const stPlatePh = document.getElementById('car-plate-photo-status');
+            if (stPlatePh) stPlatePh.textContent = 'Toma una foto de frente donde se lea claramente la placa. Solo la ve Administración para validar que coincide con el SOAT.';
             const stSoat = document.getElementById('car-soat-status');
             const stPol = document.getElementById('car-policy-status');
             if (stSoat) stSoat.textContent = 'Obligatorio para publicar el vehículo';

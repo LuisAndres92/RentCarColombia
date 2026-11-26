@@ -79,7 +79,8 @@ async function dbGetVehiculos() {
                         policyImage: v.poliza_imagen || '',
                         plate: v.placa || '',
                         soatExpiry: v.soat_vencimiento || '',
-                        soatStatus: v.soat_estado || 'Pendiente'
+                        soatStatus: v.soat_estado || 'Pendiente',
+                        platePhoto: v.foto_placa_privada || ''
                     };
                 });
                 // Sincronizar copia local (incluye lista vacía si se borraron todos en Supabase)
@@ -145,6 +146,7 @@ async function dbSaveVehiculo(vehiculo) {
             vehiculo.image = uploadedGallery[0] || vehiculo.image;
             if (vehiculo.soatImage) vehiculo.soatImage = await dbUploadDataUrlToStorage(vehiculo.soatImage, 'documentos', `soat_${vehiculo.plate || 'auto'}`);
             if (vehiculo.policyImage) vehiculo.policyImage = await dbUploadDataUrlToStorage(vehiculo.policyImage, 'documentos', `poliza_${vehiculo.plate || 'auto'}`);
+            if (vehiculo.platePhoto) vehiculo.platePhoto = await dbUploadDataUrlToStorage(vehiculo.platePhoto, 'verificacion', `placa_${vehiculo.plate || 'auto'}`);
 
             const row = {
                 marca: vehiculo.brand,
@@ -172,7 +174,8 @@ async function dbSaveVehiculo(vehiculo) {
                 poliza_imagen: vehiculo.policyImage || null,
                 placa: vehiculo.plate || null,
                 soat_vencimiento: vehiculo.soatExpiry || null,
-                soat_estado: vehiculo.soatStatus || 'Pendiente'
+                soat_estado: vehiculo.soatStatus || 'Pendiente',
+                foto_placa_privada: vehiculo.platePhoto || null
             };
 
             const { data, error } = await client.from('vehiculos').insert([row]).select();
@@ -207,6 +210,7 @@ async function dbUpdateVehiculo(vehiculo) {
             vehiculo.image = uploadedGallery[0] || vehiculo.image;
             if (vehiculo.soatImage) vehiculo.soatImage = await dbUploadDataUrlToStorage(vehiculo.soatImage, 'documentos', `soat_${vehiculo.plate || 'auto'}`);
             if (vehiculo.policyImage) vehiculo.policyImage = await dbUploadDataUrlToStorage(vehiculo.policyImage, 'documentos', `poliza_${vehiculo.plate || 'auto'}`);
+            if (vehiculo.platePhoto) vehiculo.platePhoto = await dbUploadDataUrlToStorage(vehiculo.platePhoto, 'verificacion', `placa_${vehiculo.plate || 'auto'}`);
 
             const row = {
                 marca: vehiculo.brand,
@@ -232,7 +236,8 @@ async function dbUpdateVehiculo(vehiculo) {
                 poliza_imagen: vehiculo.policyImage || null,
                 placa: vehiculo.plate || null,
                 soat_vencimiento: vehiculo.soatExpiry || null,
-                soat_estado: vehiculo.soatStatus || 'Pendiente'
+                soat_estado: vehiculo.soatStatus || 'Pendiente',
+                foto_placa_privada: vehiculo.platePhoto || null
             };
             await client.from('vehiculos').update(row).eq('id', vehiculo.id);
         } catch (err) {
