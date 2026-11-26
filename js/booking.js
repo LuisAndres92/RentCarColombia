@@ -53,9 +53,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Pre-llenar datos del conductor si ya ha iniciado sesión
     if (currentUser) {
-        if (inputName && !inputName.value) inputName.value = currentUser.name || '';
-        if (inputEmail && !inputEmail.value) inputEmail.value = currentUser.email || '';
-        if (inputPhone && !inputPhone.value) inputPhone.value = currentUser.phone || '';
+        const storedUsers = (typeof getUsers === 'function') ? getUsers() : [];
+        const fullUser = storedUsers.find(u => String(u.id) === String(currentUser.id) || (u.email && u.email.toLowerCase() === String(currentUser.email || '').toLowerCase())) || currentUser;
+        if (inputName && !inputName.value) inputName.value = fullUser.name || currentUser.name || '';
+        if (inputEmail && !inputEmail.value) inputEmail.value = fullUser.email || currentUser.email || '';
+        if (inputPhone && !inputPhone.value) inputPhone.value = fullUser.phone || currentUser.phone || '';
+        if (inputLicense && !inputLicense.value) inputLicense.value = fullUser.documentNumber || fullUser.cedula || fullUser.license || currentUser.documentNumber || currentUser.cedula || '';
     }
 
     // Fechas
@@ -413,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Procesar reserva
     if (formBooking) {
-        formBooking.addEventListener('submit', function (e) {
+        formBooking.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             if (isOwnCar) {
