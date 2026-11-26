@@ -73,27 +73,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } catch (_) { }
             try {
-                if (typeof getSupabaseClient === 'function') {
+                if (typeof getSupabaseClient === 'function' && currentUser.email) {
                     const client = getSupabaseClient();
                     if (client) {
-                        const { error } = await client.from('perfiles').upsert({
-                            id: currentUser.id,
-                            email: currentUser.email,
-                            nombre_completo: currentUser.name,
-                            telefono: newPhone,
-                            documento_identidad: newDoc
-                        });
-                        if (error) {
-                            await client.from('perfiles').upsert({
-                                id: currentUser.id,
+                        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(currentUser.id || ''));
+                        const { data: updatedRows, error: updErr } = await client
+                            .from('perfiles')
+                            .update({ telefono: newPhone, documento_identidad: newDoc })
+                            .eq('email', currentUser.email)
+                            .select('id');
+                        if (updErr) console.warn('Error actualizando perfil en Supabase:', updErr);
+                        if (!updErr && (!updatedRows || updatedRows.length === 0)) {
+                            const insPayload = {
                                 email: currentUser.email,
-                                nombre_completo: currentUser.name,
-                                telefono: newPhone
-                            });
+                                nombre_completo: currentUser.name || currentUser.email.split('@')[0],
+                                telefono: newPhone,
+                                documento_identidad: newDoc,
+                                rol: currentUser.role || 'propietario'
+                            };
+                            if (isUuid) insPayload.id = currentUser.id;
+                            const { error: insErr } = await client.from('perfiles').upsert([insPayload], { onConflict: 'email' });
+                            if (insErr) console.warn('Error insertando perfil en Supabase:', insErr);
                         }
                     }
                 }
-            } catch (_) { }
+            } catch (sbErr) { console.warn('Error guardando documento en Supabase:', sbErr); }
             $('#modalCompleteOwnerIdentity').modal('hide');
         };
         setTimeout(() => $('#modalCompleteOwnerIdentity').modal('show'), 250);
@@ -250,14 +254,29 @@ document.addEventListener('DOMContentLoaded', function () {
         const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
 
         const upper = String(rawText).toUpperCase();
+        const compactDigits = upper.replace(/[\s\-().]/g, '');
+        const phonesInText = [
+            ...upper.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g),
+            ...compactDigits.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g)
+        ].map(m => m[1]);
+        const isPhoneLike = (val) => {
+            if (!val) return true;
+            if (/^3\d{9}$/.test(val)) return true;
+            return phonesInText.some(ph => ph === val || ph.endsWith(val) || ph.includes(val));
+        };
+
         const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
-        const docByTipo = upper.match(/(?:^|[^A-Z0-9])(?:CC|CE|NIT|TI)[\s:.\-|]{1,25}(\d{6,12})(?:[^0-9]|$)/);
-        const docFallback = upper.match(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,160}?(?:CC|CE|NIT|TI)?[\s:.\-|]*(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
-        const rawDoc = docStructured ? docStructured[1] : (docByTipo ? docByTipo[1] : (docFallback ? docFallback[1] : ''));
-        // Evitar confundir con el teléfono celular del tomador (ej. 3162357871 o fragmento 162357871)
-        const phonesInText = [...upper.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g)].map(m => m[1]);
-        const isPhoneFragment = rawDoc && phonesInText.some(ph => ph === rawDoc || ph.endsWith(rawDoc));
-        const foundHolderDoc = isPhoneFragment ? '' : rawDoc;
+        const ccCandidates = [...upper.matchAll(/(?:^|[^A-Z0-9])(?:CC|CE|NIT|TI)[\s\S]{0,60}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
+            .map(m => m[1])
+            .filter(d => !isPhoneLike(d));
+        const fallbackCandidates = [...upper.matchAll(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,180}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
+            .map(m => m[1])
+            .filter(d => !isPhoneLike(d));
+
+        let foundHolderDoc = '';
+        if (docStructured && !isPhoneLike(docStructured[1])) foundHolderDoc = docStructured[1];
+        else if (ccCandidates.length > 0) foundHolderDoc = ccCandidates[0];
+        else if (fallbackCandidates.length > 0) foundHolderDoc = fallbackCandidates[0];
         if (foundHolderDoc) {
             if (typeof t.onHolderDoc === 'function') t.onHolderDoc(foundHolderDoc);
             else if (!t.plateInputId) detectedSoatHolderDoc = foundHolderDoc;
@@ -549,23 +568,38 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // Buscar No. de documento del tomador (para RUNT)
-                const docLabels = items.filter(it => /DOCUMENTO\s+DEL\s+TOMADOR|NO\.?\s*DE\s*DOCUMENTO/i.test(it.str));
+                // Buscar No. de documento del tomador (para RUNT): primero debajo de "No.DE DOCUMENTO", o a la derecha de "CC"
+                const docLabels = items.filter(it => /NO\.?\s*DE\s*DOCUMENTO/i.test(it.str));
                 for (const dLbl of docLabels) {
                     const nearbyDoc = items.filter(it => {
                         if (it === dLbl) return false;
                         const dx = it.x - dLbl.x;
                         const dyBelow = dLbl.y - it.y;
-                        return (dyBelow >= 2 && dyBelow <= 55 && dx >= -40 && dx <= 100) || (Math.abs(dyBelow) <= 10 && dx > 5 && dx <= 160);
-                    });
+                        return dyBelow >= 2 && dyBelow <= 55 && dx >= -15 && dx <= 85;
+                    }).sort((a, b) => (Math.abs(a.x - dLbl.x) + (dLbl.y - a.y)) - (Math.abs(b.x - dLbl.x) + (dLbl.y - b.y)));
                     for (const cand of nearbyDoc) {
                         const digits = cand.str.replace(/\D/g, '');
-                        if (digits.length >= 6 && digits.length <= 13) {
+                        if (digits.length >= 6 && digits.length <= 13 && !/^3\d{9}$/.test(digits)) {
                             structuredTags += ` __SOAT_TOMADOR_DOC__:${digits} `;
                             break;
                         }
                     }
                     if (structuredTags.includes('__SOAT_TOMADOR_DOC__:')) break;
+                }
+                if (!structuredTags.includes('__SOAT_TOMADOR_DOC__:')) {
+                    const ccLabels = items.filter(it => /^(CC|CE|NIT|TI)$/i.test(it.str));
+                    for (const cLbl of ccLabels) {
+                        const rightDoc = items.filter(it => it.x > cLbl.x + 5 && it.x - cLbl.x <= 220 && Math.abs(it.y - cLbl.y) <= 15)
+                            .sort((a, b) => a.x - b.x);
+                        for (const cand of rightDoc) {
+                            const digits = cand.str.replace(/\D/g, '');
+                            if (digits.length >= 6 && digits.length <= 13 && !/^3\d{9}$/.test(digits)) {
+                                structuredTags += ` __SOAT_TOMADOR_DOC__:${digits} `;
+                                break;
+                            }
+                        }
+                        if (structuredTags.includes('__SOAT_TOMADOR_DOC__:')) break;
+                    }
                 }
             }
         }
