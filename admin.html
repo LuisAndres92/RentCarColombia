@@ -1553,9 +1553,20 @@
                                         <div class="font-weight-bold text-dark small mb-2"><i
                                                 class="fa fa-plus-circle text-primary mr-1"></i> Agregar Nueva Pregunta
                                         </div>
-                                        <div class="form-group mb-2">
-                                            <input type="text" id="new-faq-q" class="form-control form-control-sm"
-                                                placeholder="Pregunta (Ej. ¿Qué incluye el seguro?)" required>
+                                        <div class="form-row">
+                                            <div class="col-md-8 form-group mb-2">
+                                                <input type="text" id="new-faq-q" class="form-control form-control-sm"
+                                                    placeholder="Pregunta (Ej. ¿Qué incluye el seguro?)" required>
+                                            </div>
+                                            <div class="col-md-4 form-group mb-2">
+                                                <select id="new-faq-category" class="form-control form-control-sm">
+                                                    <option value="Conductores">Conductores</option>
+                                                    <option value="Propietarios">Propietarios</option>
+                                                    <option value="Pagos y Garantía">Pagos y Garantía</option>
+                                                    <option value="Seguridad">Seguridad</option>
+                                                    <option value="General">General</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="form-group mb-2">
                                             <textarea id="new-faq-a" class="form-control form-control-sm" rows="2"
@@ -2147,15 +2158,15 @@
 
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_12"></script>
+    <script src="js/supabase-client.js?v=20261125_24"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <!-- Motor de Configuración y Panel de Administración -->
-    <script src="js/config.js?v=20261125_17"></script>
-    <script src="js/admin-dashboard.js?v=20261125_17"></script>
+    <script src="js/config.js?v=20261125_24"></script>
+    <script src="js/admin-dashboard.js?v=20261125_24"></script>
 </body>
 
 </html>

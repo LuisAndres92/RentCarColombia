@@ -311,6 +311,9 @@ async function syncLiveDataFromSupabase() {
         if (typeof dbGetTestimonios === 'function') {
             await dbGetTestimonios();
         }
+        if (typeof dbGetFaqs === 'function') {
+            await dbGetFaqs();
+        }
         if (typeof dbGetMensajesContacto === 'function') {
             await dbGetMensajesContacto();
         }
@@ -328,6 +331,7 @@ async function syncLiveDataFromSupabase() {
         renderFeedbackAndAlertsAdmin();
         renderCommunityTestimonialsAdmin();
         renderVerifiedReviewsModeration();
+        renderFaqList();
         renderInquiriesAdmin();
         renderAuditLogsAdmin();
         renderUsersManagement();
@@ -1424,32 +1428,204 @@ window.deleteHeroSlide = function(idx) {
     }
 };
 
-function renderFaqList(faqs) {
+function getFaqsAdminList() {
+    const synced = localStorage.getItem('rentcar_supabase_faqs_synced') === '1';
+    try {
+        const stored = JSON.parse(localStorage.getItem('rentcar_faqs_db'));
+        if (Array.isArray(stored) && (stored.length > 0 || synced)) {
+            return stored;
+        }
+    } catch (e) { }
+    const cfg = getSiteConfig();
+    return (cfg.cms && Array.isArray(cfg.cms.faqs)) ? cfg.cms.faqs.map(f => ({
+        q: f.q, a: f.a, category: f.category || 'General', visible: f.visible !== false
+    })) : [];
+}
+
+function saveFaqsAdminList(list) {
+    localStorage.setItem('rentcar_faqs_db', JSON.stringify(list));
+    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('faqs_updated');
+}
+
+function renderFaqList(faqsOverride) {
     const container = document.getElementById('faq-accordion-list');
     if (!container) return;
+
+    const faqs = Array.isArray(faqsOverride) && localStorage.getItem('rentcar_faqs_db') === null
+        ? faqsOverride
+        : getFaqsAdminList();
 
     if (!faqs || faqs.length === 0) {
         container.innerHTML = '<div class="text-center py-3 text-muted small">No hay preguntas frecuentes registradas.</div>';
         return;
     }
 
-    container.innerHTML = faqs.map((f, idx) => `
-        <div class="card border mb-2 rounded">
-            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                <span class="font-weight-bold text-dark small"><i class="fa fa-question-circle text-primary mr-2"></i>${f.q}</span>
-                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteFaq(${idx})"><i class="fa fa-trash"></i></button>
+    container.innerHTML = faqs.map((f, idx) => {
+        const isVis = f.visible !== false;
+        const cat = f.category || 'General';
+        return `
+        <div class="card border mb-2 rounded ${isVis ? '' : 'bg-light'}">
+            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-info mr-2">${cat}</span>
+                    <span class="font-weight-bold text-dark small"><i class="fa fa-question-circle text-primary mr-1"></i>${f.q}</span>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 6px;">
+                    <span class="badge ${isVis ? 'badge-success' : 'badge-secondary'}">${isVis ? 'Visible' : 'Oculta'}</span>
+                    <button type="button" class="btn btn-sm ${isVis ? 'btn-outline-secondary' : 'btn-outline-success'} py-0 px-2" onclick="toggleFaqVisibility(${idx})" title="${isVis ? 'Ocultar de la web' : 'Mostrar en la web'}">
+                        <i class="fa ${isVis ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" onclick="openEditFaqModal(${idx})" title="Editar pregunta y respuesta">
+                        <i class="fa fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteFaq(${idx})" title="Eliminar FAQ">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body py-2 small text-muted">${f.a}</div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
+window.toggleFaqVisibility = async function (idx) {
+    const list = getFaqsAdminList();
+    if (!list[idx]) return;
+    const prev = list[idx].visible !== false;
+    list[idx].visible = !prev;
+    saveFaqsAdminList(list);
+    if (typeof dbUpdateFaq === 'function' && list[idx].id) {
+        await dbUpdateFaq(list[idx]);
+    }
+    recordAdminLog('CMS', list[idx].visible ? 'FAQ activada en portada' : 'FAQ oculta en portada', list[idx].q, [
+        { field: `FAQ: ${list[idx].q}`, before: prev ? 'Visible' : 'Oculta', after: list[idx].visible ? 'Visible' : 'Oculta' }
+    ]);
+    renderFaqList();
+    notifySaved(list[idx].visible ? 'Pregunta frecuente visible en la web.' : 'Pregunta frecuente oculta de la web.');
+};
+
+window.openEditFaqModal = function (idx) {
+    const list = getFaqsAdminList();
+    const faq = list[idx];
+    if (!faq) return;
+
+    let modalEl = document.getElementById('modalAdminEditFaq');
+    if (!modalEl) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `
+            <div class="modal fade" id="modalAdminEditFaq" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                        <div class="modal-header text-white" style="background: #1C1E32;">
+                            <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-edit text-primary mr-2"></i>Editar Pregunta Frecuente</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <form id="form-admin-edit-faq">
+                            <div class="modal-body p-4">
+                                <input type="hidden" id="edit-faq-idx">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold">Categoría</label>
+                                    <select id="edit-faq-category" class="form-control form-control-sm">
+                                        <option value="Conductores">Conductores</option>
+                                        <option value="Propietarios">Propietarios</option>
+                                        <option value="Pagos y Garantía">Pagos y Garantía</option>
+                                        <option value="Seguridad">Seguridad</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="small font-weight-bold">Pregunta *</label>
+                                    <input type="text" id="edit-faq-q" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="small font-weight-bold">Respuesta *</label>
+                                    <textarea id="edit-faq-a" class="form-control" rows="4" required></textarea>
+                                </div>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="edit-faq-visible">
+                                    <label class="custom-control-label small font-weight-bold" for="edit-faq-visible">Mostrar en el sitio web</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4"><i class="fa fa-save mr-1"></i> Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrap.firstElementChild);
+        modalEl = document.getElementById('modalAdminEditFaq');
+
+        document.getElementById('form-admin-edit-faq').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const i = parseInt(document.getElementById('edit-faq-idx').value, 10);
+            const curr = getFaqsAdminList();
+            if (!curr[i]) return;
+
+            const oldItem = { ...curr[i] };
+            const newQ = document.getElementById('edit-faq-q').value.trim();
+            const newA = document.getElementById('edit-faq-a').value.trim();
+            const newCat = document.getElementById('edit-faq-category').value;
+            const newVis = document.getElementById('edit-faq-visible').checked;
+            if (!newQ || !newA) return;
+
+            curr[i].q = newQ;
+            curr[i].a = newA;
+            curr[i].category = newCat;
+            curr[i].visible = newVis;
+            saveFaqsAdminList(curr);
+
+            if (typeof dbUpdateFaq === 'function' && curr[i].id) {
+                await dbUpdateFaq(curr[i]);
+            }
+
+            const diffs = [];
+            if (oldItem.q !== newQ) diffs.push({ field: 'Pregunta FAQ', before: oldItem.q, after: newQ });
+            if (oldItem.a !== newA) diffs.push({ field: 'Respuesta FAQ', before: oldItem.a, after: newA });
+            if ((oldItem.category || 'General') !== newCat) diffs.push({ field: 'Categoría FAQ', before: oldItem.category || 'General', after: newCat });
+            if ((oldItem.visible !== false) !== newVis) diffs.push({ field: 'Visibilidad FAQ', before: oldItem.visible !== false ? 'Visible' : 'Oculta', after: newVis ? 'Visible' : 'Oculta' });
+            if (diffs.length > 0) {
+                recordAdminLog('CMS', 'Pregunta frecuente editada', newQ, diffs);
+            }
+
+            $('#modalAdminEditFaq').modal('hide');
+            renderFaqList();
+            notifySaved('Pregunta frecuente actualizada en la base de datos.');
+        });
+    }
+
+    document.getElementById('edit-faq-idx').value = String(idx);
+    document.getElementById('edit-faq-category').value = faq.category || 'General';
+    document.getElementById('edit-faq-q').value = faq.q || '';
+    document.getElementById('edit-faq-a').value = faq.a || '';
+    document.getElementById('edit-faq-visible').checked = (faq.visible !== false);
+    $('#modalAdminEditFaq').modal('show');
+};
+
 window.deleteFaq = function (idx) {
-    const cfg = getSiteConfig();
-    if (cfg.cms && cfg.cms.faqs) {
-        cfg.cms.faqs.splice(idx, 1);
-        saveSiteConfig(cfg);
-        renderFaqList(cfg.cms.faqs);
+    const list = getFaqsAdminList();
+    const target = list[idx];
+    if (!target) return;
+    const doDelete = async function () {
+        const curr = getFaqsAdminList();
+        const removed = curr.splice(idx, 1)[0];
+        saveFaqsAdminList(curr);
+        if (typeof dbDeleteFaq === 'function' && removed && removed.id) {
+            await dbDeleteFaq(removed.id);
+        }
+        if (removed) {
+            recordAdminLog('CMS', 'Pregunta frecuente eliminada', removed.q, [
+                { field: 'Pregunta frecuente', before: removed.q, after: '(Eliminada)' }
+            ]);
+        }
+        renderFaqList();
+        notifySaved('Pregunta frecuente eliminada.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar pregunta frecuente', message: `¿Deseas eliminar la pregunta "${target.q}"?`, confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
     }
 };
 
@@ -2056,22 +2232,27 @@ function setupFormListeners() {
     // 3. Agregar FAQ
     const formAddFaq = document.getElementById('form-add-faq');
     if (formAddFaq) {
-        formAddFaq.addEventListener('submit', function (e) {
+        formAddFaq.addEventListener('submit', async function (e) {
             e.preventDefault();
             const question = document.getElementById('new-faq-q').value.trim();
             const answer = document.getElementById('new-faq-a').value.trim();
+            const categoryEl = document.getElementById('new-faq-category');
+            const category = categoryEl ? categoryEl.value : 'General';
             if (!question || !answer) return;
 
-            const cfg = getSiteConfig();
-            if (!cfg.cms) cfg.cms = {};
-            if (!cfg.cms.faqs) cfg.cms.faqs = [];
-
-            cfg.cms.faqs.push({ q: question, a: answer });
-            saveSiteConfig(cfg);
-            renderFaqList(cfg.cms.faqs);
+            const list = getFaqsAdminList();
+            let newFaq = { q: question, a: answer, category: category, order: list.length + 1, visible: true };
+            if (typeof dbSaveFaq === 'function') {
+                newFaq = await dbSaveFaq(newFaq);
+            }
+            list.push(newFaq);
+            saveFaqsAdminList(list);
+            renderFaqList();
             formAddFaq.reset();
-            recordAdminLog('CMS', 'Pregunta frecuente añadida', question);
-            notifySaved('Nueva pregunta frecuente añadida.');
+            recordAdminLog('CMS', 'Pregunta frecuente añadida', question, [
+                { field: `Nueva FAQ (${category})`, before: '(Sin registro)', after: `${question} — ${answer}` }
+            ]);
+            notifySaved('Nueva pregunta frecuente guardada en la base de datos.');
         });
     }
 

@@ -541,8 +541,63 @@ function applyGlobalConfig() {
     // 12b. Testimonios de Comunidad en Portada (public.testimonios)
     try { renderCommunityTestimonialsOnHome(); } catch (e) { console.warn('Testimonials:', e); }
 
+    // 12c. Preguntas Frecuentes Dinámicas (public.preguntas_frecuentes)
+    try { renderFaqsOnHome(); } catch (e) { console.warn('FAQs:', e); }
+
     // 13. Renumeración Dinámica y Secuencial de Secciones Visibles (01, 02, 03...)
     try { renumberVisibleSections(); } catch (e) { console.warn('Renumber sections:', e); }
+}
+
+function renderFaqsOnHome() {
+    const acc = document.getElementById('site-faq-accordion');
+    const sections = document.querySelectorAll('.site-faq-section');
+    if (!acc) return;
+
+    let faqs = [];
+    const synced = localStorage.getItem('rentcar_supabase_faqs_synced') === '1';
+    try {
+        const stored = JSON.parse(localStorage.getItem('rentcar_faqs_db'));
+        if (Array.isArray(stored) && (stored.length > 0 || synced)) {
+            faqs = stored;
+        } else {
+            const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
+            faqs = (cfg.cms && Array.isArray(cfg.cms.faqs)) ? cfg.cms.faqs : [];
+        }
+    } catch (e) {
+        faqs = [];
+    }
+
+    const visibleFaqs = faqs.filter(f => f && f.visible !== false);
+    if (visibleFaqs.length === 0) {
+        sections.forEach(el => { el.style.display = 'none'; });
+        return;
+    }
+    sections.forEach(el => { el.style.display = ''; });
+
+    acc.innerHTML = visibleFaqs.map((f, idx) => {
+        const q = (f.q || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const a = (f.a || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const cat = (f.category || 'General').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const collapseId = `siteFaqCollapse${idx}`;
+        const isOpen = idx === 0;
+        return `
+        <div class="card border-0 shadow-sm mb-3 rounded overflow-hidden">
+            <div class="card-header bg-white py-3 px-4" id="siteFaqHeading${idx}" style="cursor: pointer;" data-toggle="collapse" data-target="#${collapseId}" aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="${collapseId}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="pr-3">
+                        <span class="badge badge-light border text-primary mr-2">${cat}</span>
+                        <span class="font-weight-bold text-dark">${q}</span>
+                    </div>
+                    <i class="fa fa-chevron-down text-primary"></i>
+                </div>
+            </div>
+            <div id="${collapseId}" class="collapse ${isOpen ? 'show' : ''}" aria-labelledby="siteFaqHeading${idx}" data-parent="#site-faq-accordion">
+                <div class="card-body bg-light text-dark px-4 py-3 border-top">
+                    ${a}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function renderCommunityTestimonialsOnHome() {
@@ -953,6 +1008,15 @@ function initGlobalConfigAndLiveCars() {
         dbGetTestimonios().then(() => {
             try {
                 renderCommunityTestimonialsOnHome();
+                renumberVisibleSections();
+            } catch (e) { }
+        }).catch(() => { });
+    }
+
+    if (typeof dbGetFaqs === 'function') {
+        dbGetFaqs().then(() => {
+            try {
+                renderFaqsOnHome();
                 renumberVisibleSections();
             } catch (e) { }
         }).catch(() => { });

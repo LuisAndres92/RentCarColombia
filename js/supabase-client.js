@@ -741,3 +741,77 @@ async function dbDeleteTestimonio(id) {
         try { await client.from('testimonios').delete().eq('id', id); } catch (e) { }
     }
 }
+
+/** ================= 11. PREGUNTAS FRECUENTES (FAQS DINÁMICAS) ================= **/
+async function dbGetFaqs() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client
+                .from('preguntas_frecuentes')
+                .select('*')
+                .order('orden', { ascending: true })
+                .order('creado_en', { ascending: true });
+            if (!error && data) {
+                const mapped = data.map(f => ({
+                    id: f.id,
+                    q: f.pregunta,
+                    a: f.respuesta,
+                    category: f.categoria || 'General',
+                    order: parseInt(f.orden, 10) || 0,
+                    visible: f.visible !== false
+                }));
+                localStorage.setItem('rentcar_faqs_db', JSON.stringify(mapped));
+                localStorage.setItem('rentcar_supabase_faqs_synced', '1');
+                return mapped;
+            }
+        } catch (e) {
+            console.warn("Cargando FAQs desde Supabase:", e);
+        }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_faqs_db')) || []; } catch (e) { return []; }
+}
+
+async function dbSaveFaq(faq) {
+    const client = getSupabaseClient();
+    if (client && faq) {
+        try {
+            const { data, error } = await client.from('preguntas_frecuentes').insert([{
+                pregunta: faq.q,
+                respuesta: faq.a,
+                categoria: faq.category || 'General',
+                orden: parseInt(faq.order, 10) || 0,
+                visible: faq.visible !== false
+            }]).select();
+            if (!error && data && data[0]) faq.id = data[0].id;
+        } catch (e) {
+            console.warn("Error guardando FAQ en Supabase:", e);
+        }
+    }
+    return faq;
+}
+
+async function dbUpdateFaq(faq) {
+    const client = getSupabaseClient();
+    if (client && faq && faq.id) {
+        try {
+            await client.from('preguntas_frecuentes').update({
+                pregunta: faq.q,
+                respuesta: faq.a,
+                categoria: faq.category || 'General',
+                orden: parseInt(faq.order, 10) || 0,
+                visible: faq.visible !== false
+            }).eq('id', faq.id);
+        } catch (e) {
+            console.warn("Error actualizando FAQ en Supabase:", e);
+        }
+    }
+    return faq;
+}
+
+async function dbDeleteFaq(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('preguntas_frecuentes').delete().eq('id', id); } catch (e) { }
+    }
+}

@@ -148,10 +148,42 @@ SET propietario_id = (
 WHERE propietario_id IS NULL
   AND EXISTS (SELECT 1 FROM public.perfiles WHERE email = 'propietario@ejemplo.com');
 
--- 11. Verificación rápida de tablas
+-- 11. Asegurar tabla preguntas_frecuentes (FAQs dinámicas modificables y con visibilidad)
+CREATE TABLE IF NOT EXISTS public.preguntas_frecuentes (
+    id uuid primary key default gen_random_uuid(),
+    pregunta text not null,
+    respuesta text not null,
+    categoria text default 'General',
+    orden integer default 0,
+    visible boolean default true,
+    creado_en timestamptz default now()
+);
+ALTER TABLE public.preguntas_frecuentes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion total preguntas_frecuentes" ON public.preguntas_frecuentes;
+CREATE POLICY "Gestion total preguntas_frecuentes" ON public.preguntas_frecuentes FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.preguntas_frecuentes (pregunta, respuesta, categoria, orden, visible)
+SELECT v.pregunta, v.respuesta, v.categoria, v.orden, true
+FROM (VALUES
+    ('¿Qué requisitos necesito para alquilar un auto?', 'Ser mayor de 21 años, contar con cédula de ciudadanía original (o pasaporte vigente para extranjeros) y licencia de conducción vigente en buen estado. A diferencia de las agencias tradicionales, no exigimos tarjeta de crédito obligatoria.', 'Conductores', 1),
+    ('¿Cómo y cuándo recibo mis ganancias como propietario?', 'Recibes el 85% neto del valor del alquiler mediante transferencia bancaria o Nequi una vez finalizado el viaje y confirmada la entrega del vehículo sin novedades (la plataforma retiene el 15% por servicio, contrato digital y soporte).', 'Propietarios', 2),
+    ('¿Qué cubre el depósito de garantía (fianza)?', 'Respalda posibles infracciones o fotomultas ocurridas durante el viaje, combustible faltante, entregas tardías o daños estéticos leves. Si el vehículo regresa en las mismas condiciones del acta de entrega, la fianza se libera al 100%.', 'Pagos y Garantía', 3),
+    ('¿Puedo alquilar un vehículo si soy extranjero o turista en Colombia?', 'Sí. Debes presentar tu pasaporte original vigente con el sello de ingreso al país y la licencia de conducción vigente de tu país de origen (válida durante el tiempo de tu permiso turístico; si está en otro alfabeto, se recomienda Permiso Internacional).', 'Conductores', 4),
+    ('¿Qué métodos de pago aceptan para reservar y cubrir la fianza?', 'Puedes pagar de forma segura mediante Wompi (PSE, Nequi, tarjetas débito o crédito) o transferencia bancaria directa. El pago y la custodia de la fianza quedan registrados en tu reserva sin bloqueos abusivos de cupo.', 'Pagos y Garantía', 5),
+    ('¿Los vehículos tienen seguro y qué ocurre en caso de accidente o falla mecánica?', 'Todos los vehículos publicados deben contar con SOAT vigente y póliza de respaldo verificada. Al recibir el auto se firma un Acta Digital de Entrega con registro fotográfico y cuentas con acompañamiento 24/7 ante cualquier eventualidad en carretera.', 'Seguridad', 6),
+    ('¿Cómo funciona el kilometraje incluido y la política de combustible?', 'Cada propietario define el límite diario de su vehículo (generalmente entre 200 y 250 km/día o ilimitado negociable), visible antes de reservar. El auto se entrega y debe devolverse con el mismo nivel de combustible registrado en el acta inicial.', 'Conductores', 7),
+    ('¿Puede conducir otra persona adicional al titular de la reserva?', 'Sí, siempre que el conductor adicional sea notificado y validado antes de la entrega con su documento de identidad y licencia vigente para quedar cubierto en el contrato digital.', 'Conductores', 8),
+    ('¿Quién asume las multas de tránsito o fotomultas durante el alquiler?', 'El arrendatario asume cualquier comparendo o fotomulta registrada dentro de las fechas y horas exactas de su contrato. En caso de notificación posterior, se presenta el soporte oficial de tránsito para su descuento o cobro.', 'Seguridad', 9),
+    ('¿Puedo cancelar o reprogramar mi reserva?', 'Sí. Si solicitas la cancelación o cambio de fechas con anticipación antes de la hora de entrega, gestionamos la reprogramación (sujeta a disponibilidad del anfitrión) o la devolución según las políticas vigentes del servicio.', 'Pagos y Garantía', 10)
+) AS v(pregunta, respuesta, categoria, orden)
+WHERE NOT EXISTS (SELECT 1 FROM public.preguntas_frecuentes);
+
+-- 12. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
 UNION ALL
 SELECT 'testimonios', count(*) FROM public.testimonios
+UNION ALL
+SELECT 'preguntas_frecuentes', count(*) FROM public.preguntas_frecuentes
 UNION ALL
 SELECT 'resenas', count(*) FROM public.resenas
 UNION ALL
