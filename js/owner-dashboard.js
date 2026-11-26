@@ -23,6 +23,22 @@ document.addEventListener('DOMContentLoaded', function () {
     setupWorkflowModals();
     setupMarketPriceHint();
 
+    // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
+    (async function syncOwnerLiveDataFromSupabase() {
+        try {
+            if (typeof dbGetVehiculos === 'function') await dbGetVehiculos();
+            if (typeof dbGetReservas === 'function') await dbGetReservas();
+            if (typeof dbGetOwnerAlerts === 'function') await dbGetOwnerAlerts();
+            renderOwnerAlertsAndProposals();
+            renderDashboardStats();
+            renderOwnerCars();
+            renderBookingRequests();
+            renderWalletStats();
+        } catch (e) {
+            console.warn('Sincronización propietario Supabase:', e);
+        }
+    })();
+
     // 4. Manejo de cambio de imagen en tiempo real
     const selectImg = document.getElementById('car-template-img');
     const customUrl = document.getElementById('car-custom-url');

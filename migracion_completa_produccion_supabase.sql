@@ -140,7 +140,15 @@ INSERT INTO public.testimonios (nombre_cliente, rol_o_ciudad, foto_url, califica
 SELECT 'Diana Paternina', 'Conductora Frecuente', 'img/testimonial-4.jpg', 5, 'Excelente atención al cliente por WhatsApp. Reservé un sedán para un viaje de negocios y todo estuvo listo a mi llegada. La mejor opción en Colombia.', 'Chevrolet Onix', true
 WHERE (SELECT count(*) FROM public.testimonios) = 3;
 
--- 10. Verificación rápida de tablas
+-- 10. Asignar el vehículo de ejemplo (sin dueño) a propietario@ejemplo.com
+UPDATE public.vehiculos
+SET propietario_id = (
+    SELECT id FROM public.perfiles WHERE email = 'propietario@ejemplo.com' LIMIT 1
+)
+WHERE propietario_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.perfiles WHERE email = 'propietario@ejemplo.com');
+
+-- 11. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
 UNION ALL
 SELECT 'testimonios', count(*) FROM public.testimonios
