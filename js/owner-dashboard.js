@@ -35,19 +35,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let uploadedSoatImg = '';
     let uploadedPolicyImg = '';
+    function compressDocImage(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const MAX = 900;
+                let w = img.width;
+                let h = img.height;
+                if (w > h && w > MAX) { h = Math.round((h * MAX) / w); w = MAX; }
+                else if (h >= w && h > MAX) { w = Math.round((w * MAX) / h); h = MAX; }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                callback(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.onerror = function () { callback(ev.target.result); };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
     const bindDocUpload = (inputId, statusId, setter) => {
         const el = document.getElementById(inputId);
         const st = document.getElementById(statusId);
         if (!el) return;
         el.addEventListener('change', function (e) {
             const file = e.target.files && e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (ev) {
-                setter(ev.target.result);
-                if (st) st.innerHTML = '<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Documento adjuntado</span>';
-            };
-            reader.readAsDataURL(file);
+            if (!file) {
+                setter('');
+                if (st) st.textContent = 'Obligatorio para publicar el vehículo';
+                return;
+            }
+            compressDocImage(file, function (dataUrl) {
+                setter(dataUrl);
+                if (st) {
+                    st.innerHTML = `<div class="d-flex align-items-center mt-1"><img src="${dataUrl}" class="rounded border mr-2" style="width:42px;height:32px;object-fit:cover;"><span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Documento cargado</span></div>`;
+                }
+            });
         });
     };
     bindDocUpload('car-soat-file', 'car-soat-status', v => { uploadedSoatImg = v; });
@@ -281,6 +307,12 @@ document.addEventListener('DOMContentLoaded', function () {
             // Limpiar formulario y volver a la lista
             publishForm.reset();
             ownerGalleryImages = [];
+            uploadedSoatImg = '';
+            uploadedPolicyImg = '';
+            const stSoat = document.getElementById('car-soat-status');
+            const stPol = document.getElementById('car-policy-status');
+            if (stSoat) stSoat.textContent = 'Obligatorio para publicar el vehículo';
+            if (stPol) stPol.textContent = 'Obligatorio para publicar el vehículo';
             renderOwnerGalleryPreview();
             if (carFileLabel) carFileLabel.innerText = 'Elegir una o varias fotos de tu vehículo...';
             $('#tab-cars-btn').tab('show');
@@ -1280,12 +1312,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 el.addEventListener('change', function (evt) {
                     const f = evt.target.files && evt.target.files[0];
                     if (!f) return;
-                    const r = new FileReader();
-                    r.onload = function (ev) {
-                        window[key] = ev.target.result;
-                        if (st) st.innerHTML = '<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Nuevo documento listo para guardar</span>';
-                    };
-                    r.readAsDataURL(f);
+                    compressDocImage(f, function (dataUrl) {
+                        window[key] = dataUrl;
+                        if (st) {
+                            st.innerHTML = `<div class="d-flex align-items-center mt-1"><img src="${dataUrl}" class="rounded border mr-2" style="width:46px;height:34px;object-fit:cover;"><span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Nuevo documento listo para guardar</span></div>`;
+                        }
+                    });
                 });
             };
             bindEditDoc('edit-car-soat-file', 'edit-car-soat-status', '_editingSoatImg');
@@ -1413,8 +1445,20 @@ document.addEventListener('DOMContentLoaded', function () {
         window._editingPolicyImg = '';
         const soatSt = document.getElementById('edit-car-soat-status');
         const polSt = document.getElementById('edit-car-policy-status');
-        if (soatSt) soatSt.innerHTML = car.soatImage ? '<span class="text-success"><i class="fa fa-check-circle mr-1"></i>SOAT adjunto actualmente</span>' : 'Sin archivo adjunto';
-        if (polSt) polSt.innerHTML = car.policyImage ? '<span class="text-success"><i class="fa fa-check-circle mr-1"></i>Póliza adjunta actualmente</span>' : 'Sin archivo adjunto';
+        const soatInp = document.getElementById('edit-car-soat-file');
+        const polInp = document.getElementById('edit-car-policy-file');
+        if (soatInp) soatInp.value = '';
+        if (polInp) polInp.value = '';
+        if (soatSt) {
+            soatSt.innerHTML = car.soatImage
+                ? `<div class="d-flex align-items-center mt-1"><a href="${car.soatImage}" target="_blank"><img src="${car.soatImage}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;"></a><div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>SOAT cargado</span><a href="${car.soatImage}" target="_blank" class="small text-primary">Ver documento</a></div></div>`
+                : '<span class="text-muted">Sin archivo adjunto</span>';
+        }
+        if (polSt) {
+            polSt.innerHTML = car.policyImage
+                ? `<div class="d-flex align-items-center mt-1"><a href="${car.policyImage}" target="_blank"><img src="${car.policyImage}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;"></a><div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>Póliza cargada</span><a href="${car.policyImage}" target="_blank" class="small text-primary">Ver documento</a></div></div>`
+                : '<span class="text-muted">Sin archivo adjunto</span>';
+        }
         document.getElementById('edit-car-price').value = car.pricePerDay || car.price || 200000;
         document.getElementById('edit-car-city').value = car.city || 'Valledupar';
         document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';
