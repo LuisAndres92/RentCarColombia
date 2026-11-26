@@ -28,9 +28,30 @@ document.addEventListener('DOMContentLoaded', function () {
         brandEl: document.getElementById('car-brand'),
         modelEl: document.getElementById('car-model'),
         categoryEl: document.getElementById('car-category'),
-        seatsEl: document.getElementById('car-seats')
+        seatsEl: document.getElementById('car-seats'),
+        luggageEl: document.getElementById('car-luggage')
     });
     attachClearButtonToFields(['car-brand', 'car-model', 'car-price', 'car-city', 'car-mileage']);
+
+    let uploadedSoatImg = '';
+    let uploadedPolicyImg = '';
+    const bindDocUpload = (inputId, statusId, setter) => {
+        const el = document.getElementById(inputId);
+        const st = document.getElementById(statusId);
+        if (!el) return;
+        el.addEventListener('change', function (e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                setter(ev.target.result);
+                if (st) st.innerHTML = '<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Documento adjuntado</span>';
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+    bindDocUpload('car-soat-file', 'car-soat-status', v => { uploadedSoatImg = v; });
+    bindDocUpload('car-policy-file', 'car-policy-status', v => { uploadedPolicyImg = v; });
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -200,6 +221,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const transmission = document.getElementById('car-transmission').value;
             const fuel = document.getElementById('car-fuel').value;
             const seats = parseInt(document.getElementById('car-seats').value);
+            const luggage = parseInt(document.getElementById('car-luggage')?.value || '3', 10) || 3;
+            const hostType = document.getElementById('car-host-type')?.value || 'Rentadora Aliada';
+            const hasGps = (document.getElementById('car-has-gps')?.value !== 'false');
             const price = parseInt(document.getElementById('car-price').value);
             const city = document.getElementById('car-city').value;
             const mileage = document.getElementById('car-mileage').value.trim();
@@ -221,6 +245,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 transmission: transmission,
                 fuel: fuel,
                 seats: seats,
+                luggage: luggage,
+                hostType: hostType,
+                hasGps: hasGps,
+                soatImage: uploadedSoatImg || '',
+                policyImage: uploadedPolicyImg || '',
+                blockedDates: [],
                 pricePerDay: price,
                 city: city,
                 mileage: mileage,
@@ -324,12 +354,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between pt-2 border-top" style="gap: 6px;">
+                        <div class="d-flex justify-content-between pt-2 border-top" style="gap: 4px;">
                             <button class="btn btn-sm btn-primary font-weight-bold" onclick="openEditCarModal('${car.id}')" title="Editar datos y fotos">
                                 <i class="fa fa-edit mr-1"></i> Editar
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleCarStatus('${car.id}')">
-                                <i class="fa fa-power-off mr-1"></i> ${car.status === 'Activo' ? 'Pausar' : 'Activar'}
+                            <button class="btn btn-sm btn-outline-warning text-dark font-weight-bold" onclick="openBlockDatesModal('${car.id}')" title="Bloquear fechas ocupadas">
+                                <i class="fa fa-calendar-times mr-1"></i> Fechas
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleCarStatus('${car.id}')" title="${car.status === 'Activo' ? 'Pausar' : 'Activar'}">
+                                <i class="fa fa-power-off"></i>
                             </button>
                             <a href="detail.html?id=${car.id}" class="btn btn-sm btn-outline-primary" target="_blank" title="Vista previa">
                                 <i class="fa fa-eye"></i>
@@ -888,7 +921,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function bindSmartVehicleSpecs({ brandEl, modelEl, categoryEl, seatsEl }) {
+    function bindSmartVehicleSpecs({ brandEl, modelEl, categoryEl, seatsEl, luggageEl }) {
         if (!brandEl || !modelEl || !categoryEl || !seatsEl || modelEl.dataset.specsBound) return;
         modelEl.dataset.specsBound = '1';
 
@@ -897,6 +930,12 @@ document.addEventListener('DOMContentLoaded', function () {
             hintEl = document.createElement('small');
             hintEl.className = 'rc-spec-hint text-info font-weight-bold d-block mt-1';
             categoryEl.parentNode.appendChild(hintEl);
+        }
+
+        function syncLuggage() {
+            if (luggageEl && typeof window.getLuggageByCategory === 'function') {
+                luggageEl.value = String(window.getLuggageByCategory(categoryEl.value));
+            }
         }
 
         function applySpecs(forceAdjustSeats) {
@@ -918,6 +957,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (forceAdjustSeats || isNaN(currentSeats) || currentSeats > spec.maxSeats || currentSeats < 2) {
                     seatsEl.value = String(spec.defaultSeats);
                 }
+                if (forceAdjustSeats) syncLuggage();
                 const allowedLabel = allowed.length > 1 ? `Elige: ${allowed.join(' o ')}` : allowed[0];
                 hintEl.innerHTML = `<i class="fa fa-lock mr-1"></i> ${allowedLabel} &bull; Máx. ${spec.maxSeats} pasajeros`;
                 hintEl.style.display = 'block';
@@ -930,6 +970,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        categoryEl.addEventListener('change', syncLuggage);
         modelEl.addEventListener('change', () => applySpecs(true));
         modelEl.addEventListener('input', () => applySpecs(true));
         brandEl.addEventListener('change', () => applySpecs(false));
@@ -945,6 +986,108 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    window.openBlockDatesModal = function (carId) {
+        const cars = getAllCars();
+        const car = cars.find(c => String(c.id) === String(carId));
+        if (!car) return;
+
+        let modalEl = document.getElementById('modalBlockCarDates');
+        if (!modalEl) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = `
+                <div class="modal fade" id="modalBlockCarDates" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                            <div class="modal-header text-white" style="background: #1C1E32;">
+                                <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-calendar-times text-primary mr-2"></i>Bloquear Fechas Ocupadas</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <p class="small text-muted mb-3">Bloquea los días en que este vehículo ya esté alquilado por fuera o en mantenimiento para evitar reservas duplicadas en <strong id="block-dates-car-name"></strong>.</p>
+                                <form id="form-add-blocked-range" class="p-3 bg-light border rounded mb-3">
+                                    <input type="hidden" id="block-dates-car-id">
+                                    <div class="form-row">
+                                        <div class="col-md-5 form-group mb-2">
+                                            <label class="small font-weight-bold">Desde *</label>
+                                            <input type="date" id="block-start-date" class="form-control form-control-sm" required>
+                                        </div>
+                                        <div class="col-md-5 form-group mb-2">
+                                            <label class="small font-weight-bold">Hasta *</label>
+                                            <input type="date" id="block-end-date" class="form-control form-control-sm" required>
+                                        </div>
+                                        <div class="col-md-2 form-group mb-2 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-primary btn-sm btn-block font-weight-bold"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                    <input type="text" id="block-reason" class="form-control form-control-sm" placeholder="Motivo (Ej. Alquilado en agencia / Mantenimiento)">
+                                </form>
+                                <div class="small font-weight-bold text-uppercase text-muted mb-2">Rangos bloqueados actualmente:</div>
+                                <div id="blocked-ranges-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(wrap.firstElementChild);
+            modalEl = document.getElementById('modalBlockCarDates');
+
+            document.getElementById('form-add-blocked-range').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const cid = document.getElementById('block-dates-car-id').value;
+                const start = document.getElementById('block-start-date').value;
+                const end = document.getElementById('block-end-date').value;
+                const reason = document.getElementById('block-reason').value.trim() || 'Ocupado / No disponible';
+                if (!start || !end || end < start) {
+                    alert('La fecha final debe ser igual o posterior a la fecha inicial.');
+                    return;
+                }
+                const list = getAllCars();
+                const idx = list.findIndex(c => String(c.id) === String(cid));
+                if (idx === -1) return;
+                if (!Array.isArray(list[idx].blockedDates)) list[idx].blockedDates = [];
+                list[idx].blockedDates.push({ start, end, reason });
+                localStorage.setItem('renteasy_cars', JSON.stringify(list));
+                if (typeof dbUpdateVehiculo === 'function') await dbUpdateVehiculo(list[idx]);
+                if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
+                document.getElementById('form-add-blocked-range').reset();
+                renderBlockedRanges(list[idx]);
+            });
+        }
+
+        function renderBlockedRanges(targetCar) {
+            const box = document.getElementById('blocked-ranges-list');
+            const ranges = Array.isArray(targetCar.blockedDates) ? targetCar.blockedDates : [];
+            if (ranges.length === 0) {
+                box.innerHTML = '<div class="text-center py-2 text-muted small border rounded">No hay fechas bloqueadas manualmente.</div>';
+                return;
+            }
+            box.innerHTML = ranges.map((r, i) => `
+                <div class="d-flex justify-content-between align-items-center p-2 border rounded mb-1 bg-white small">
+                    <div>
+                        <strong class="text-dark">${r.start} &rarr; ${r.end}</strong>
+                        <div class="text-muted" style="font-size: 11px;">${r.reason || 'Ocupado'}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="window._removeBlockedRange('${targetCar.id}', ${i})"><i class="fa fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        window._removeBlockedRange = async function (cid, idx) {
+            const list = getAllCars();
+            const c = list.find(item => String(item.id) === String(cid));
+            if (!c || !Array.isArray(c.blockedDates)) return;
+            c.blockedDates.splice(idx, 1);
+            localStorage.setItem('renteasy_cars', JSON.stringify(list));
+            if (typeof dbUpdateVehiculo === 'function') await dbUpdateVehiculo(c);
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
+            renderBlockedRanges(c);
+        };
+
+        document.getElementById('block-dates-car-id').value = car.id;
+        document.getElementById('block-dates-car-name').textContent = car.fullName;
+        renderBlockedRanges(car);
+        $('#modalBlockCarDates').modal('show');
+    };
 
     window.toggleCarStatus = function (carId) {
         const cars = getAllCars();

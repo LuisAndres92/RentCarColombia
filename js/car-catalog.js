@@ -395,6 +395,21 @@
         return null;
     }
 
+    function getLuggageByCategory(cat) {
+        const c = normText(cat);
+        if (c.includes('pickup')) return 5;
+        if (c.includes('suv') || c.includes('camioneta')) return 4;
+        if (c.includes('sedan')) return 3;
+        if (c.includes('compacto')) return 2;
+        if (c.includes('deportivo')) return 2;
+        return 3;
+    }
+
     window.CAR_CATALOG_BY_BRAND = CAR_CATALOG_BY_BRAND;
-    window.detectVehicleSpecs = detectVehicleSpecs;
+    window.getLuggageByCategory = getLuggageByCategory;
+    window.detectVehicleSpecs = function (brand, model) {
+        const res = detectVehicleSpecs(brand, model);
+        if (!res) return null;
+        return Object.assign({}, res, { luggage: getLuggageByCategory(res.defaultCategory) });
+    };
 })();

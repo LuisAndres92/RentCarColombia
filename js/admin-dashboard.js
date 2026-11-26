@@ -385,7 +385,13 @@ function renderFleetModeration(filterStatus = 'all') {
             </td>
             <td>
                 <div class="font-weight-bold text-dark">${car.fullName} (${car.year})</div>
-                <small class="text-muted"><i class="fa fa-tag mr-1 text-primary"></i>${car.category} &bull; ${car.transmission}</small>
+                <small class="text-muted"><i class="fa fa-tag mr-1 text-primary"></i>${car.category} &bull; ${car.transmission} &bull; <i class="fa fa-suitcase text-primary"></i> ${car.luggage || 3}</small>
+                <div class="mt-1">
+                    <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'}" style="font-size:10px;">${car.hostType || 'Rentadora Aliada'}</span>
+                    ${car.hasGps !== false ? '<span class="badge badge-light border text-dark ml-1" style="font-size:10px;">GPS</span>' : ''}
+                    ${car.soatImage ? `<a href="${car.soatImage}" target="_blank" class="badge badge-primary ml-1" style="font-size:10px;">Ver SOAT</a>` : ''}
+                    ${car.policyImage ? `<a href="${car.policyImage}" target="_blank" class="badge badge-dark ml-1" style="font-size:10px;">Ver Póliza</a>` : ''}
+                </div>
             </td>
             <td>
                 <div class="small font-weight-semi-bold">${car.ownerName || 'Propietario'}</div>

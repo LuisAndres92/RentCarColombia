@@ -178,7 +178,30 @@ FROM (VALUES
 ) AS v(pregunta, respuesta, categoria, orden)
 WHERE NOT EXISTS (SELECT 1 FROM public.preguntas_frecuentes);
 
--- 12. Verificación rápida de tablas
+-- 12. Columnas para Enfoque A (Rentadoras Aliadas) + Bloqueo de Fechas + SOAT/Póliza/GPS/Maletas + KYC y Conductor Adicional
+ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS tipo_anfitrion text DEFAULT 'Rentadora Aliada';
+ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS nit_empresa text;
+
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS fechas_bloqueadas jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS soat_imagen text;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS poliza_imagen text;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS tiene_gps boolean DEFAULT true;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS capacidad_maletas integer DEFAULT 3;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS tipo_anfitrion text DEFAULT 'Rentadora Aliada';
+
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_nombre text;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_licencia text;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_cedula_img text;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_licencia_img text;
+
+-- Asegurar cláusula legal "Alquiler estrictamente sin conductor" en FAQs si no existe
+INSERT INTO public.preguntas_frecuentes (pregunta, respuesta, categoria, orden, visible)
+SELECT '¿El alquiler incluye conductor o es solo el vehículo?', 'Todos los vehículos en Rent Car Colombia se alquilan estrictamente SIN conductor, mediante contrato digital de arrendamiento de vehículo particular conforme a la ley colombiana. Esto garantiza operación 100% legal tanto con Rentadoras Aliadas como con anfitriones certificados.', 'Seguridad', 11, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.preguntas_frecuentes WHERE pregunta ILIKE '%incluye conductor%'
+);
+
+-- 13. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
 UNION ALL
 SELECT 'testimonios', count(*) FROM public.testimonios

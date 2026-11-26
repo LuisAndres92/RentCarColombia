@@ -243,11 +243,34 @@ function initCarDetail() {
         setElemText('calc-total', `$${formatPrice(total)} COP`);
 
         if (btnBookNow) {
+            const avail = (typeof window.isCarDateRangeAvailable === 'function' && inputStart && inputEnd)
+                ? window.isCarDateRangeAvailable(car, inputStart.value, inputEnd.value)
+                : { available: true };
+            let availWarn = document.getElementById('detail-date-conflict-warn');
+            if (!avail.available) {
+                if (!availWarn) {
+                    availWarn = document.createElement('div');
+                    availWarn.id = 'detail-date-conflict-warn';
+                    availWarn.className = 'alert alert-danger small py-2 px-3 mt-2 mb-2';
+                    btnBookNow.parentNode.insertBefore(availWarn, btnBookNow);
+                }
+                availWarn.innerHTML = `<i class="fa fa-calendar-times mr-1"></i> <strong>No disponible</strong> (${avail.conflictStart} al ${avail.conflictEnd}): ${avail.reason}. Elige otras fechas.`;
+                availWarn.style.display = 'block';
+                btnBookNow.className = 'btn btn-secondary btn-block btn-lg font-weight-bold disabled';
+                btnBookNow.href = 'javascript:void(0)';
+                btnBookNow.onclick = (e) => { e.preventDefault(); alert('Las fechas seleccionadas ya están ocupadas. Elige otro rango.'); };
+                return;
+            }
+            if (availWarn) availWarn.style.display = 'none';
+            btnBookNow.onclick = null;
+
             if (typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car)) {
                 btnBookNow.href = `dashboard-propietario.html?editCar=${car.id}`;
                 btnBookNow.className = 'btn btn-dark btn-block btn-lg font-weight-bold shadow-sm';
                 btnBookNow.innerHTML = '<i class="fa fa-edit mr-2"></i> Gestionar / Editar mi Auto';
             } else {
+                btnBookNow.className = 'btn btn-primary btn-block btn-lg font-weight-bold shadow-sm';
+                btnBookNow.innerHTML = '<i class="fa fa-calendar-check mr-2"></i> Solicitar Reserva';
                 btnBookNow.href = `booking.html?id=${car.id}&days=${days}&start=${inputStart ? inputStart.value : ''}&end=${inputEnd ? inputEnd.value : ''}`;
             }
         }

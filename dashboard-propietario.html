@@ -406,7 +406,28 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label class="font-weight-semi-bold">Capacidad (Pasajeros) *</label>
-                                    <input type="number" id="car-seats" class="form-control" value="5" min="2" max="10" required>
+                                    <input type="number" id="car-seats" class="form-control" value="5" min="2" max="15" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Capacidad de Maletas *</label>
+                                    <input type="number" id="car-luggage" class="form-control" value="3" min="1" max="12" required>
+                                    <small class="text-muted">Se ajusta automáticamente según categoría/modelo.</small>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">Tipo de Anfitrión *</label>
+                                    <select id="car-host-type" class="custom-select" required>
+                                        <option value="Rentadora Aliada">Rentadora Aliada / Agencia (Póliza Comercial)</option>
+                                        <option value="Propietario Particular">Propietario Particular Certificado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="font-weight-semi-bold">¿Cuenta con GPS activo? *</label>
+                                    <select id="car-has-gps" class="custom-select" required>
+                                        <option value="true">Sí — Rastreo GPS Activo</option>
+                                        <option value="false">No — Sin GPS instalado</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -475,8 +496,24 @@
                                 <textarea id="car-description" class="form-control" rows="3" placeholder="Ej. Auto en excelente estado mecánico, full aire acondicionado, se entrega limpio con tanque lleno. No se permite fumar en el interior."></textarea>
                             </div>
 
+                            <div class="row p-3 bg-light border rounded mb-4">
+                                <div class="col-12 mb-2">
+                                    <div class="font-weight-bold text-dark small"><i class="fa fa-shield-alt text-primary mr-1"></i> Documentación de Respaldo (Para verificación de Admin)</div>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="small font-weight-semi-bold">Foto / Escaneo del SOAT Vigente (Opcional)</label>
+                                    <input type="file" id="car-soat-file" accept="image/*" class="form-control-file small">
+                                    <small id="car-soat-status" class="text-muted"></small>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="small font-weight-semi-bold">Foto / Escaneo Póliza Todo Riesgo o Comercial (Opcional)</label>
+                                    <input type="file" id="car-policy-file" accept="image/*" class="form-control-file small">
+                                    <small id="car-policy-status" class="text-muted"></small>
+                                </div>
+                            </div>
+
                             <div class="alert alert-info">
-                                <i class="fa fa-shield-alt mr-2"></i> <strong>Requisito de seguridad:</strong> Cada vehículo publicado pasa por una validación de póliza SOAT antes de su primer viaje para proteger tu patrimonio.
+                                <i class="fa fa-shield-alt mr-2"></i> <strong>Contrato Legal en Colombia:</strong> Todos los vehículos se alquilan estrictamente <strong>sin conductor</strong> bajo contrato digital de arrendamiento.
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg px-5 font-weight-bold shadow">
@@ -764,8 +801,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js?v=20261125_25"></script>
     <script src="js/config.js?v=20261125_17"></script>
-    <script src="js/car-catalog.js?v=20261125_22"></script>
-    <script src="js/owner-dashboard.js?v=20261125_23"></script>
+    <script src="js/car-catalog.js?v=20261125_26"></script>
+    <script src="js/owner-dashboard.js?v=20261125_26"></script>
 </body>
 
 </html>

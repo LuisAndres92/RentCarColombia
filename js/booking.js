@@ -87,6 +87,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewContainer = document.getElementById('receipt-preview-container');
     const previewImg = document.getElementById('receipt-preview-img');
     let receiptBase64 = null;
+    let driverIdImgBase64 = '';
+    let driverLicenseImgBase64 = '';
+
+    const bindKycFile = (inputId, statusId, setter) => {
+        const el = document.getElementById(inputId);
+        const st = document.getElementById(statusId);
+        if (!el) return;
+        el.addEventListener('change', function (e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                setter(ev.target.result);
+                if (st) st.innerHTML = '<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Documento cargado</span>';
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+    bindKycFile('book-driver-id-file', 'book-driver-id-status', v => { driverIdImgBase64 = v; });
+    bindKycFile('book-driver-license-file', 'book-driver-license-status', v => { driverLicenseImgBase64 = v; });
 
     // Estado del cupón aplicado
     let activeAppliedCoupon = null; // { code, discountPercent, formattedExpiry }
@@ -360,6 +380,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            if (typeof window.isCarDateRangeAvailable === 'function') {
+                const avail = window.isCarDateRangeAvailable(car, inputStart.value, inputEnd.value);
+                if (!avail.available) {
+                    alert(`Este vehículo no está disponible del ${avail.conflictStart} al ${avail.conflictEnd} (${avail.reason}). Por favor elige otras fechas.`);
+                    return;
+                }
+            }
+
             const calc = recalculateTotal();
 
             const renterName = inputName.value.trim();
@@ -415,6 +443,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 renterEmail: renterEmail,
                 renterPhone: renterPhone,
                 renterLicense: renterLicense,
+                extraDriverName: document.getElementById('book-extra-driver-name')?.value.trim() || '',
+                extraDriverLicense: document.getElementById('book-extra-driver-license')?.value.trim() || '',
+                driverIdImg: driverIdImgBase64 || '',
+                driverLicenseImg: driverLicenseImgBase64 || '',
                 startDate: inputStart.value,
                 endDate: inputEnd.value,
                 totalDays: calc.days,

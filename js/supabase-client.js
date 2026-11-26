@@ -70,7 +70,13 @@ async function dbGetVehiculos() {
                         images: Array.isArray(v.galeria_imagenes) && v.galeria_imagenes.length > 0 ? v.galeria_imagenes : [v.imagen_url || v.image || 'img/car-rent-1.png'],
                         priceNegotiation: v.negociacion_tarifa || null,
                         status: v.estado || v.status || 'Activo',
-                        ownerId: v.propietario_id || v.ownerId
+                        ownerId: v.propietario_id || v.ownerId,
+                        hostType: v.tipo_anfitrion || 'Rentadora Aliada',
+                        hasGps: v.tiene_gps !== false,
+                        luggage: parseInt(v.capacidad_maletas, 10) || 3,
+                        blockedDates: Array.isArray(v.fechas_bloqueadas) ? v.fechas_bloqueadas : [],
+                        soatImage: v.soat_imagen || '',
+                        policyImage: v.poliza_imagen || ''
                     };
                 });
                 // Sincronizar copia local (incluye lista vacía si se borraron todos en Supabase)
@@ -112,7 +118,13 @@ async function dbSaveVehiculo(vehiculo) {
                 galeria_imagenes: Array.isArray(vehiculo.images) ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
                 negociacion_tarifa: vehiculo.priceNegotiation || null,
                 propietario_id: vehiculo.ownerId || null,
-                estado: vehiculo.status || 'Activo'
+                estado: vehiculo.status || 'Activo',
+                tipo_anfitrion: vehiculo.hostType || 'Rentadora Aliada',
+                tiene_gps: vehiculo.hasGps !== false,
+                capacidad_maletas: parseInt(vehiculo.luggage, 10) || 3,
+                fechas_bloqueadas: Array.isArray(vehiculo.blockedDates) ? vehiculo.blockedDates : [],
+                soat_imagen: vehiculo.soatImage || null,
+                poliza_imagen: vehiculo.policyImage || null
             };
 
             const { data, error } = await client.from('vehiculos').insert([row]).select();
@@ -151,7 +163,13 @@ async function dbUpdateVehiculo(vehiculo) {
                 descripcion: vehiculo.description || vehiculo.desc || '',
                 imagen_url: vehiculo.image || 'img/car-rent-1.png',
                 galeria_imagenes: Array.isArray(vehiculo.images) && vehiculo.images.length > 0 ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
-                estado: vehiculo.status || 'Activo'
+                estado: vehiculo.status || 'Activo',
+                tipo_anfitrion: vehiculo.hostType || 'Rentadora Aliada',
+                tiene_gps: vehiculo.hasGps !== false,
+                capacidad_maletas: parseInt(vehiculo.luggage, 10) || 3,
+                fechas_bloqueadas: Array.isArray(vehiculo.blockedDates) ? vehiculo.blockedDates : [],
+                soat_imagen: vehiculo.soatImage || null,
+                poliza_imagen: vehiculo.policyImage || null
             };
             await client.from('vehiculos').update(row).eq('id', vehiculo.id);
         } catch (err) {
@@ -189,6 +207,10 @@ async function dbGetReservas() {
                     paymentMethod: r.metodo_pago,
                     paymentStatus: r.estado_pago,
                     status: r.estado_reserva,
+                    extraDriverName: r.conductor_adicional_nombre || '',
+                    extraDriverLicense: r.conductor_adicional_licencia || '',
+                    driverIdImg: r.conductor_cedula_img || '',
+                    driverLicenseImg: r.conductor_licencia_img || '',
                     createdAt: r.creado_en
                 }));
                 localStorage.setItem('renteasy_bookings', JSON.stringify(mapped));
@@ -225,7 +247,11 @@ async function dbSaveReserva(reserva) {
                 total_cobrado: parseFloat(reserva.totalPaid) || 0,
                 metodo_pago: reserva.paymentMethod || 'PSE / Wompi',
                 estado_pago: reserva.paymentStatus || 'Autorizado',
-                estado_reserva: reserva.status || 'Pendiente'
+                estado_reserva: reserva.status || 'Pendiente',
+                conductor_adicional_nombre: reserva.extraDriverName || null,
+                conductor_adicional_licencia: reserva.extraDriverLicense || null,
+                conductor_cedula_img: reserva.driverIdImg || null,
+                conductor_licencia_img: reserva.driverLicenseImg || null
             };
 
             const { data, error } = await client.from('reservas').insert([row]).select();

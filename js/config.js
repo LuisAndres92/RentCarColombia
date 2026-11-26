@@ -754,10 +754,17 @@ function renderFeaturedCarsOnHome() {
                                 <h5 class="text-uppercase font-weight-bold mb-0 text-dark">${displayName}</h5>
                                 <span class="badge badge-light border text-primary font-weight-bold">${displayYear}</span>
                             </div>
+                            <div class="mb-2">
+                                <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1" style="font-size: 10px;">
+                                    <i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}
+                                </span>
+                                ${car.hasGps !== false ? '<span class="badge badge-light border text-dark ml-1" style="font-size: 10px;"><i class="fa fa-satellite-dish text-primary mr-1"></i>GPS</span>' : ''}
+                            </div>
                             <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
                                 <div><i class="fa fa-cog text-primary"></i> ${displayTrans}</div>
                                 <div class="border-left border-right px-2"><i class="fa fa-gas-pump text-primary"></i> ${displayFuel}</div>
-                                <div><i class="fa fa-users text-primary"></i> ${displaySeats} Puestos</div>
+                                <div><i class="fa fa-users text-primary"></i> ${displaySeats}</div>
+                                <div class="border-left pl-2"><i class="fa fa-suitcase text-primary"></i> ${car.luggage || 3}</div>
                             </div>
                         </div>
                     </div>
@@ -1052,7 +1059,7 @@ if (RENTCAR_SYNC_CHANNEL) {
     };
 }
 
-/** ================= HELPER PROPIEDAD DE VEHÍCULO ================= **/
+/** ================= HELPER PROPIEDAD Y DISPONIBILIDAD DE FECHAS ================= **/
 window.isMyOwnCar = function (car) {
     if (!car || !car.ownerId) return false;
     try {
@@ -1061,6 +1068,35 @@ window.isMyOwnCar = function (car) {
     } catch (e) {
         return false;
     }
+};
+
+window.isCarDateRangeAvailable = function (car, startStr, endStr) {
+    if (!car || !startStr || !endStr) return { available: true };
+    const reqStart = startStr;
+    const reqEnd = endStr;
+
+    // 1. Validar bloqueos manuales de la rentadora / propietario
+    const blocked = Array.isArray(car.blockedDates) ? car.blockedDates : [];
+    for (let i = 0; i < blocked.length; i++) {
+        const r = blocked[i];
+        if (r && r.start && r.end && reqStart <= r.end && reqEnd >= r.start) {
+            return { available: false, reason: r.reason || 'Fechas bloqueadas por el anfitrión', conflictStart: r.start, conflictEnd: r.end };
+        }
+    }
+
+    // 2. Validar contra reservas activas/aceptadas existentes
+    let bookings = [];
+    try { bookings = JSON.parse(localStorage.getItem('renteasy_bookings')) || []; } catch (e) { bookings = []; }
+    for (let i = 0; i < bookings.length; i++) {
+        const b = bookings[i];
+        if (!b || String(b.carId) !== String(car.id)) continue;
+        const st = String(b.status || '').toLowerCase();
+        if (st === 'rechazada' || st === 'cancelada' || st === 'finalizada') continue;
+        if (b.startDate && b.endDate && reqStart <= b.endDate && reqEnd >= b.startDate) {
+            return { available: false, reason: 'Ya existe una reserva en esas fechas', conflictStart: b.startDate, conflictEnd: b.endDate };
+        }
+    }
+    return { available: true };
 };
 
 /** ================= MODAL UNIFICADO DE CIERRE DE SESIÓN ================= **/
