@@ -507,48 +507,57 @@ function initUniversalAdminAuditObserver() {
         (scope || tabContent).querySelectorAll('input, textarea, select').forEach(el => {
             if (el.type === 'hidden' || el.type === 'file' || el.type === 'password') return;
             if (el.id === 'logs-search-input' || el.id === 'logs-module-filter' || el.id === 'logs-date-from' || el.id === 'logs-date-to' || el.id === 'search-users-input' || el.id === 'fleet-filter-status') return;
-            el.dataset.auditLastVal = (el.type === 'checkbox') ? String(el.checked) : String(el.value || '');
+            el.dataset.auditLastVal = (el.type === 'checkbox') ? (el.checked ? 'Activado' : 'Desactivado') : String(el.value || '');
         });
     };
 
     // Tomar foto inicial de todos los campos tras cargar configuraciones
-    setTimeout(() => snapshotFields(tabContent), 200);
+    setTimeout(() => snapshotFields(tabContent), 250);
 
     tabContent.addEventListener('focusin', function (e) {
         const el = e.target;
         if (!el || !el.matches('input, textarea, select')) return;
         if (el.type === 'hidden' || el.type === 'file' || el.type === 'password') return;
         if (el.dataset.auditLastVal === undefined) {
-            el.dataset.auditLastVal = (el.type === 'checkbox') ? String(el.checked) : String(el.value || '');
+            el.dataset.auditLastVal = (el.type === 'checkbox') ? (el.checked ? 'Activado' : 'Desactivado') : String(el.value || '');
         }
     });
 
-    // Registrar automáticamente cualquier cambio en interruptores (switches/checkboxes)
+    // Solo interruptores INDEPENDIENTES (fuera de <form>, ej. quick-toggle-reviews) registran al cambiar
     tabContent.addEventListener('change', function (e) {
         const target = e.target;
         if (!target || target.type !== 'checkbox') return;
+        if (target.closest('form')) return; // Los de dentro de un <form> se registran en 1 solo log al guardar el formulario
+
         const labelEl = target.closest('.custom-control, .form-check, .d-flex')?.querySelector('label, strong, h6');
         const controlName = labelEl ? labelEl.innerText.trim() : (target.id || 'Interruptor');
         const stateText = target.checked ? 'Activado' : 'Desactivado';
         const prevText = target.checked ? 'Desactivado' : 'Activado';
-        target.dataset.auditLastVal = String(target.checked);
+        target.dataset.auditLastVal = stateText;
+        // Sincronizar también el snapshot del checkbox hermano si existe (ej. vis-testimonials)
+        const visTest = document.getElementById('vis-testimonials');
+        if (target.id === 'quick-toggle-reviews' && visTest) {
+            visTest.dataset.auditLastVal = stateText;
+        }
         recordAdminLog(
             getPaneModule(target),
             `${stateText}: ${controlName}`,
-            `Interruptor cambiado de ${prevText} a ${stateText}`,
+            `Control cambiado de ${prevText} a ${stateText}`,
             [{ field: controlName, before: prevText, after: stateText }]
         );
     });
 
-    // Al guardar cualquier formulario en el panel, capturar todos los campos modificados (Antes vs Después)
+    // Al guardar cualquier formulario de configuración/edición, capturar TODOS los campos (incl. switches) en 1 solo log
+    const addForms = new Set(['form-add-hero-slide', 'form-add-team', 'form-add-faq']);
     tabContent.addEventListener('submit', function (e) {
         const form = e.target;
-        if (!form || form.tagName !== 'FORM') return;
+        if (!form || form.tagName !== 'FORM' || addForms.has(form.id)) return;
+
         const changes = [];
         form.querySelectorAll('input, textarea, select').forEach(el => {
-            if (el.type === 'hidden' || el.type === 'file' || el.type === 'password' || el.type === 'checkbox') return;
+            if (el.type === 'hidden' || el.type === 'file' || el.type === 'password') return;
             const prev = el.dataset.auditLastVal !== undefined ? el.dataset.auditLastVal : '';
-            const curr = String(el.value || '');
+            const curr = (el.type === 'checkbox') ? (el.checked ? 'Activado' : 'Desactivado') : String(el.value || '');
             if (prev !== curr) {
                 changes.push({
                     field: getFieldLabel(el),
@@ -561,13 +570,11 @@ function initUniversalAdminAuditObserver() {
 
         if (changes.length > 0) {
             const mod = getPaneModule(form);
-            const summary = changes.map(c => c.field).join(', ');
-            recordAdminLog(
-                mod,
-                changes.length === 1 ? `Editado: ${changes[0].field}` : `${changes.length} campos editados`,
-                `Campos modificados: ${summary}`,
-                changes
-            );
+            const summary = changes.map(c => `${c.field}: ${c.before} → ${c.after}`).join(' | ');
+            const actionTitle = changes.length === 1
+                ? `${changes[0].after === 'Activado' || changes[0].after === 'Desactivado' ? changes[0].after : 'Editado'}: ${changes[0].field}`
+                : `${changes.length} cambios guardados en ${mod}`;
+            recordAdminLog(mod, actionTitle, summary.length > 180 ? `${changes.length} campos modificados (clic para comparar Antes / Después)` : summary, changes);
         }
     });
 
@@ -584,10 +591,11 @@ window.approveCar = function (carId) {
     const cars = getCars();
     const car = cars.find(c => c.id === carId);
     if (car) {
+        const prev = car.status || 'En Revision';
         car.status = 'Activo';
         saveCars(cars);
         syncCarStatusSupabase(carId, 'Activo');
-        recordAdminLog('Flota', 'Vehículo aprobado', `${car.fullName} (${car.city || ''})`);
+        recordAdminLog('Flota', 'Vehículo aprobado', `${car.fullName} (${car.city || ''})`, [{ field: `Estado de ${car.fullName}`, before: prev, after: 'Activo' }]);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved(`Vehículo "${car.fullName}" APROBADO. Ya es visible en el catálogo.`);
@@ -598,10 +606,11 @@ window.pauseCar = function (carId) {
     const cars = getCars();
     const car = cars.find(c => c.id === carId);
     if (car) {
-        car.status = car.status === 'Activo' ? 'Pausado' : 'Activo';
+        const prev = car.status || 'Activo';
+        car.status = prev === 'Activo' ? 'Pausado' : 'Activo';
         saveCars(cars);
         syncCarStatusSupabase(carId, car.status);
-        recordAdminLog('Flota', `Vehículo ${car.status.toLowerCase()}`, `${car.fullName}`);
+        recordAdminLog('Flota', `Vehículo ${car.status.toLowerCase()}`, `${car.fullName}`, [{ field: `Estado de ${car.fullName}`, before: prev, after: car.status }]);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved(`Vehículo "${car.fullName}" cambiado a estado: ${car.status}.`);
@@ -614,11 +623,12 @@ window.rejectCarPrompt = function (carId) {
         const cars = getCars();
         const car = cars.find(c => c.id === carId);
         if (car) {
+            const prev = car.status || 'En Revision';
             car.status = 'Rechazado';
             car.rejectReason = reason;
             saveCars(cars);
             syncCarStatusSupabase(carId, 'Rechazado');
-            recordAdminLog('Flota', 'Vehículo rechazado', `${car.fullName} — Motivo: ${reason}`);
+            recordAdminLog('Flota', 'Vehículo rechazado', `${car.fullName} — Motivo: ${reason}`, [{ field: `Estado de ${car.fullName}`, before: prev, after: `Rechazado (${reason})` }]);
             renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
             renderFinancialOverview();
             notifySaved(`Vehículo rechazado con la nota: "${reason}".`);
@@ -630,9 +640,10 @@ window.toggleFeatureCar = function (carId) {
     const cars = getCars();
     const car = cars.find(c => c.id === carId);
     if (car) {
-        car.featured = !car.featured;
+        const prev = !!car.featured;
+        car.featured = !prev;
         saveCars(cars);
-        recordAdminLog('Flota', car.featured ? 'Vehículo destacado' : 'Vehículo quitado de destacados', `${car.fullName}`);
+        recordAdminLog('Flota', car.featured ? 'Vehículo destacado' : 'Vehículo quitado de destacados', `${car.fullName}`, [{ field: `Destacado: ${car.fullName}`, before: prev ? 'Sí' : 'No', after: car.featured ? 'Sí' : 'No' }]);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         notifySaved(car.featured ? `"${car.fullName}" marcado como Destacado.` : `"${car.fullName}" quitado de Destacados.`);
     }
@@ -650,7 +661,7 @@ window.deleteCarAdmin = async function (carId) {
                 if (client) await client.from('vehiculos').delete().eq('id', carId);
             }
         } catch (e) { console.warn('Supabase delete car:', e); }
-        recordAdminLog('Flota', 'Vehículo eliminado', target ? target.fullName : carId);
+        recordAdminLog('Flota', 'Vehículo eliminado', target ? target.fullName : carId, [{ field: 'Vehículo en catálogo', before: target ? target.fullName : carId, after: '(Eliminado)' }]);
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved('Vehículo eliminado de la plataforma.');
@@ -1001,13 +1012,13 @@ window.updateFeedbackStatusAdmin = function (feedbackId, newStatus) {
     try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
     const item = items.find(i => i && i.id === feedbackId);
     if (item) {
+        const prev = item.status || 'Pendiente';
         item.status = newStatus;
         localStorage.setItem('rentcar_feedback', JSON.stringify(items));
         if (typeof dbResolveFeedback === 'function') dbResolveFeedback(feedbackId, newStatus);
-        if (typeof window.logSystemEvent === 'function') window.logSystemEvent('Feedback', `Estado cambiado a ${newStatus}`, `${item.carName || ''} - ${item.subject || ''}`);
+        recordAdminLog('Feedback', `Estado cambiado a ${newStatus}`, `${item.carName || ''} - ${item.subject || ''}`, [{ field: `Reporte: ${item.subject}`, before: prev, after: newStatus }]);
         renderFeedbackAndAlertsAdmin();
         renderFinancialOverview();
-        renderAuditLogsAdmin();
         notifySaved(`Reporte actualizado a estado: ${newStatus}.`);
     }
 };
@@ -1020,10 +1031,9 @@ window.deleteFeedbackAdmin = function (feedbackId) {
     items = items.filter(i => i && i.id !== feedbackId);
     localStorage.setItem('rentcar_feedback', JSON.stringify(items));
     if (typeof dbDeleteFeedback === 'function') dbDeleteFeedback(feedbackId);
-    if (typeof window.logSystemEvent === 'function' && removed) window.logSystemEvent('Feedback', 'Reporte eliminado', `${removed.carName || ''} - ${removed.subject || ''}`);
+    if (removed) recordAdminLog('Feedback', 'Reporte eliminado', `${removed.carName || ''} - ${removed.subject || ''}`, [{ field: `Reporte (${removed.carName || 'General'})`, before: `${removed.subject}: ${removed.message}`, after: '(Eliminado)' }]);
     renderFeedbackAndAlertsAdmin();
     renderFinancialOverview();
-    renderAuditLogsAdmin();
     notifySaved('Reporte eliminado del historial.');
 };
 
@@ -1772,7 +1782,6 @@ function setupFormListeners() {
             syncFinancialLabels();
             renderFinancialOverview();
             renderBookingsAndDisputes();
-            recordAdminLog('Finanzas', 'Parámetros financieros actualizados', `Comisión: ${cfg.payments.commissionPercent}% | Fianza: $${formatCop(cfg.payments.defaultDeposit)} COP`);
             notifySaved(`¡Parámetros actualizados! Fianza estándar: $${formatCop(cfg.payments.defaultDeposit)} COP | Comisión: ${cfg.payments.commissionPercent}%`);
         });
     }
@@ -1875,7 +1884,6 @@ function setupFormListeners() {
 
             saveSiteConfig(cfg);
             updatePromoStatusPreview();
-            recordAdminLog('CMS', 'Banner promocional y cupón actualizados', `Estado: ${isEnabled ? 'Activo' : 'Deshabilitado'} | Cupón: ${code || 'Sin código'}`);
             notifySaved('¡Banner de descuento, fecha de expiración y cupón guardados con éxito!');
         });
     }
@@ -1920,7 +1928,6 @@ function setupFormListeners() {
             if (quickReviewToggle) quickReviewToggle.checked = testChecked;
 
             saveSiteConfig(cfg);
-            recordAdminLog('CMS', 'Visibilidad de secciones actualizada', `Equipo: ${cfg.visibility.team ? 'Sí' : 'No'} | Reseñas: ${cfg.visibility.testimonials ? 'Sí' : 'No'} | Marcas: ${cfg.visibility.vendors ? 'Sí' : 'No'} | Banners: ${cfg.visibility.promoBanner ? 'Sí' : 'No'} | Servicios: ${cfg.visibility.services ? 'Sí' : 'No'}`);
             notifySaved('¡Configuración de visibilidad guardada exitosamente!');
         });
     }
@@ -1937,7 +1944,6 @@ function setupFormListeners() {
             if (!cfg.visibility) cfg.visibility = {};
             cfg.visibility.testimonials = isChecked;
             saveSiteConfig(cfg);
-            recordAdminLog('CMS', isChecked ? 'Sección de reseñas activada' : 'Sección de reseñas desactivada', 'Cambio rápido en visibilidad de reseñas');
             notifySaved(isChecked ? 'Sección de opiniones activada en la web.' : 'Sección de opiniones oculta de la web.');
         });
     }
@@ -2003,7 +2009,6 @@ function setupFormListeners() {
                 values: getVal('cfg-about-values')
             };
             saveSiteConfig(cfg);
-            recordAdminLog('Empresa', 'Información de empresa actualizada', `${cfg.brandName} | ${cfg.phoneDisplay} | ${cfg.emailMain}`);
             notifySaved('¡Información de empresa, historia, misión y redes guardada!');
         });
     }
@@ -2020,7 +2025,6 @@ function setupFormListeners() {
                 contractClauses: getVal('legal-contract')
             };
             saveSiteConfig(cfg);
-            recordAdminLog('Legal', 'Contratos y textos legales actualizados', 'Términos, Privacidad y Cláusulas');
             notifySaved('¡Contratos y textos legales actualizados!');
         });
     }
