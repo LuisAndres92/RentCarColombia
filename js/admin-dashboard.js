@@ -767,11 +767,16 @@ window.verifyPlateInRunt = function (plate, ownerId, soatOwnerDoc) {
     document.getElementById('runt-helper-owner').textContent = ownerName;
     const docRow = document.getElementById('runt-helper-doc-row');
     const docEl = document.getElementById('runt-helper-doc');
+    docRow.style.setProperty('display', 'flex', 'important');
+    const copyDocBtn = document.getElementById('runt-copy-doc-btn');
     if (ownerDoc) {
-        docRow.style.setProperty('display', 'flex', 'important');
         docEl.textContent = ownerDoc;
+        docEl.className = 'text-dark';
+        if (copyDocBtn) copyDocBtn.disabled = false;
     } else {
-        docRow.style.setProperty('display', 'none', 'important');
+        docEl.textContent = 'Sin documento registrado aún';
+        docEl.className = 'text-muted small';
+        if (copyDocBtn) copyDocBtn.disabled = true;
     }
 
     document.getElementById('runt-copy-plate-btn').onclick = function () {
