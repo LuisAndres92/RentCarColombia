@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', function () {
     setupMarketPriceHint();
     attachColombiaCityAutocomplete(document.getElementById('car-city'));
     attachBrandAndModelAutocomplete(document.getElementById('car-brand'), document.getElementById('car-model'));
+    bindSmartVehicleSpecs({
+        brandEl: document.getElementById('car-brand'),
+        modelEl: document.getElementById('car-model'),
+        categoryEl: document.getElementById('car-category'),
+        seatsEl: document.getElementById('car-seats')
+    });
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -854,6 +860,105 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function detectVehicleSpecs(brand, model) {
+        const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const m = norm(model);
+        const b = norm(brand);
+        if (!m) return null;
+
+        const twoSeaters = ['mx-5', 'z4', '718 boxster', '718 cayman', 'r8', 'cyberster'];
+        const fourSeatersSport = ['911', 'tt', 'mustang', 'challenger', 'cooper 3 puertas', 'eq1', 'jimny'];
+        const sports5 = ['mustang mach-e', 'charger', 'stinger', 'panamera', 'taycan'];
+
+        if (twoSeaters.some(x => m === x || m.includes(x))) return { category: 'Deportivo / Lujo', maxSeats: 2, defaultSeats: 2 };
+        if (m === '911' || m === 'tt' || m === 'mustang' || m === 'challenger') return { category: 'Deportivo / Lujo', maxSeats: 4, defaultSeats: 4 };
+        if (sports5.some(x => m === x || m.includes(x))) return { category: 'Deportivo / Lujo', maxSeats: 5, defaultSeats: 5 };
+        if (m.includes('cooper 3')) return { category: 'Compacto', maxSeats: 4, defaultSeats: 4 };
+        if (m.includes('eq1')) return { category: 'Compacto', maxSeats: 4, defaultSeats: 4 };
+        if (m.includes('jimny')) return { category: 'SUV / Camioneta', maxSeats: 4, defaultSeats: 4 };
+
+        const pickups = ['oroch', 'alaskan', 'colorado', 'montana', 'bt-50', 'hilux', 'tacoma', 'tundra', 'frontier', 'np300', 'amarok', 'saveiro', 'maverick', 'ranger', 'f-150', 'ridgeline', 'l200', 'triton', 'gladiator', 'landtrek', 'strada', 'toro', 'shark', 't6', 't8', 't9', 'hunter', 'poer', 'wingle', 'musso', '700', '1000', '1500', '2500', 'rampage', 'tunland', 'cybertruck'];
+        if (pickups.some(x => m === x || (x.length > 2 && m.includes(x)))) {
+            const maxS = (m === 'saveiro' || m === 'strada') ? 2 : 5;
+            return { category: 'Pickup', maxSeats: maxS, defaultSeats: maxS };
+        }
+
+        const vans15 = ['hiace', 'sprinter', 'transit', 'view cs2', 'master', 'trafic'];
+        if (vans15.some(x => m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 15, defaultSeats: 12 };
+
+        const suvs8 = ['sequoia', 'traverse', 'tahoe', 'carnival', 'telluride', 'palisade', 'expedition'];
+        if (suvs8.some(x => m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 8, defaultSeats: 8 };
+        if (m.includes('staria')) return { category: 'SUV / Camioneta', maxSeats: 11, defaultSeats: 9 };
+        if (m.includes('n300') || m.includes('n400') || m.includes('promaster')) return { category: 'SUV / Camioneta', maxSeats: 8, defaultSeats: 7 };
+
+        const suvs7 = ['fortuner', 'sw4', 'prado', 'land cruiser 300', '4runner', 'trailblazer', 'captiva', 'cx-9', 'cx-90', 'sorento', 'pathfinder', 'xl7', 'ertiga', 'teramont', 'explorer', 'pilot', 'montero sport', 'commander', '5008', 'tiggo 8', 'js8', 'tang', 'evoltis', 'x7', 'gls', 'q7', 'xc90', 'defender', 'discovery', 'durango', 'x70', 'x90', 'okavango', '009', 'model x', 'rexton', 'tarraco', 'glb', 'tiguan'];
+        if (suvs7.some(x => m === x || m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 7, defaultSeats: 7 };
+
+        const suvs5 = ['duster', 'koleos', 'captur', 'arkana', 'kardian', 'tracker', 'equinox', 'blazer', 'cx-3', 'cx-30', 'cx-5', 'cx-50', 'cx-60', 'corolla cross', 'raize', 'rush', 'rav4', 'sonet', 'seltos', 'stonic', 'niro', 'sportage', 'ev5', 'ev6', 'ev9', 'venue', 'creta', 'kona', 'tucson', 'santa fe', 'ioniq 5', 'kicks', 'qashqai', 'x-trail', 'murano', 'patrol', 'vitara', 'grand vitara', 's-cross', 'fronx', 'nivus', 't-cross', 'taos', 'touareg', 'id.4', 'ecosport', 'escape', 'bronco', 'edge', 'wr-v', 'hr-v', 'zr-v', 'cr-v', 'passport', 'asx', 'eclipse cross', 'outlander', 'renegade', 'compass', 'cherokee', 'grand cherokee', 'wrangler', '2008', '3008', 'aircross', 'cactus', 'pulse', 'fastback', 'yuan', 'atto 3', 'song', 'tiggo 2', 'tiggo 4', 'tiggo 7', 'mg zs', 'mg hs', 'mg rx5', 'mg one', 'js2', 'js3', 'js4', 'js6', 'cs15', 'cs35', 'cs55', 'uni-t', 'uni-k', 'jolion', 'h6', 'dargo', 'tivoli', 'korando', 'torres', 'actyon', 'crosstrek', 'xv', 'forester', 'outback', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'ix1', 'ix3', 'gla', 'glc', 'gle', 'clase g', 'eqa', 'eqb', 'q2', 'q3', 'q5', 'q8', 'e-tron', 'ex30', 'xc40', 'ex40', 'c40', 'xc60', 'evoque', 'velar', 'range rover', 'macan', 'cayenne', 'countryman', 'aceman', 'arona', 'ateca', 'formentor', 'terramar', 'mokka', 'crossland', 'grandland', 'journey', 'dashing', 't2', 'coolray', 'azkarra', 'geometry', 'ex5', 's07', 's05', '001', '7x', 'omoda', 'jaecoo', 'model y', 'kangoo', 'partner', 'berlingo', 'fiorino', 'vito'];
+        if (suvs5.some(x => m === x || m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 5, defaultSeats: 5 };
+
+        const compactos = ['picanto', 'spark', 'beat', 'kwid', 'sandero', 'march', 'swift', 'alto', 's-presso', 'celerio', 'baleno', 'ignis', 'grand i10', 'i20', 'hb20', 'gol', 'polo', 'golf', 'fiesta', '208', 'c3', 'mobi', 'argo', '500', 'seagull', 'dolphin', 'mg 3', 'mg 4', 'e10x', 'ora 03', 'corsa', 'ibiza', 'leon', 'born', 'cooper', 'clubman', 'a1', 'a3', 'serie 1', 'clase a', 'clase b', 'leaf', 'i4'];
+        if (compactos.some(x => m === x || m.includes(x))) return { category: 'Compacto', maxSeats: 5, defaultSeats: 5 };
+
+        const sedans = ['logan', 'sail', 'onix', 'joy', 'aveo', 'cruze', 'mazda 2', 'mazda 3', 'mazda 6', 'yaris', 'corolla', 'prius', 'camry', 'soluto', 'rio', 'k3', 'cerato', 'forte', 'accent', 'elantra', 'sonata', 'ioniq 6', 'versa', 'sentra', 'altima', 'voyage', 'virtus', 'jetta', 'focus', 'city', 'civic', 'accord', 'mirage', 'cronos', 'seal', 'han', 'arrizo', 'mg 5', 'alsvin', 'impreza', 'wrx', 'serie 2', 'serie 3', 'serie 4', 'serie 5', 'cla', 'clase c', 'clase e', 'clase s', 'eqe', 'a4', 'a5', 'a6', 's60', 'model 3', 'model s', 'l07'];
+        if (sedans.some(x => m === x || m.includes(x))) return { category: 'Sedán', maxSeats: 5, defaultSeats: 5 };
+
+        if (b && m === 'x') return { category: 'SUV / Camioneta', maxSeats: 5, defaultSeats: 5 };
+        return null;
+    }
+
+    function bindSmartVehicleSpecs({ brandEl, modelEl, categoryEl, seatsEl }) {
+        if (!brandEl || !modelEl || !categoryEl || !seatsEl || modelEl.dataset.specsBound) return;
+        modelEl.dataset.specsBound = '1';
+
+        let hintEl = categoryEl.parentNode.querySelector('.rc-spec-hint');
+        if (!hintEl) {
+            hintEl = document.createElement('small');
+            hintEl.className = 'rc-spec-hint text-info font-weight-bold d-block mt-1';
+            categoryEl.parentNode.appendChild(hintEl);
+        }
+
+        function applySpecs(forceAdjustSeats) {
+            const spec = detectVehicleSpecs(brandEl.value, modelEl.value);
+            if (spec) {
+                Array.from(categoryEl.options).forEach(opt => {
+                    opt.disabled = (opt.value !== spec.category);
+                });
+                if (categoryEl.value !== spec.category) {
+                    categoryEl.value = spec.category;
+                    categoryEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                seatsEl.max = String(spec.maxSeats);
+                seatsEl.min = '2';
+                const currentSeats = parseInt(seatsEl.value, 10);
+                if (forceAdjustSeats || isNaN(currentSeats) || currentSeats > spec.maxSeats || currentSeats < 2) {
+                    seatsEl.value = String(spec.defaultSeats);
+                }
+                hintEl.innerHTML = `<i class="fa fa-lock mr-1"></i> ${spec.category} &bull; Máx. ${spec.maxSeats} pasajeros`;
+                hintEl.style.display = 'block';
+            } else {
+                Array.from(categoryEl.options).forEach(opt => { opt.disabled = false; });
+                seatsEl.max = '15';
+                seatsEl.min = '2';
+                hintEl.textContent = '';
+                hintEl.style.display = 'none';
+            }
+        }
+
+        modelEl.addEventListener('change', () => applySpecs(true));
+        modelEl.addEventListener('input', () => applySpecs(true));
+        brandEl.addEventListener('change', () => applySpecs(false));
+
+        seatsEl.addEventListener('input', function () {
+            const spec = detectVehicleSpecs(brandEl.value, modelEl.value);
+            const val = parseInt(this.value, 10);
+            if (spec && !isNaN(val) && val > spec.maxSeats) {
+                this.value = String(spec.maxSeats);
+                alert(`El modelo "${modelEl.value.trim()}" admite máximo ${spec.maxSeats} pasajeros (incluyendo el conductor).`);
+            }
+        });
+    }
+
     window.toggleCarStatus = function (carId) {
         const cars = getAllCars();
         const car = cars.find(c => c.id === carId);
@@ -903,12 +1008,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="col-md-3 form-group">
                                             <label class="small font-weight-bold">Categoría</label>
                                             <select id="edit-car-category" class="form-control">
-                                                <option value="SUV / Camioneta">SUV / Camioneta</option>
                                                 <option value="Sedán">Sedán</option>
+                                                <option value="SUV / Camioneta">SUV / Camioneta</option>
                                                 <option value="Compacto">Compacto</option>
-                                                <option value="Pick-Up 4x4">Pick-Up 4x4</option>
-                                                <option value="Deportivo">Deportivo</option>
-                                                <option value="Van / Familiar">Van / Familiar</option>
+                                                <option value="Pickup">Pickup 4x4</option>
+                                                <option value="Deportivo / Lujo">Deportivo / Lujo</option>
                                             </select>
                                         </div>
                                         <div class="col-md-3 form-group">
@@ -992,6 +1096,12 @@ document.addEventListener('DOMContentLoaded', function () {
             modalEl = document.getElementById('modalEditOwnerCar');
             attachColombiaCityAutocomplete(document.getElementById('edit-car-city'));
             attachBrandAndModelAutocomplete(document.getElementById('edit-car-brand'), document.getElementById('edit-car-model'));
+            bindSmartVehicleSpecs({
+                brandEl: document.getElementById('edit-car-brand'),
+                modelEl: document.getElementById('edit-car-model'),
+                categoryEl: document.getElementById('edit-car-category'),
+                seatsEl: document.getElementById('edit-car-seats')
+            });
 
             document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
                 const files = Array.from(evt.target.files || []);
