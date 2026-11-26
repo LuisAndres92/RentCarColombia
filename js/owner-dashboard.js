@@ -35,7 +35,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let uploadedSoatImg = '';
     let uploadedPolicyImg = '';
-    function compressDocImage(file, callback) {
+    function processDocFile(file, callback) {
+        if (!file) return;
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+        if (isPdf) {
+            if (file.size > 4 * 1024 * 1024) {
+                alert('El archivo PDF supera el límite de 4 MB. Por favor comprímelo o sube una imagen.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (ev) { callback(ev.target.result); };
+            reader.readAsDataURL(file);
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function (ev) {
             const img = new Image();
@@ -57,6 +69,18 @@ document.addEventListener('DOMContentLoaded', function () {
         reader.readAsDataURL(file);
     }
 
+    function renderDocPreviewHtml(dataUrl, labelText, allowOpenLink) {
+        if (!dataUrl) return '<span class="text-muted">Sin archivo adjunto</span>';
+        const isPdf = String(dataUrl).startsWith('data:application/pdf');
+        const thumb = isPdf
+            ? '<div class="rounded border d-flex align-items-center justify-content-center bg-white mr-2" style="width:48px;height:36px;"><i class="fa fa-file-pdf text-danger fa-lg"></i></div>'
+            : `<img src="${dataUrl}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;cursor:pointer;">`;
+        const openBtn = allowOpenLink
+            ? `<button type="button" class="btn btn-link btn-sm p-0 small text-primary font-weight-bold" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${dataUrl.replace(/"/g, '&quot;')}">${isPdf ? 'Abrir PDF' : 'Ver imagen'}</button>`
+            : '';
+        return `<div class="d-flex align-items-center mt-1">${thumb}<div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>${labelText}</span>${openBtn}</div></div>`;
+    }
+
     const bindDocUpload = (inputId, statusId, setter) => {
         const el = document.getElementById(inputId);
         const st = document.getElementById(statusId);
@@ -65,14 +89,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const file = e.target.files && e.target.files[0];
             if (!file) {
                 setter('');
-                if (st) st.textContent = 'Obligatorio para publicar el vehículo';
+                if (st) st.textContent = 'Obligatorio (imagen o PDF) para publicar';
                 return;
             }
-            compressDocImage(file, function (dataUrl) {
+            processDocFile(file, function (dataUrl) {
                 setter(dataUrl);
-                if (st) {
-                    st.innerHTML = `<div class="d-flex align-items-center mt-1"><img src="${dataUrl}" class="rounded border mr-2" style="width:42px;height:32px;object-fit:cover;"><span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Documento cargado</span></div>`;
-                }
+                if (st) st.innerHTML = renderDocPreviewHtml(dataUrl, 'Documento cargado', true);
             });
         });
     };
@@ -1273,13 +1295,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="row p-2 bg-light border rounded">
                                         <div class="col-12 mb-1 small font-weight-bold text-dark"><i class="fa fa-shield-alt text-primary mr-1"></i> Documentos de Respaldo (SOAT y Póliza)</div>
                                         <div class="col-md-6 mb-2">
-                                            <label class="small font-weight-semi-bold mb-1">Actualizar SOAT Vigente</label>
-                                            <input type="file" id="edit-car-soat-file" accept="image/*" class="form-control-file small">
+                                            <label class="small font-weight-semi-bold mb-1">Actualizar SOAT Vigente (Imagen o PDF)</label>
+                                            <input type="file" id="edit-car-soat-file" accept="image/*,application/pdf,.pdf" class="form-control-file small">
                                             <small id="edit-car-soat-status" class="text-muted"></small>
                                         </div>
                                         <div class="col-md-6 mb-2">
-                                            <label class="small font-weight-semi-bold mb-1">Actualizar Póliza de Seguro</label>
-                                            <input type="file" id="edit-car-policy-file" accept="image/*" class="form-control-file small">
+                                            <label class="small font-weight-semi-bold mb-1">Actualizar Póliza de Seguro (Imagen o PDF)</label>
+                                            <input type="file" id="edit-car-policy-file" accept="image/*,application/pdf,.pdf" class="form-control-file small">
                                             <small id="edit-car-policy-status" class="text-muted"></small>
                                         </div>
                                     </div>
@@ -1312,11 +1334,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 el.addEventListener('change', function (evt) {
                     const f = evt.target.files && evt.target.files[0];
                     if (!f) return;
-                    compressDocImage(f, function (dataUrl) {
+                    processDocFile(f, function (dataUrl) {
                         window[key] = dataUrl;
-                        if (st) {
-                            st.innerHTML = `<div class="d-flex align-items-center mt-1"><img src="${dataUrl}" class="rounded border mr-2" style="width:46px;height:34px;object-fit:cover;"><span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Nuevo documento listo para guardar</span></div>`;
-                        }
+                        if (st) st.innerHTML = renderDocPreviewHtml(dataUrl, 'Nuevo documento listo para guardar', true);
                     });
                 });
             };
@@ -1449,16 +1469,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const polInp = document.getElementById('edit-car-policy-file');
         if (soatInp) soatInp.value = '';
         if (polInp) polInp.value = '';
-        if (soatSt) {
-            soatSt.innerHTML = car.soatImage
-                ? `<div class="d-flex align-items-center mt-1"><a href="${car.soatImage}" target="_blank"><img src="${car.soatImage}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;"></a><div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>SOAT cargado</span><a href="${car.soatImage}" target="_blank" class="small text-primary">Ver documento</a></div></div>`
-                : '<span class="text-muted">Sin archivo adjunto</span>';
-        }
-        if (polSt) {
-            polSt.innerHTML = car.policyImage
-                ? `<div class="d-flex align-items-center mt-1"><a href="${car.policyImage}" target="_blank"><img src="${car.policyImage}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;"></a><div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>Póliza cargada</span><a href="${car.policyImage}" target="_blank" class="small text-primary">Ver documento</a></div></div>`
-                : '<span class="text-muted">Sin archivo adjunto</span>';
-        }
+        if (soatSt) soatSt.innerHTML = renderDocPreviewHtml(car.soatImage, 'SOAT cargado', true);
+        if (polSt) polSt.innerHTML = renderDocPreviewHtml(car.policyImage, 'Póliza cargada', true);
         document.getElementById('edit-car-price').value = car.pricePerDay || car.price || 200000;
         document.getElementById('edit-car-city').value = car.city || 'Valledupar';
         document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';

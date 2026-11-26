@@ -1276,3 +1276,25 @@ window.showAppAlert = function (message, type) {
 window.alert = function (msg) {
     window.showAppAlert(msg);
 };
+
+/** ================= VISOR SEGURO DE DOCUMENTOS (PDF E IMÁGENES) ================= **/
+window.openDocumentPreview = function (dataUrl) {
+    if (!dataUrl) return;
+    if (String(dataUrl).startsWith('data:')) {
+        try {
+            const parts = dataUrl.split(',');
+            const mimeMatch = parts[0].match(/:(.*?);/);
+            const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+            const bin = atob(parts[1]);
+            const arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            const blob = new Blob([arr], { type: mime });
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+            return;
+        } catch (e) {
+            console.warn('Error abriendo documento:', e);
+        }
+    }
+    window.open(dataUrl, '_blank');
+};
