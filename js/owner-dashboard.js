@@ -753,10 +753,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 listBox.innerHTML = '';
                 return;
             }
+            const tokens = q.split(/\s+/).filter(Boolean);
             const items = typeof getItemsFn === 'function' ? getItemsFn() : [];
             const starts = items.filter(item => norm(item).startsWith(q));
-            const contains = items.filter(item => !norm(item).startsWith(q) && norm(item).includes(q));
-            const matches = starts.concat(contains).slice(0, 10);
+            const tokenMatches = items.filter(item => {
+                const n = norm(item);
+                return !n.startsWith(q) && tokens.every(tok => n.includes(tok));
+            });
+            const matches = starts.concat(tokenMatches).slice(0, 15);
 
             if (matches.length === 0) {
                 listBox.style.display = 'none';
@@ -801,52 +805,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function attachBrandAndModelAutocomplete(brandEl, modelEl) {
-        const CAR_CATALOG_BY_BRAND = {
-            'Renault': ['Logan', 'Sandero', 'Sandero Stepway', 'Kwid', 'Kwid E-Tech', 'Duster', 'Duster Oroch', 'Oroch', 'Koleos', 'Captur', 'Arkana', 'Kardian', 'Megane E-Tech', 'Kangoo', 'Master', 'Trafic', 'Alaskan'],
-            'Chevrolet': ['Spark', 'Spark GT', 'Beat', 'Sail', 'Onix', 'Onix Turbo', 'Onix RS', 'Joy', 'Aveo', 'Cruze', 'Tracker', 'Tracker Turbo', 'Equinox', 'Captiva', 'Blazer', 'Trailblazer', 'Traverse', 'Tahoe', 'Colorado', 'Montana', 'N300', 'N400'],
-            'Mazda': ['Mazda 2', 'Mazda 3', 'Mazda 6', 'CX-3', 'CX-30', 'CX-5', 'CX-50', 'CX-60', 'CX-9', 'CX-90', 'MX-5', 'BT-50'],
-            'Toyota': ['Yaris', 'Corolla', 'Corolla Cross', 'Corolla Hybrid', 'Prius', 'Camry', 'Raize', 'Rush', 'RAV4', 'Fortuner', 'SW4', 'Land Cruiser Prado', 'Land Cruiser 300', '4Runner', 'Sequoia', 'Hilux', 'Tacoma', 'Tundra', 'Hiace'],
-            'Kia': ['Picanto', 'Soluto', 'Rio', 'K3', 'Cerato', 'Forte', 'Stinger', 'Sonet', 'Seltos', 'Stonic', 'Niro', 'Sportage', 'Sorento', 'Carnival', 'Telluride', 'EV5', 'EV6', 'EV9'],
-            'Hyundai': ['Grand i10', 'i20', 'HB20', 'Accent', 'Elantra', 'Sonata', 'Venue', 'Creta', 'Kona', 'Tucson', 'Santa Fe', 'Palisade', 'Staria', 'Ioniq 5', 'Ioniq 6'],
-            'Nissan': ['March', 'Versa', 'Sentra', 'Altima', 'Kicks', 'Kicks Play', 'Qashqai', 'X-Trail', 'Pathfinder', 'Murano', 'Patrol', 'Frontier', 'NP300', 'Leaf'],
-            'Suzuki': ['Alto', 'S-Presso', 'Celerio', 'Swift', 'Swift Dzire', 'Baleno', 'Fronx', 'Ignis', 'Jimny', 'Vitara', 'Grand Vitara', 'S-Cross', 'XL7', 'Ertiga'],
-            'Volkswagen': ['Gol', 'Voyage', 'Polo', 'Virtus', 'Jetta', 'Golf', 'Nivus', 'T-Cross', 'Taos', 'Tiguan', 'Teramont', 'Touareg', 'Amarok', 'Saveiro', 'ID.4'],
-            'Ford': ['Fiesta', 'Focus', 'Mustang', 'Mustang Mach-E', 'EcoSport', 'Escape', 'Bronco', 'Bronco Sport', 'Edge', 'Explorer', 'Expedition', 'Maverick', 'Ranger', 'F-150', 'Transit'],
-            'Honda': ['City', 'Civic', 'Accord', 'WR-V', 'HR-V', 'ZR-V', 'CR-V', 'Pilot', 'Passport', 'Ridgeline'],
-            'Mitsubishi': ['Mirage', 'ASX', 'Eclipse Cross', 'Outlander', 'Outlander Sport', 'Montero Sport', 'L200', 'Triton'],
-            'Jeep': ['Renegade', 'Compass', 'Cherokee', 'Grand Cherokee', 'Commander', 'Wrangler', 'Gladiator'],
-            'Peugeot': ['208', '2008', '3008', '5008', 'Landtrek', 'Partner', 'Expert'],
-            'Citroën': ['C3', 'C3 Aircross', 'C4 Cactus', 'C5 Aircross', 'Berlingo', 'Jumpy'],
-            'Fiat': ['Mobi', 'Argo', 'Cronos', 'Pulse', 'Fastback', '500', 'Strada', 'Toro', 'Fiorino'],
-            'BYD': ['Seagull', 'Dolphin', 'Dolphin Mini', 'Yuan Up', 'Yuan Plus', 'Atto 3', 'Song Plus', 'Song Pro', 'Seal', 'Han', 'Tang', 'Shark'],
-            'Chery': ['Tiggo 2 Pro', 'Tiggo 4 Pro', 'Tiggo 7 Pro', 'Tiggo 8 Pro', 'Arrizo 5', 'eQ1'],
-            'MG': ['MG 3', 'MG 4', 'MG 5', 'MG ZS', 'MG HS', 'MG RX5', 'MG One', 'Cyberster'],
-            'JAC': ['JS2', 'JS3', 'JS4', 'JS6', 'JS8', 'E10X', 'T6', 'T8', 'T9'],
-            'Changan': ['Alsvin', 'CS15', 'CS35 Plus', 'CS55 Plus', 'UNI-T', 'UNI-K', 'Hunter'],
-            'Great Wall / Haval': ['Jolion', 'H6', 'Dargo', 'Poer', 'Wingle 5', 'Wingle 7', 'Ora 03'],
-            'SsangYong / KGM': ['Tivoli', 'Korando', 'Torres', 'Rexton', 'Actyon', 'Musso'],
-            'Subaru': ['Impreza', 'Crosstrek', 'XV', 'Forester', 'Outback', 'Evoltis', 'WRX'],
-            'BMW': ['Serie 1', 'Serie 2', 'Serie 3', 'Serie 4', 'Serie 5', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'iX1', 'iX3', 'i4', 'Z4'],
-            'Mercedes-Benz': ['Clase A', 'Clase B', 'Clase C', 'Clase E', 'Clase S', 'CLA', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'Clase G', 'EQA', 'EQB', 'EQE', 'Sprinter', 'Vito'],
-            'Audi': ['A1', 'A3', 'A4', 'A5', 'A6', 'Q2', 'Q3', 'Q5', 'Q7', 'Q8', 'e-tron', 'Q4 e-tron', 'R8', 'TT'],
-            'Volvo': ['EX30', 'XC40', 'EX40', 'C40', 'XC60', 'XC90', 'S60'],
-            'Land Rover': ['Defender', 'Discovery', 'Discovery Sport', 'Range Rover Evoque', 'Range Rover Velar', 'Range Rover Sport', 'Range Rover'],
-            'Porsche': ['Macan', 'Cayenne', 'Panamera', 'Taycan', '911', '718 Boxster', '718 Cayman'],
-            'MINI': ['Cooper 3 Puertas', 'Cooper 5 Puertas', 'Clubman', 'Countryman', 'Aceman'],
-            'Seat': ['Ibiza', 'León', 'Arona', 'Ateca', 'Tarraco'],
-            'Cupra': ['Formentor', 'León', 'Ateca', 'Terramar', 'Born'],
-            'Opel': ['Corsa', 'Mokka', 'Crossland', 'Grandland'],
-            'Dodge': ['Journey', 'Durango', 'Charger', 'Challenger'],
-            'RAM': ['700', '1000', '1500', '2500', 'Rampage', 'ProMaster'],
-            'Foton': ['Tunland G7', 'Tunland V7', 'Tunland V9', 'View CS2'],
-            'Jetour': ['X70', 'X70 Plus', 'X90 Plus', 'Dashing', 'T2'],
-            'Geely': ['Coolray', 'Azkarra', 'Okavango', 'Geometry C', 'EX5'],
-            'Deepal': ['S07', 'S05', 'L07'],
-            'Zeekr': ['001', 'X', '009', '7X'],
-            'Omoda / Jaecoo': ['Omoda 5', 'Omoda E5', 'Jaecoo 7', 'Jaecoo 8'],
-            'Tesla': ['Model 3', 'Model Y', 'Model S', 'Model X', 'Cybertruck']
-        };
-        const brands = Object.keys(CAR_CATALOG_BY_BRAND);
+        const catalog = window.CAR_CATALOG_BY_BRAND || {};
+        const brands = Object.keys(catalog);
         const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
         attachTypeaheadAutocomplete(brandEl, () => brands);
@@ -854,57 +814,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const entered = norm(brandEl ? brandEl.value.trim() : '');
             if (entered) {
                 const matchedKey = brands.find(b => norm(b) === entered || norm(b).includes(entered));
-                if (matchedKey) return CAR_CATALOG_BY_BRAND[matchedKey];
+                if (matchedKey) return catalog[matchedKey];
             }
-            return Object.values(CAR_CATALOG_BY_BRAND).flat();
+            return Object.values(catalog).flat();
         });
-    }
-
-    function detectVehicleSpecs(brand, model) {
-        const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        const m = norm(model);
-        const b = norm(brand);
-        if (!m) return null;
-
-        const twoSeaters = ['mx-5', 'z4', '718 boxster', '718 cayman', 'r8', 'cyberster'];
-        const fourSeatersSport = ['911', 'tt', 'mustang', 'challenger', 'cooper 3 puertas', 'eq1', 'jimny'];
-        const sports5 = ['mustang mach-e', 'charger', 'stinger', 'panamera', 'taycan'];
-
-        if (twoSeaters.some(x => m === x || m.includes(x))) return { category: 'Deportivo / Lujo', maxSeats: 2, defaultSeats: 2 };
-        if (m === '911' || m === 'tt' || m === 'mustang' || m === 'challenger') return { category: 'Deportivo / Lujo', maxSeats: 4, defaultSeats: 4 };
-        if (sports5.some(x => m === x || m.includes(x))) return { category: 'Deportivo / Lujo', maxSeats: 5, defaultSeats: 5 };
-        if (m.includes('cooper 3')) return { category: 'Compacto', maxSeats: 4, defaultSeats: 4 };
-        if (m.includes('eq1')) return { category: 'Compacto', maxSeats: 4, defaultSeats: 4 };
-        if (m.includes('jimny')) return { category: 'SUV / Camioneta', maxSeats: 4, defaultSeats: 4 };
-
-        const pickups = ['oroch', 'alaskan', 'colorado', 'montana', 'bt-50', 'hilux', 'tacoma', 'tundra', 'frontier', 'np300', 'amarok', 'saveiro', 'maverick', 'ranger', 'f-150', 'ridgeline', 'l200', 'triton', 'gladiator', 'landtrek', 'strada', 'toro', 'shark', 't6', 't8', 't9', 'hunter', 'poer', 'wingle', 'musso', '700', '1000', '1500', '2500', 'rampage', 'tunland', 'cybertruck'];
-        if (pickups.some(x => m === x || (x.length > 2 && m.includes(x)))) {
-            const maxS = (m === 'saveiro' || m === 'strada') ? 2 : 5;
-            return { category: 'Pickup', maxSeats: maxS, defaultSeats: maxS };
-        }
-
-        const vans15 = ['hiace', 'sprinter', 'transit', 'view cs2', 'master', 'trafic'];
-        if (vans15.some(x => m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 15, defaultSeats: 12 };
-
-        const suvs8 = ['sequoia', 'traverse', 'tahoe', 'carnival', 'telluride', 'palisade', 'expedition'];
-        if (suvs8.some(x => m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 8, defaultSeats: 8 };
-        if (m.includes('staria')) return { category: 'SUV / Camioneta', maxSeats: 11, defaultSeats: 9 };
-        if (m.includes('n300') || m.includes('n400') || m.includes('promaster')) return { category: 'SUV / Camioneta', maxSeats: 8, defaultSeats: 7 };
-
-        const suvs7 = ['fortuner', 'sw4', 'prado', 'land cruiser 300', '4runner', 'trailblazer', 'captiva', 'cx-9', 'cx-90', 'sorento', 'pathfinder', 'xl7', 'ertiga', 'teramont', 'explorer', 'pilot', 'montero sport', 'commander', '5008', 'tiggo 8', 'js8', 'tang', 'evoltis', 'x7', 'gls', 'q7', 'xc90', 'defender', 'discovery', 'durango', 'x70', 'x90', 'okavango', '009', 'model x', 'rexton', 'tarraco', 'glb', 'tiguan'];
-        if (suvs7.some(x => m === x || m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 7, defaultSeats: 7 };
-
-        const suvs5 = ['duster', 'koleos', 'captur', 'arkana', 'kardian', 'tracker', 'equinox', 'blazer', 'cx-3', 'cx-30', 'cx-5', 'cx-50', 'cx-60', 'corolla cross', 'raize', 'rush', 'rav4', 'sonet', 'seltos', 'stonic', 'niro', 'sportage', 'ev5', 'ev6', 'ev9', 'venue', 'creta', 'kona', 'tucson', 'santa fe', 'ioniq 5', 'kicks', 'qashqai', 'x-trail', 'murano', 'patrol', 'vitara', 'grand vitara', 's-cross', 'fronx', 'nivus', 't-cross', 'taos', 'touareg', 'id.4', 'ecosport', 'escape', 'bronco', 'edge', 'wr-v', 'hr-v', 'zr-v', 'cr-v', 'passport', 'asx', 'eclipse cross', 'outlander', 'renegade', 'compass', 'cherokee', 'grand cherokee', 'wrangler', '2008', '3008', 'aircross', 'cactus', 'pulse', 'fastback', 'yuan', 'atto 3', 'song', 'tiggo 2', 'tiggo 4', 'tiggo 7', 'mg zs', 'mg hs', 'mg rx5', 'mg one', 'js2', 'js3', 'js4', 'js6', 'cs15', 'cs35', 'cs55', 'uni-t', 'uni-k', 'jolion', 'h6', 'dargo', 'tivoli', 'korando', 'torres', 'actyon', 'crosstrek', 'xv', 'forester', 'outback', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'ix1', 'ix3', 'gla', 'glc', 'gle', 'clase g', 'eqa', 'eqb', 'q2', 'q3', 'q5', 'q8', 'e-tron', 'ex30', 'xc40', 'ex40', 'c40', 'xc60', 'evoque', 'velar', 'range rover', 'macan', 'cayenne', 'countryman', 'aceman', 'arona', 'ateca', 'formentor', 'terramar', 'mokka', 'crossland', 'grandland', 'journey', 'dashing', 't2', 'coolray', 'azkarra', 'geometry', 'ex5', 's07', 's05', '001', '7x', 'omoda', 'jaecoo', 'model y', 'kangoo', 'partner', 'berlingo', 'fiorino', 'vito'];
-        if (suvs5.some(x => m === x || m.includes(x))) return { category: 'SUV / Camioneta', maxSeats: 5, defaultSeats: 5 };
-
-        const compactos = ['picanto', 'spark', 'beat', 'kwid', 'sandero', 'march', 'swift', 'alto', 's-presso', 'celerio', 'baleno', 'ignis', 'grand i10', 'i20', 'hb20', 'gol', 'polo', 'golf', 'fiesta', '208', 'c3', 'mobi', 'argo', '500', 'seagull', 'dolphin', 'mg 3', 'mg 4', 'e10x', 'ora 03', 'corsa', 'ibiza', 'leon', 'born', 'cooper', 'clubman', 'a1', 'a3', 'serie 1', 'clase a', 'clase b', 'leaf', 'i4'];
-        if (compactos.some(x => m === x || m.includes(x))) return { category: 'Compacto', maxSeats: 5, defaultSeats: 5 };
-
-        const sedans = ['logan', 'sail', 'onix', 'joy', 'aveo', 'cruze', 'mazda 2', 'mazda 3', 'mazda 6', 'yaris', 'corolla', 'prius', 'camry', 'soluto', 'rio', 'k3', 'cerato', 'forte', 'accent', 'elantra', 'sonata', 'ioniq 6', 'versa', 'sentra', 'altima', 'voyage', 'virtus', 'jetta', 'focus', 'city', 'civic', 'accord', 'mirage', 'cronos', 'seal', 'han', 'arrizo', 'mg 5', 'alsvin', 'impreza', 'wrx', 'serie 2', 'serie 3', 'serie 4', 'serie 5', 'cla', 'clase c', 'clase e', 'clase s', 'eqe', 'a4', 'a5', 'a6', 's60', 'model 3', 'model s', 'l07'];
-        if (sedans.some(x => m === x || m.includes(x))) return { category: 'Sedán', maxSeats: 5, defaultSeats: 5 };
-
-        if (b && m === 'x') return { category: 'SUV / Camioneta', maxSeats: 5, defaultSeats: 5 };
-        return null;
     }
 
     function bindSmartVehicleSpecs({ brandEl, modelEl, categoryEl, seatsEl }) {
@@ -919,13 +832,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function applySpecs(forceAdjustSeats) {
-            const spec = detectVehicleSpecs(brandEl.value, modelEl.value);
+            const spec = typeof window.detectVehicleSpecs === 'function'
+                ? window.detectVehicleSpecs(brandEl.value, modelEl.value)
+                : null;
             if (spec) {
+                const allowed = Array.isArray(spec.categories) ? spec.categories : [spec.defaultCategory];
                 Array.from(categoryEl.options).forEach(opt => {
-                    opt.disabled = (opt.value !== spec.category);
+                    opt.disabled = !allowed.includes(opt.value);
                 });
-                if (categoryEl.value !== spec.category) {
-                    categoryEl.value = spec.category;
+                if (!allowed.includes(categoryEl.value) || forceAdjustSeats) {
+                    categoryEl.value = spec.defaultCategory || allowed[0];
                     categoryEl.dispatchEvent(new Event('change', { bubbles: true }));
                 }
                 seatsEl.max = String(spec.maxSeats);
@@ -934,7 +850,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (forceAdjustSeats || isNaN(currentSeats) || currentSeats > spec.maxSeats || currentSeats < 2) {
                     seatsEl.value = String(spec.defaultSeats);
                 }
-                hintEl.innerHTML = `<i class="fa fa-lock mr-1"></i> ${spec.category} &bull; Máx. ${spec.maxSeats} pasajeros`;
+                const allowedLabel = allowed.length > 1 ? `Elige: ${allowed.join(' o ')}` : allowed[0];
+                hintEl.innerHTML = `<i class="fa fa-lock mr-1"></i> ${allowedLabel} &bull; Máx. ${spec.maxSeats} pasajeros`;
                 hintEl.style.display = 'block';
             } else {
                 Array.from(categoryEl.options).forEach(opt => { opt.disabled = false; });
@@ -950,7 +867,9 @@ document.addEventListener('DOMContentLoaded', function () {
         brandEl.addEventListener('change', () => applySpecs(false));
 
         seatsEl.addEventListener('input', function () {
-            const spec = detectVehicleSpecs(brandEl.value, modelEl.value);
+            const spec = typeof window.detectVehicleSpecs === 'function'
+                ? window.detectVehicleSpecs(brandEl.value, modelEl.value)
+                : null;
             const val = parseInt(this.value, 10);
             if (spec && !isNaN(val) && val > spec.maxSeats) {
                 this.value = String(spec.maxSeats);
