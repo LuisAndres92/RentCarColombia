@@ -98,10 +98,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function extractPlateFromText(rawText) {
         if (!rawText) return '';
         const upper = String(rawText).toUpperCase();
-        // Placa carro Colombia (ABC123) o moto (ABC12D)
-        const carMatch = upper.match(/\b([A-Z]{3})[\s\-]?(\d{3})\b/);
+        // 1. Buscar primero junto a la palabra PLACA (ej. PLACA: LQL58H o PLACA KLM 123)
+        const nearLabel = upper.match(/PLACA[\s:.\-#]*([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])/);
+        if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
+        // 2. Placa carro Colombia (ABC123) o moto (ABC12D)
+        const carMatch = upper.match(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{3})(?:[^A-Z0-9]|$)/);
         if (carMatch) return `${carMatch[1]}${carMatch[2]}`;
-        const motoMatch = upper.match(/\b([A-Z]{3})[\s\-]?(\d{2}[A-Z])\b/);
+        const motoMatch = upper.match(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{2}[A-Z])(?:[^A-Z0-9]|$)/);
         if (motoMatch) return `${motoMatch[1]}${motoMatch[2]}`;
         return '';
     }
@@ -190,6 +193,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const tc = await page.getTextContent();
             fullText += ' ' + tc.items.map(it => it.str).join(' ');
         }
+        // Si el PDF es escaneado (sin texto seleccionable), aplicar OCR sobre la página 1
+        if (fullText.trim().length < 25) {
+            try {
+                const page1 = await pdf.getPage(1);
+                const viewport = page1.getViewport({ scale: 1.8 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page1.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                const ok = await ensureTesseractLoaded();
+                if (ok && window.Tesseract) {
+                    const ocr = await window.Tesseract.recognize(canvas.toDataURL('image/jpeg', 0.9), 'spa');
+                    if (ocr?.data?.text) fullText += ' ' + ocr.data.text;
+                }
+            } catch (_) { }
+        }
         return fullText;
     }
 
@@ -208,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <form id="form-pdf-password-unlock">
                                 <div class="modal-body p-4">
                                     <p class="small text-muted mb-3">Las aseguradoras suelen proteger el PDF del SOAT con tu <strong>número de cédula/NIT</strong> o la <strong>placa del vehículo</strong>. Ingrésala para leer los datos automáticamente:</p>
-                                    <input type="text" id="pdf-unlock-password-input" class="form-control mb-2" placeholder="Ej. Tu cédula o placa" required>
+                                    <input type="text" id="pdf-unlock-password-input" class="form-control text-uppercase mb-2" style="text-transform: uppercase;" placeholder="Ej. Tu cédula o placa" required>
                                     <small id="pdf-unlock-error" class="text-danger d-none">Contraseña incorrecta, intenta nuevamente o ingrésalo manual.</small>
                                 </div>
                                 <div class="modal-footer bg-light">
@@ -225,12 +244,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const inp = document.getElementById('pdf-unlock-password-input');
         const errEl = document.getElementById('pdf-unlock-error');
         inp.value = '';
+        inp.oninput = function () { this.value = this.value.toUpperCase(); };
         errEl.classList.add('d-none');
 
         const form = document.getElementById('form-pdf-password-unlock');
         form.onsubmit = async function (e) {
             e.preventDefault();
-            const ok = await onSubmitPwd(inp.value.trim());
+            const raw = inp.value.trim();
+            const variants = Array.from(new Set([raw, raw.toUpperCase(), raw.toLowerCase()].filter(Boolean)));
+            let ok = false;
+            for (const v of variants) {
+                if (await onSubmitPwd(v)) {
+                    ok = true;
+                    break;
+                }
+            }
             if (ok) {
                 $('#modalPdfPasswordPrompt').modal('hide');
             } else {
@@ -275,6 +303,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                     const txt = await extractPdfTextWithOptionalPassword(buf, pwd);
                                     unlocked = true;
                                     parseSoatTextAndFill(txt);
+                                    if (!detectedSoatPlate) {
+                                        const platePwd = extractPlateFromText(pwd);
+                                        if (platePwd) detectedSoatPlate = platePwd;
+                                    }
                                     return true;
                                 } catch (_) { return false; }
                             },
