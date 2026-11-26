@@ -254,23 +254,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
 
         const upper = String(rawText).toUpperCase();
-        console.log('[SOAT DEBUG] extracted text:', upper.slice(0, 1200));
         const compactDigits = upper.replace(/[\s\-().]/g, '');
         const phonesInText = [
-            ...upper.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g),
+            ...upper.matchAll(/(?:^|[^0-9])(3\d{7,9})(?:[^0-9]|$)/g),
             ...compactDigits.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g)
         ].map(m => m[1]);
         const isPhoneLike = (val) => {
             if (!val) return true;
             if (/^3\d{9}$/.test(val)) return true;
-            if (phonesInText.some(ph => ph === val || ph.endsWith(val) || ph.includes(val))) return true;
-            // Si aparece un "3" separado justo antes (ej. "3 162357871" o "B162357871" por OCR del teléfono)
-            if (val.length === 9 && new RegExp('(?:3|B|S)\\s*' + val + '(?:[^0-9]|$)').test(upper)) return true;
+            if (phonesInText.some(ph => ph === val || ph.endsWith(val) || ph.includes(val) || (val.length >= 7 && ph.includes(val.slice(0, 7))))) return true;
+            if (val.length === 9 && new RegExp('(?:3|B|S)\\s*' + val.slice(0, 6)).test(upper)) return true;
             return false;
         };
 
         const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
-        const ccCandidates = [...upper.matchAll(/(?:^|[^A-Z0-9])(?:C\.?\s*C\.?|C\.?\s*E\.?|NIT|T\.?\s*I\.?)[\s\S]{0,60}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
+        // Incluir variantes OCR comunes de "CC" (ej. "OO", "OC", "CO", "CG") seguidas del documento
+        const ccCandidates = [...upper.matchAll(/(?:^|[^A-Z0-9])(?:C\.?\s*C\.?|OO|OC|CO|CG|C\.?\s*E\.?|NIT|T\.?\s*I\.?)[\s:.\-|]{1,20}(\d{6,12})(?:[^0-9]|$)/g)]
             .map(m => m[1])
             .filter(d => !isPhoneLike(d));
         const fallbackCandidates = [...upper.matchAll(/(?:NO\.?\s*DE\s*DOCUMENTO|DOCUMENTO\s+DEL\s+TOMADOR)[\s\S]{0,180}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
