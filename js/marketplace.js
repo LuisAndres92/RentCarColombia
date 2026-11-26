@@ -155,7 +155,9 @@ function initCarCatalog() {
                             </div>
                             <div class="btn-group">
                                 <a class="btn btn-outline-secondary btn-sm px-2" href="detail.html?id=${car.id}">Detalles</a>
-                                <a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>
+                                ${(typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car))
+                                    ? `<a class="btn btn-dark btn-sm px-3 font-weight-bold" href="dashboard-propietario.html?editCar=${car.id}" title="Tu vehículo"><i class="fa fa-edit mr-1"></i> Editar</a>`
+                                    : `<a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>`}
                             </div>
                         </div>
                     </div>
@@ -241,7 +243,13 @@ function initCarDetail() {
         setElemText('calc-total', `$${formatPrice(total)} COP`);
 
         if (btnBookNow) {
-            btnBookNow.href = `booking.html?id=${car.id}&days=${days}&start=${inputStart ? inputStart.value : ''}&end=${inputEnd ? inputEnd.value : ''}`;
+            if (typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car)) {
+                btnBookNow.href = `dashboard-propietario.html?editCar=${car.id}`;
+                btnBookNow.className = 'btn btn-dark btn-block btn-lg font-weight-bold shadow-sm';
+                btnBookNow.innerHTML = '<i class="fa fa-edit mr-2"></i> Gestionar / Editar mi Auto';
+            } else {
+                btnBookNow.href = `booking.html?id=${car.id}&days=${days}&start=${inputStart ? inputStart.value : ''}&end=${inputEnd ? inputEnd.value : ''}`;
+            }
         }
     }
 

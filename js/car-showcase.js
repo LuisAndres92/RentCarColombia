@@ -263,7 +263,9 @@
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-outline-secondary btn-sm px-2" onclick="openCarQuickView('${car.id}')">Detalles</button>
-                            <a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>
+                            ${(typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car))
+                                ? `<a class="btn btn-dark btn-sm px-3 font-weight-bold" href="dashboard-propietario.html?editCar=${car.id}" title="Este vehículo te pertenece"><i class="fa fa-edit mr-1"></i> Editar</a>`
+                                : `<a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>`}
                         </div>
                     </div>
                 </div>
@@ -529,7 +531,18 @@
         document.getElementById('qv-mileage').textContent = car.mileage || '250 km/día';
         document.getElementById('qv-desc').textContent = car.description || 'Vehículo en excelentes condiciones mecánicas y estéticas, listo para entregar.';
 
-        document.getElementById('qv-rent-btn').href = `booking.html?id=${car.id}`;
+        const qvRentBtn = document.getElementById('qv-rent-btn');
+        if (qvRentBtn) {
+            if (typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car)) {
+                qvRentBtn.href = `dashboard-propietario.html?editCar=${car.id}`;
+                qvRentBtn.className = 'btn btn-dark font-weight-bold px-4';
+                qvRentBtn.innerHTML = '<i class="fa fa-edit mr-1"></i> Gestionar mi Auto';
+            } else {
+                qvRentBtn.href = `booking.html?id=${car.id}`;
+                qvRentBtn.className = 'btn btn-primary font-weight-bold px-4';
+                qvRentBtn.innerHTML = '<i class="fa fa-calendar-check mr-1"></i> Rentar Ahora';
+            }
+        }
         document.getElementById('qv-full-detail-link').href = `detail.html?id=${car.id}`;
 
         const prevBtn = document.getElementById('qv-prev-btn');

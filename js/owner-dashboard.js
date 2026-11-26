@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', function () {
             renderOwnerCars();
             renderBookingRequests();
             renderWalletStats();
+            const editCarId = new URLSearchParams(window.location.search).get('editCar');
+            if (editCarId && typeof window.openEditCarModal === 'function') {
+                window.openEditCarModal(editCarId);
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
         } catch (e) {
             console.warn('Sincronización propietario Supabase:', e);
         }
@@ -265,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function () {
         grid.innerHTML = cars.map(car => `
             <div class="col-lg-4 col-md-6">
                 <div class="car-manage-card">
-                    <div class="position-relative">
+                    <div class="position-relative" style="cursor: pointer;" onclick="openEditCarModal('${car.id}')" title="Clic para editar datos y fotos">
                         <img src="${car.image}" alt="${car.fullName}" class="car-manage-img" onerror="this.src='img/car-rent-1.png'">
                         <span class="position-absolute badge-status ${car.status === 'Activo' ? 'badge-active' : 'badge-rented'}" style="top: 12px; right: 12px;">
                             ${car.status}
@@ -275,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </span>
                     </div>
                     <div class="p-3">
-                        <h5 class="font-weight-bold text-dark mb-1">${car.fullName}</h5>
+                        <h5 class="font-weight-bold text-dark mb-1" style="cursor: pointer;" onclick="openEditCarModal('${car.id}')">${car.fullName}</h5>
                         <p class="small text-muted mb-3"><i class="fa fa-tag mr-1 text-primary"></i> ${car.category} &bull; Modelo ${car.year}</p>
                         
                         <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-3 text-center small">
@@ -304,14 +311,17 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between pt-2 border-top">
+                        <div class="d-flex justify-content-between pt-2 border-top" style="gap: 6px;">
+                            <button class="btn btn-sm btn-primary font-weight-bold" onclick="openEditCarModal('${car.id}')" title="Editar datos y fotos">
+                                <i class="fa fa-edit mr-1"></i> Editar
+                            </button>
                             <button class="btn btn-sm btn-outline-secondary" onclick="toggleCarStatus('${car.id}')">
                                 <i class="fa fa-power-off mr-1"></i> ${car.status === 'Activo' ? 'Pausar' : 'Activar'}
                             </button>
-                            <a href="detail.html?id=${car.id}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                <i class="fa fa-eye mr-1"></i> Vista previa
+                            <a href="detail.html?id=${car.id}" class="btn btn-sm btn-outline-primary" target="_blank" title="Vista previa">
+                                <i class="fa fa-eye"></i>
                             </a>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCar('${car.id}')">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCar('${car.id}')" title="Eliminar vehículo">
                                 <i class="fa fa-trash"></i>
                             </button>
                         </div>
@@ -707,8 +717,255 @@ document.addEventListener('DOMContentLoaded', function () {
         if (car) {
             car.status = car.status === 'Activo' ? 'Pausado' : 'Activo';
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof dbUpdateVehiculo === 'function') dbUpdateVehiculo(car);
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
             renderOwnerCars();
         }
+    };
+
+    window.openEditCarModal = function (carId) {
+        const cars = getAllCars();
+        const car = cars.find(c => String(c.id) === String(carId));
+        if (!car) return;
+
+        let modalEl = document.getElementById('modalEditOwnerCar');
+        if (!modalEl) {
+            const wrap = document.createElement('div');
+            wrap.innerHTML = `
+                <div class="modal fade" id="modalEditOwnerCar" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-header text-white" style="background: #1C1E32;">
+                                <h5 class="modal-title font-weight-bold text-white"><i class="fa fa-edit text-primary mr-2"></i>Editar Vehículo y Fotos</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                            </div>
+                            <form id="form-edit-owner-car">
+                                <div class="modal-body p-4" style="max-height: 75vh; overflow-y: auto;">
+                                    <input type="hidden" id="edit-car-id">
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Marca *</label>
+                                            <input type="text" id="edit-car-brand" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Modelo *</label>
+                                            <input type="text" id="edit-car-model" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Año *</label>
+                                            <input type="number" id="edit-car-year" class="form-control" min="1990" max="2030" required>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3 form-group">
+                                            <label class="small font-weight-bold">Categoría</label>
+                                            <select id="edit-car-category" class="form-control">
+                                                <option value="SUV / Camioneta">SUV / Camioneta</option>
+                                                <option value="Sedán">Sedán</option>
+                                                <option value="Compacto">Compacto</option>
+                                                <option value="Pick-Up 4x4">Pick-Up 4x4</option>
+                                                <option value="Deportivo">Deportivo</option>
+                                                <option value="Van / Familiar">Van / Familiar</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 form-group">
+                                            <label class="small font-weight-bold">Transmisión</label>
+                                            <select id="edit-car-transmission" class="form-control">
+                                                <option value="Automático">Automático</option>
+                                                <option value="Mecánico">Mecánico</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 form-group">
+                                            <label class="small font-weight-bold">Combustible</label>
+                                            <select id="edit-car-fuel" class="form-control">
+                                                <option value="Gasolina">Gasolina</option>
+                                                <option value="Diésel">Diésel</option>
+                                                <option value="Híbrido">Híbrido</option>
+                                                <option value="Eléctrico">Eléctrico</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 form-group">
+                                            <label class="small font-weight-bold">Puestos</label>
+                                            <input type="number" id="edit-car-seats" class="form-control" min="2" max="15" required>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Precio Diario (COP) *</label>
+                                            <input type="number" id="edit-car-price" class="form-control" min="30000" step="1000" required>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Ciudad</label>
+                                            <input type="text" id="edit-car-city" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Kilometraje Límite</label>
+                                            <input type="text" id="edit-car-mileage" class="form-control" placeholder="Ej. 250 km/día">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Estado</label>
+                                            <select id="edit-car-status" class="form-control">
+                                                <option value="Activo">Activo (Visible)</option>
+                                                <option value="Pausado">Pausado (Oculto)</option>
+                                                <option value="En Renta">En Renta</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-8 form-group">
+                                            <label class="small font-weight-bold">Descripción</label>
+                                            <textarea id="edit-car-description" class="form-control" rows="2"></textarea>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="form-group mb-2">
+                                        <label class="small font-weight-bold d-block"><i class="fa fa-images text-primary mr-1"></i> Galería de Fotos del Vehículo</label>
+                                        <div id="edit-car-gallery-list" class="d-flex flex-wrap mb-2" style="gap: 10px;"></div>
+                                        <div class="row align-items-center mt-2">
+                                            <div class="col-md-6 mb-2">
+                                                <input type="file" id="edit-car-photo-file" accept="image/*" multiple class="form-control-file small">
+                                                <small class="text-muted">Subir nuevas fotos desde tu dispositivo</small>
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="url" id="edit-car-photo-url" class="form-control" placeholder="https://... URL de foto">
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="btn-edit-add-photo-url" class="btn btn-outline-primary">Agregar URL</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary font-weight-bold px-4"><i class="fa fa-save mr-1"></i> Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(wrap.firstElementChild);
+            modalEl = document.getElementById('modalEditOwnerCar');
+
+            document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
+                const files = Array.from(evt.target.files || []);
+                files.forEach(file => {
+                    if (file.size > 4 * 1024 * 1024) return;
+                    const reader = new FileReader();
+                    reader.onload = function (r) {
+                        window._editingCarGallery.push(r.target.result);
+                        renderEditGallery();
+                    };
+                    reader.readAsDataURL(file);
+                });
+                evt.target.value = '';
+            });
+
+            document.getElementById('btn-edit-add-photo-url').addEventListener('click', function () {
+                const urlInput = document.getElementById('edit-car-photo-url');
+                const val = urlInput.value.trim();
+                if (val) {
+                    window._editingCarGallery.push(val);
+                    urlInput.value = '';
+                    renderEditGallery();
+                }
+            });
+
+            document.getElementById('form-edit-owner-car').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-car-id').value;
+                const all = getAllCars();
+                const idx = all.findIndex(c => String(c.id) === String(id));
+                if (idx === -1) return;
+
+                const brand = document.getElementById('edit-car-brand').value.trim();
+                const model = document.getElementById('edit-car-model').value.trim();
+                const gallery = window._editingCarGallery.length > 0 ? window._editingCarGallery.slice() : [all[idx].image || 'img/car-rent-1.png'];
+
+                all[idx].brand = brand;
+                all[idx].model = model;
+                all[idx].fullName = `${brand} ${model}`.trim();
+                all[idx].name = all[idx].fullName;
+                all[idx].year = parseInt(document.getElementById('edit-car-year').value) || 2024;
+                all[idx].category = document.getElementById('edit-car-category').value;
+                all[idx].type = all[idx].category;
+                all[idx].transmission = document.getElementById('edit-car-transmission').value;
+                all[idx].fuel = document.getElementById('edit-car-fuel').value;
+                all[idx].seats = parseInt(document.getElementById('edit-car-seats').value) || 5;
+                all[idx].pricePerDay = parseFloat(document.getElementById('edit-car-price').value) || 200000;
+                all[idx].price = all[idx].pricePerDay;
+                all[idx].city = document.getElementById('edit-car-city').value.trim() || 'Valledupar';
+                all[idx].mileage = document.getElementById('edit-car-mileage').value.trim() || '250 km/día';
+                all[idx].status = document.getElementById('edit-car-status').value;
+                all[idx].description = document.getElementById('edit-car-description').value.trim();
+                all[idx].desc = all[idx].description;
+                all[idx].images = gallery;
+                all[idx].image = gallery[0];
+
+                localStorage.setItem('renteasy_cars', JSON.stringify(all));
+                if (typeof dbUpdateVehiculo === 'function') {
+                    await dbUpdateVehiculo(all[idx]);
+                }
+                if (typeof window.logSystemEvent === 'function') {
+                    window.logSystemEvent('Flota', 'Vehículo actualizado por propietario', `${all[idx].fullName} ($${all[idx].pricePerDay}/día, ${gallery.length} fotos)`);
+                }
+                if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
+
+                $('#modalEditOwnerCar').modal('hide');
+                renderDashboardStats();
+                renderOwnerCars();
+                alert('¡Vehículo actualizado correctamente!');
+            });
+        }
+
+        function renderEditGallery() {
+            const box = document.getElementById('edit-car-gallery-list');
+            if (!box) return;
+            box.innerHTML = window._editingCarGallery.map((src, i) => `
+                <div class="border rounded p-1 bg-light text-center position-relative" style="width: 105px;">
+                    <img src="${src}" class="rounded" style="width: 95px; height: 65px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
+                    <div class="mt-1 d-flex justify-content-between align-items-center">
+                        ${i === 0
+                            ? '<span class="badge badge-primary" style="font-size: 9px;">Principal</span>'
+                            : `<button type="button" class="btn btn-link btn-sm p-0" style="font-size: 10px;" onclick="window._editSetPrimaryImg(${i})">Principal</button>`}
+                        <button type="button" class="btn btn-link text-danger btn-sm p-0" style="font-size: 11px;" onclick="window._editRemoveImg(${i})" title="Quitar foto"><i class="fa fa-times"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window._editSetPrimaryImg = function (i) {
+            const item = window._editingCarGallery.splice(i, 1)[0];
+            if (item) window._editingCarGallery.unshift(item);
+            renderEditGallery();
+        };
+        window._editRemoveImg = function (i) {
+            if (window._editingCarGallery.length <= 1) {
+                alert('El vehículo debe conservar al menos una foto.');
+                return;
+            }
+            window._editingCarGallery.splice(i, 1);
+            renderEditGallery();
+        };
+
+        window._editingCarGallery = Array.isArray(car.images) && car.images.length > 0 ? car.images.slice() : [car.image || 'img/car-rent-1.png'];
+        document.getElementById('edit-car-id').value = car.id;
+        document.getElementById('edit-car-brand').value = car.brand || '';
+        document.getElementById('edit-car-model').value = car.model || '';
+        document.getElementById('edit-car-year').value = car.year || 2024;
+        document.getElementById('edit-car-category').value = car.category || 'SUV / Camioneta';
+        document.getElementById('edit-car-transmission').value = car.transmission || 'Automático';
+        document.getElementById('edit-car-fuel').value = car.fuel || 'Gasolina';
+        document.getElementById('edit-car-seats').value = car.seats || 5;
+        document.getElementById('edit-car-price').value = car.pricePerDay || car.price || 200000;
+        document.getElementById('edit-car-city').value = car.city || 'Valledupar';
+        document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';
+        document.getElementById('edit-car-status').value = car.status || 'Activo';
+        document.getElementById('edit-car-description').value = car.description || car.desc || '';
+        renderEditGallery();
+
+        $('#modalEditOwnerCar').modal('show');
     };
 
     window.deleteCar = function (carId) {

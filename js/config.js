@@ -713,7 +713,9 @@ function renderFeaturedCarsOnHome() {
                         </div>
                         <div class="btn-group">
                             <a class="btn btn-outline-secondary btn-sm px-2" href="detail.html?id=${car.id}">Detalles</a>
-                            <a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>
+                            ${(typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car))
+                                ? `<a class="btn btn-dark btn-sm px-3 font-weight-bold" href="dashboard-propietario.html?editCar=${car.id}" title="Este vehículo es tuyo"><i class="fa fa-edit mr-1"></i> Editar</a>`
+                                : `<a class="btn btn-primary btn-sm px-3 font-weight-bold" href="booking.html?id=${car.id}">Rentar</a>`}
                         </div>
                     </div>
                 </div>
@@ -985,6 +987,17 @@ if (RENTCAR_SYNC_CHANNEL) {
         handleLiveConfigSync();
     };
 }
+
+/** ================= HELPER PROPIEDAD DE VEHÍCULO ================= **/
+window.isMyOwnCar = function (car) {
+    if (!car || !car.ownerId) return false;
+    try {
+        const u = JSON.parse(localStorage.getItem('renteasy_current_user') || 'null');
+        return !!(u && u.id && String(u.id) === String(car.ownerId));
+    } catch (e) {
+        return false;
+    }
+};
 
 /** ================= MODAL UNIFICADO DE CIERRE DE SESIÓN ================= **/
 window.openLogoutConfirmModal = function (onConfirm) {

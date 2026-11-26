@@ -132,6 +132,35 @@ async function dbSaveVehiculo(vehiculo) {
     return vehiculo;
 }
 
+async function dbUpdateVehiculo(vehiculo) {
+    const client = getSupabaseClient();
+    if (client && vehiculo && vehiculo.id) {
+        try {
+            const row = {
+                marca: vehiculo.brand,
+                modelo: vehiculo.model,
+                nombre_completo: vehiculo.fullName || vehiculo.name || `${vehiculo.brand} ${vehiculo.model}`,
+                año: parseInt(vehiculo.year) || 2022,
+                categoria: vehiculo.category || vehiculo.type || 'Sedán',
+                transmision: vehiculo.transmission || 'Automático',
+                combustible: vehiculo.fuel || 'Gasolina',
+                puestos: parseInt(vehiculo.seats) || 5,
+                precio_por_dia: parseFloat(vehiculo.pricePerDay || vehiculo.price) || 200000,
+                ciudad: vehiculo.city || 'Valledupar',
+                kilometraje_limite: vehiculo.mileage || '200 km/día',
+                descripcion: vehiculo.description || vehiculo.desc || '',
+                imagen_url: vehiculo.image || 'img/car-rent-1.png',
+                galeria_imagenes: Array.isArray(vehiculo.images) && vehiculo.images.length > 0 ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
+                estado: vehiculo.status || 'Activo'
+            };
+            await client.from('vehiculos').update(row).eq('id', vehiculo.id);
+        } catch (err) {
+            console.warn("Error actualizando vehículo en Supabase:", err);
+        }
+    }
+    return vehiculo;
+}
+
 /** ================= 2. RESERVAS ================= **/
 async function dbGetReservas() {
     const client = getSupabaseClient();

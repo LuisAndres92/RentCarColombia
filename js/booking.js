@@ -329,11 +329,36 @@ document.addEventListener('DOMContentLoaded', function () {
     if (inputEnd) inputEnd.addEventListener('change', recalculateTotal);
     recalculateTotal();
 
-    // Procesar reserva
+    // Bloquear reserva si el usuario logueado es el propietario del vehículo
+    const isOwnCar = car && typeof window.isMyOwnCar === 'function' && window.isMyOwnCar(car);
     const formBooking = document.getElementById('form-booking');
+    if (isOwnCar && formBooking) {
+        const notice = document.createElement('div');
+        notice.className = 'alert alert-warning border-warning shadow-sm mb-4';
+        notice.innerHTML = `
+            <h6 class="font-weight-bold mb-1"><i class="fa fa-exclamation-triangle mr-2"></i>Este vehículo es de tu propiedad</h6>
+            <p class="small mb-2">No puedes reservar ni alquilar tu propio vehículo. Si deseas modificar sus datos, tarifa o fotos, hazlo desde tu panel.</p>
+            <a href="dashboard-propietario.html?editCar=${car.id}" class="btn btn-dark btn-sm font-weight-bold">
+                <i class="fa fa-edit mr-1"></i> Ir a Editar mi Vehículo
+            </a>
+        `;
+        formBooking.parentNode.insertBefore(notice, formBooking);
+        const submitBtn = formBooking.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-ban mr-2"></i> No puedes reservar tu propio vehículo';
+        }
+    }
+
+    // Procesar reserva
     if (formBooking) {
         formBooking.addEventListener('submit', function (e) {
             e.preventDefault();
+
+            if (isOwnCar) {
+                alert('No puedes reservar tu propio vehículo.');
+                return;
+            }
 
             const calc = recalculateTotal();
 
