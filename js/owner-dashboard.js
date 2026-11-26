@@ -105,8 +105,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cleanPref && cleanPref.length >= 5 && compact.includes(cleanPref)) {
             return cleanPref;
         }
-        // 1. Buscar primero junto a la palabra PLACA o MATRICULA
-        const nearLabel = upper.match(/(?:PLACA|MATRICULA)[\s:.\-#A-Z]{0,12}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
+        // 1. Buscar primero junto a la palabra PLACA No. / PLACA / MATRICULA
+        const nearLabel = upper.match(/(?:PLACA\s*NO\.?|PLACA|MATRICULA)[\s:.\-#A-Z]{0,16}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
         if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
         // 2. Buscar todas las candidatas aisladas descartando códigos largos o prefijos comunes
         const ignorePrefixes = new Set(['NIT', 'SOA', 'POL', 'TEL', 'FAX', 'COD', 'REF', 'NRO', 'NUM', 'RUT', 'VER']);
@@ -130,7 +130,11 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const m of upper.matchAll(/(\d{2})\s*[\/\-\.]\s*(\d{2})\s*[\/\-\.]\s*(20\d{2})/g)) {
             pushDate(m[3], m[2], m[1]);
         }
-        for (const m of upper.matchAll(/(20\d{2})\s*[\/\-\.]\s*(\d{2})\s*[\/\-\.]\s*(\d{2})/g)) {
+        for (const m of upper.matchAll(/(20\d{2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})/g)) {
+            pushDate(m[1], m[2], m[3]);
+        }
+        // Formato oficial SOAT Colombia (AÑO MES DÍA separados por espacios, ej: 2027 8 26)
+        for (const m of upper.matchAll(/\b(20\d{2})\s+(\d{1,2})\s+(\d{1,2})\b/g)) {
             pushDate(m[1], m[2], m[3]);
         }
         const monthMap = {
@@ -163,9 +167,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Priorizar fecha junto a palabras de vencimiento/vigencia
+        // Priorizar fecha junto a palabras de vencimiento/vigencia ("HASTA LAS 23:59 HORAS DEL 2027 8 26")
         let chosenDate = '';
-        const expiryCtx = upper.match(/(?:VENCIMIENTO|VIGENCIA\s*HASTA|FIN\s*DE\s*VIGENCIA|HASTA)[\s:.\-A-Z]{0,25}?([^\n]{6,22})/);
+        const expiryCtx = upper.match(/(?:VENCIMIENTO|VIGENCIA\s*HASTA|FIN\s*DE\s*VIGENCIA|HASTA(?:\s+LAS\s+23:59\s+HORAS\s+DEL)?)[\s:.\-A-Z0-9]{0,25}?(20\d{2}\s+\d{1,2}\s+\d{1,2}|\d{2}\s*[\/\-]\s*\d{2}\s*[\/\-]\s*20\d{2})/);
         if (expiryCtx) {
             const nearDates = extractAllDatesFromText(expiryCtx[1]);
             if (nearDates.length > 0) chosenDate = nearDates[nearDates.length - 1];
@@ -363,8 +367,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 try {
                                     const txt = await extractPdfTextWithOptionalPassword(buf, pwd);
                                     unlocked = true;
-                                    parseSoatTextAndFill(txt, t);
                                     const platePwd = extractPlateFromText(pwd);
+                                    parseSoatTextAndFill(txt, Object.assign({}, t, { preferredPlate: platePwd || pwd }));
                                     if (platePwd) {
                                         if (typeof t.onPlate === 'function') t.onPlate(platePwd);
                                         else if (!detectedSoatPlate) detectedSoatPlate = platePwd;
