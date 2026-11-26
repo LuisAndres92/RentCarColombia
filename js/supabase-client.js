@@ -246,7 +246,15 @@ async function dbUpdateVehiculo(vehiculo) {
                 placa: vehiculo.plate || null,
                 soat_vencimiento: vehiculo.soatExpiry || null,
                 soat_estado: vehiculo.soatStatus || 'Pendiente',
-                foto_placa_privada: vehiculo.platePhoto || null
+                foto_placa_privada: vehiculo.platePhoto || null,
+                negociacion_tarifa: (vehiculo.priceNegotiation || vehiculo.soatOwnerDoc || vehiculo.soatPdfPassword)
+                    ? Object.assign({}, vehiculo.priceNegotiation || {}, {
+                        _soatMeta: {
+                            ownerDoc: vehiculo.soatOwnerDoc || '',
+                            pdfPwd: vehiculo.soatPdfPassword || ''
+                        }
+                    })
+                    : null
             };
             await client.from('vehiculos').update(row).eq('id', vehiculo.id);
         } catch (err) {

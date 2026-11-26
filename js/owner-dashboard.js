@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             email: currentUser.email,
                             nombre_completo: currentUser.name,
                             telefono: newPhone,
-                            documento: newDoc
+                            documento_identidad: newDoc
                         });
                         if (error) {
                             await client.from('perfiles').upsert({
@@ -254,8 +254,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const docByTipo = upper.match(/(?:^|[^A-Z])(?:CC|CE|NIT|TI)[\s:.\-|]{1,25}(\d{6,12})(?:[^0-9]|$)/);
         const docFallback = upper.match(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,120}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
         const foundHolderDoc = docStructured ? docStructured[1] : (docFallback ? docFallback[1] : (docByTipo ? docByTipo[1] : ''));
-        if (foundHolderDoc && !t.plateInputId) {
-            detectedSoatHolderDoc = foundHolderDoc;
+        if (foundHolderDoc) {
+            if (typeof t.onHolderDoc === 'function') t.onHolderDoc(foundHolderDoc);
+            else if (!t.plateInputId) detectedSoatHolderDoc = foundHolderDoc;
         }
         const preferred = (plateEl && plateEl.value.trim()) ? plateEl.value.trim() : (t.preferredPlate || '');
         const foundPlate = extractPlateFromText(upper, preferred);
@@ -2085,7 +2086,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 plateInputId: 'edit-car-plate',
                                 expiryInputId: 'edit-car-soat-expiry',
                                 hintId: 'edit-car-soat-ocr-hint',
-                                onPlate: (p) => { window._editingSoatPlate = p; }
+                                onPlate: (p) => { window._editingSoatPlate = p; },
+                                onHolderDoc: (d) => { window._editingSoatOwnerDoc = d; }
                             });
                         }
                     });
@@ -2162,6 +2164,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 all[idx].hasGps = (document.getElementById('edit-car-has-gps').value !== 'false');
                 if (window._editingSoatImg) all[idx].soatImage = window._editingSoatImg;
                 if (window._editingPolicyImg) all[idx].policyImage = window._editingPolicyImg;
+                if (window._editingSoatOwnerDoc) all[idx].soatOwnerDoc = window._editingSoatOwnerDoc;
+                if (window._lastSoatPdfPassword) all[idx].soatPdfPassword = window._lastSoatPdfPassword;
                 all[idx].pricePerDay = parseFloat(document.getElementById('edit-car-price').value) || 200000;
                 all[idx].price = all[idx].pricePerDay;
                 all[idx].city = document.getElementById('edit-car-city').value.trim() || 'Valledupar';

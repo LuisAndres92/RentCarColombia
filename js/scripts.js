@@ -326,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             email: email,
                             nombre_completo: name,
                             telefono: phone,
+                            documento_identidad: documentNumber,
                             rol: role,
                             ciudad: city,
                             avatar_url: userAvatar
@@ -345,6 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 role: newUser.role,
                 city: newUser.city,
                 phone: newUser.phone,
+                documentNumber: newUser.documentNumber,
                 avatar: newUser.avatar,
                 appliedCoupon: newUser.appliedCoupon,
                 discountPercent: newUser.discountPercent,

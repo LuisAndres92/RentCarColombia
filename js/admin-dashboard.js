@@ -298,6 +298,7 @@ async function syncLiveDataFromSupabase() {
                     name: p.nombre_completo || p.email.split('@')[0],
                     email: p.email,
                     phone: p.telefono || '',
+                    documentNumber: p.documento_identidad || '',
                     role: p.rol || 'conductor',
                     city: p.ciudad || 'Valledupar',
                     verified: p.identidad_verificada || false,
