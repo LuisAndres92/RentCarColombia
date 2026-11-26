@@ -384,13 +384,19 @@ function renderFleetModeration(filterStatus = 'all') {
                 <img src="${car.image}" alt="${car.fullName}" class="rounded border shadow-sm" style="width: 90px; height: 60px; object-fit: cover;" onerror="this.src='img/car-rent-1.png'">
             </td>
             <td>
-                <div class="font-weight-bold text-dark">${car.fullName} (${car.year})</div>
+                <div class="font-weight-bold text-dark">${car.fullName} (${car.year}) ${car.plate ? `<span class="badge badge-dark ml-1">${car.plate}</span>` : ''}</div>
                 <small class="text-muted"><i class="fa fa-tag mr-1 text-primary"></i>${car.category} &bull; ${car.transmission} &bull; <i class="fa fa-suitcase text-primary"></i> ${car.luggage || 3}</small>
-                <div class="mt-1">
+                <div class="mt-1 d-flex flex-wrap align-items-center" style="gap: 4px;">
                     <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'}" style="font-size:10px;">${car.hostType || 'Rentadora Aliada'}</span>
-                    ${car.hasGps !== false ? '<span class="badge badge-light border text-dark ml-1" style="font-size:10px;">GPS</span>' : ''}
-                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0 ml-1" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
-                    ${car.policyImage ? `<button type="button" class="badge badge-dark border-0 ml-1" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
+                    ${car.hasGps !== false ? '<span class="badge badge-light border text-dark" style="font-size:10px;">GPS</span>' : ''}
+                    ${(() => {
+                        const st = car.soatExpiry ? ((new Date(car.soatExpiry + 'T00:00:00') < new Date(new Date().setHours(0,0,0,0))) ? 'Vencido' : (((new Date(car.soatExpiry + 'T00:00:00') - new Date(new Date().setHours(0,0,0,0))) / 86400000 <= 15) ? 'Por vencer' : 'Vigente')) : (car.soatStatus || 'Pendiente');
+                        const cls = st === 'Vigente' ? 'badge-success' : st === 'Por vencer' ? 'badge-warning text-dark' : st === 'Vencido' ? 'badge-danger' : 'badge-secondary';
+                        return `<span class="badge ${cls}" style="font-size:10px;">SOAT: ${st}${car.soatExpiry ? ` (${car.soatExpiry})` : ''}</span>`;
+                    })()}
+                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
+                    ${car.policyImage ? `<button type="button" class="badge badge-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
+                    ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}')" title="Copiar placa y abrir RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
                 </div>
             </td>
             <td>
@@ -684,6 +690,15 @@ window.toggleFeatureCar = function (carId) {
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         notifySaved(car.featured ? `"${car.fullName}" marcado como Destacado.` : `"${car.fullName}" quitado de Destacados.`);
     }
+};
+
+window.verifyPlateInRunt = function (plate) {
+    const clean = String(plate || '').trim().toUpperCase();
+    if (clean && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(clean).catch(() => {});
+    }
+    notifySaved(`Placa "${clean}" copiada al portapapeles. Abriendo consulta oficial del RUNT...`);
+    window.open('https://www.runt.gov.co/consultaCiudadana/#/consultaVehiculo', '_blank');
 };
 
 window.deleteCarAdmin = function (carId) {

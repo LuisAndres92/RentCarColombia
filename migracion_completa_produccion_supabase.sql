@@ -188,6 +188,9 @@ ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS poliza_imagen text;
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS tiene_gps boolean DEFAULT true;
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS capacidad_maletas integer DEFAULT 3;
 ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS tipo_anfitrion text DEFAULT 'Rentadora Aliada';
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS placa text;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS soat_vencimiento date;
+ALTER TABLE public.vehiculos ADD COLUMN IF NOT EXISTS soat_estado text DEFAULT 'Pendiente';
 
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_nombre text;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS conductor_adicional_licencia text;
@@ -201,7 +204,27 @@ WHERE NOT EXISTS (
     SELECT 1 FROM public.preguntas_frecuentes WHERE pregunta ILIKE '%incluye conductor%'
 );
 
--- 13. Verificación rápida de tablas
+-- 13. Crear Bucket de Supabase Storage para fotos de vehículos, SOAT, pólizas y documentos KYC
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('rentcar-archivos', 'rentcar-archivos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Acceso publico lectura rentcar-archivos" ON storage.objects;
+CREATE POLICY "Acceso publico lectura rentcar-archivos"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'rentcar-archivos');
+
+DROP POLICY IF EXISTS "Subida y gestion rentcar-archivos" ON storage.objects;
+CREATE POLICY "Subida y gestion rentcar-archivos"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'rentcar-archivos');
+
+DROP POLICY IF EXISTS "Actualizacion rentcar-archivos" ON storage.objects;
+CREATE POLICY "Actualizacion rentcar-archivos"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'rentcar-archivos');
+
+-- 14. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
 UNION ALL
 SELECT 'testimonios', count(*) FROM public.testimonios

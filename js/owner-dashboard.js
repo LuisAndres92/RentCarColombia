@@ -81,7 +81,100 @@ document.addEventListener('DOMContentLoaded', function () {
         return `<div class="d-flex align-items-center mt-1">${thumb}<div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>${labelText}</span>${openBtn}</div></div>`;
     }
 
-    const bindDocUpload = (inputId, statusId, setter) => {
+    function computeSoatStatus(expiryStr) {
+        if (!expiryStr) return 'Pendiente';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const exp = new Date(expiryStr + 'T00:00:00');
+        if (isNaN(exp.getTime())) return 'Pendiente';
+        const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return 'Vencido';
+        if (diffDays <= 15) return 'Por vencer';
+        return 'Vigente';
+    }
+
+    function parseSoatTextAndFill(rawText) {
+        if (!rawText) return;
+        const upper = String(rawText).toUpperCase();
+        // 1. Detectar placa colombiana (ABC123 o ABC 123)
+        const plateMatch = upper.match(/\b([A-Z]{3})[\s\-]?(\d{3})\b/);
+        const plateInput = document.getElementById('car-plate');
+        if (plateMatch && plateInput && !plateInput.value.trim()) {
+            plateInput.value = `${plateMatch[1]}${plateMatch[2]}`;
+        }
+
+        // 2. Detectar fechas (DD/MM/YYYY, YYYY/MM/DD, YYYY-MM-DD, DD-MM-YYYY) y tomar la fecha futura más lejana (fin de vigencia)
+        const dates = [];
+        const dmy = upper.matchAll(/\b(\d{2})[\/\-](\d{2})[\/\-](20\d{2})\b/g);
+        for (const m of dmy) {
+            const iso = `${m[3]}-${m[2]}-${m[1]}`;
+            if (!isNaN(Date.parse(iso))) dates.push(iso);
+        }
+        const ymd = upper.matchAll(/\b(20\d{2})[\/\-](\d{2})[\/\-](\d{2})\b/g);
+        for (const m of ymd) {
+            const iso = `${m[1]}-${m[2]}-${m[3]}`;
+            if (!isNaN(Date.parse(iso))) dates.push(iso);
+        }
+
+        const hint = document.getElementById('car-soat-ocr-hint');
+        const expiryInput = document.getElementById('car-soat-expiry');
+        if (dates.length > 0 && expiryInput) {
+            dates.sort();
+            const latest = dates[dates.length - 1];
+            expiryInput.value = latest;
+            const st = computeSoatStatus(latest);
+            if (hint) {
+                hint.innerHTML = `<i class="fa fa-magic mr-1"></i>Detectado del SOAT: <strong>${st}</strong> (vence ${latest})${plateMatch ? ` &bull; Placa ${plateMatch[1]}${plateMatch[2]}` : ''}`;
+            }
+        } else if (hint) {
+            hint.textContent = 'Verifica o ingresa manualmente la fecha de vencimiento del SOAT.';
+        }
+    }
+
+    async function analyzeSoatDocument(file, dataUrl) {
+        const hint = document.getElementById('car-soat-ocr-hint');
+        if (hint) hint.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i>Analizando documento SOAT automáticamente...';
+        try {
+            const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+            if (isPdf && window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                const buf = await file.arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+                let fullText = '';
+                for (let p = 1; p <= Math.min(2, pdf.numPages); p++) {
+                    const page = await pdf.getPage(p);
+                    const tc = await page.getTextContent();
+                    fullText += ' ' + tc.items.map(it => it.str).join(' ');
+                }
+                parseSoatTextAndFill(fullText);
+                return;
+            }
+            // OCR para imágenes con Tesseract.js bajo demanda
+            if (!isPdf) {
+                if (!window.Tesseract) {
+                    await new Promise((res, rej) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+                        s.onload = res;
+                        s.onerror = rej;
+                        document.head.appendChild(s);
+                    });
+                }
+                if (window.Tesseract) {
+                    const result = await window.Tesseract.recognize(dataUrl, 'spa');
+                    parseSoatTextAndFill(result?.data?.text || '');
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('Lectura automática SOAT:', err);
+        }
+        if (hint && hint.textContent.includes('Analizando')) {
+            hint.textContent = 'Verifica o ingresa la fecha de vencimiento del SOAT.';
+        }
+    }
+
+    const bindDocUpload = (inputId, statusId, setter, isSoat) => {
         const el = document.getElementById(inputId);
         const st = document.getElementById(statusId);
         if (!el) return;
@@ -95,11 +188,12 @@ document.addEventListener('DOMContentLoaded', function () {
             processDocFile(file, function (dataUrl) {
                 setter(dataUrl);
                 if (st) st.innerHTML = renderDocPreviewHtml(dataUrl, 'Documento cargado', true);
+                if (isSoat) analyzeSoatDocument(file, dataUrl);
             });
         });
     };
-    bindDocUpload('car-soat-file', 'car-soat-status', v => { uploadedSoatImg = v; });
-    bindDocUpload('car-policy-file', 'car-policy-status', v => { uploadedPolicyImg = v; });
+    bindDocUpload('car-soat-file', 'car-soat-status', v => { uploadedSoatImg = v; }, true);
+    bindDocUpload('car-policy-file', 'car-policy-status', v => { uploadedPolicyImg = v; }, false);
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -269,6 +363,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const brand = document.getElementById('car-brand').value.trim();
             const model = document.getElementById('car-model').value.trim();
             const year = parseInt(document.getElementById('car-year').value);
+            const plate = (document.getElementById('car-plate')?.value || '').trim().toUpperCase();
+            const soatExpiry = document.getElementById('car-soat-expiry')?.value || '';
+            const soatStatus = computeSoatStatus(soatExpiry);
             const category = document.getElementById('car-category').value;
             const transmission = document.getElementById('car-transmission').value;
             const fuel = document.getElementById('car-fuel').value;
@@ -302,6 +399,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 hasGps: hasGps,
                 soatImage: uploadedSoatImg || '',
                 policyImage: uploadedPolicyImg || '',
+                plate: plate,
+                soatExpiry: soatExpiry,
+                soatStatus: soatStatus,
                 blockedDates: [],
                 pricePerDay: price,
                 city: city,
@@ -309,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 description: description || 'Vehículo en óptimas condiciones mecánicas y estéticas para alquiler.',
                 image: image,
                 images: finalGallery,
-                status: 'Activo', // 'Activo', 'En Renta', 'Pausado'
+                status: 'En Revision', // Requiere validación de documentos por Admin antes de publicarse
                 createdAt: new Date().toISOString()
             };
 
@@ -320,11 +420,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 dbSaveVehiculo(newCar);
             }
             if (typeof window.logSystemEvent === 'function') {
-                window.logSystemEvent('Flota', 'Vehículo publicado por propietario', `${newCar.fullName} ($${newCar.pricePerDay}/día)`);
+                window.logSystemEvent('Flota', 'Vehículo enviado a revisión por propietario', `${newCar.fullName} (${plate || 'Sin placa'}) — SOAT: ${soatStatus}`);
             }
             if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
 
-            alert(`¡Excelente! Tu vehículo "${newCar.fullName}" ha sido publicado con ${finalGallery.length} ${finalGallery.length === 1 ? 'foto' : 'fotos'}.`);
+            alert(`¡Vehículo "${newCar.fullName}" enviado a revisión!\n\nNuestro equipo administrativo validará tu SOAT y Póliza para activarlo en el catálogo público.`);
 
             // Limpiar formulario y volver a la lista
             publishForm.reset();

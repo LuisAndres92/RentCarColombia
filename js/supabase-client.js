@@ -76,7 +76,10 @@ async function dbGetVehiculos() {
                         luggage: parseInt(v.capacidad_maletas, 10) || 3,
                         blockedDates: Array.isArray(v.fechas_bloqueadas) ? v.fechas_bloqueadas : [],
                         soatImage: v.soat_imagen || '',
-                        policyImage: v.poliza_imagen || ''
+                        policyImage: v.poliza_imagen || '',
+                        plate: v.placa || '',
+                        soatExpiry: v.soat_vencimiento || '',
+                        soatStatus: v.soat_estado || 'Pendiente'
                     };
                 });
                 // Sincronizar copia local (incluye lista vacía si se borraron todos en Supabase)
@@ -97,10 +100,52 @@ async function dbGetVehiculos() {
     }
 }
 
+async function dbUploadDataUrlToStorage(dataUrl, folder = 'vehiculos', filePrefix = 'archivo') {
+    if (!dataUrl || !String(dataUrl).startsWith('data:')) return dataUrl || null;
+    const client = getSupabaseClient();
+    if (!client || !client.storage) return dataUrl;
+    try {
+        const parts = dataUrl.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+        const ext = mime.includes('pdf') ? 'pdf' : mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
+        const bin = atob(parts[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: mime });
+        const safePrefix = String(filePrefix || 'archivo').replace(/[^a-zA-Z0-9_-]/g, '');
+        const filePath = `${folder}/${safePrefix}_${Date.now()}_${Math.floor(Math.random() * 10000)}.${ext}`;
+        const { error } = await client.storage.from('rentcar-archivos').upload(filePath, blob, {
+            contentType: mime,
+            upsert: true
+        });
+        if (!error) {
+            const pub = client.storage.from('rentcar-archivos').getPublicUrl(filePath);
+            if (pub && pub.data && pub.data.publicUrl) {
+                return pub.data.publicUrl;
+            }
+        }
+    } catch (e) {
+        console.warn('Fallback local (Storage no disponible):', e);
+    }
+    return dataUrl;
+}
+
 async function dbSaveVehiculo(vehiculo) {
     const client = getSupabaseClient();
     if (client) {
         try {
+            // Subir imágenes y documentos reales a Supabase Storage si vienen en Base64
+            const rawGallery = Array.isArray(vehiculo.images) && vehiculo.images.length > 0 ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'];
+            const uploadedGallery = [];
+            for (let i = 0; i < rawGallery.length; i++) {
+                uploadedGallery.push(await dbUploadDataUrlToStorage(rawGallery[i], 'vehiculos', `car_${vehiculo.brand || 'auto'}_${i}`));
+            }
+            vehiculo.images = uploadedGallery;
+            vehiculo.image = uploadedGallery[0] || vehiculo.image;
+            if (vehiculo.soatImage) vehiculo.soatImage = await dbUploadDataUrlToStorage(vehiculo.soatImage, 'documentos', `soat_${vehiculo.plate || 'auto'}`);
+            if (vehiculo.policyImage) vehiculo.policyImage = await dbUploadDataUrlToStorage(vehiculo.policyImage, 'documentos', `poliza_${vehiculo.plate || 'auto'}`);
+
             const row = {
                 marca: vehiculo.brand,
                 modelo: vehiculo.model,
@@ -115,16 +160,19 @@ async function dbSaveVehiculo(vehiculo) {
                 kilometraje_limite: vehiculo.mileage || '200 km/día',
                 descripcion: vehiculo.description || vehiculo.desc || '',
                 imagen_url: vehiculo.image || 'img/car-rent-1.png',
-                galeria_imagenes: Array.isArray(vehiculo.images) ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
+                galeria_imagenes: uploadedGallery,
                 negociacion_tarifa: vehiculo.priceNegotiation || null,
                 propietario_id: vehiculo.ownerId || null,
-                estado: vehiculo.status || 'Activo',
+                estado: vehiculo.status || 'En Revision',
                 tipo_anfitrion: vehiculo.hostType || 'Rentadora Aliada',
                 tiene_gps: vehiculo.hasGps !== false,
                 capacidad_maletas: parseInt(vehiculo.luggage, 10) || 3,
                 fechas_bloqueadas: Array.isArray(vehiculo.blockedDates) ? vehiculo.blockedDates : [],
                 soat_imagen: vehiculo.soatImage || null,
-                poliza_imagen: vehiculo.policyImage || null
+                poliza_imagen: vehiculo.policyImage || null,
+                placa: vehiculo.plate || null,
+                soat_vencimiento: vehiculo.soatExpiry || null,
+                soat_estado: vehiculo.soatStatus || 'Pendiente'
             };
 
             const { data, error } = await client.from('vehiculos').insert([row]).select();
@@ -139,7 +187,9 @@ async function dbSaveVehiculo(vehiculo) {
     // Guardar en copia local
     let cars = [];
     try { cars = JSON.parse(localStorage.getItem('renteasy_cars')) || []; } catch(e) {}
-    cars.unshift(vehiculo);
+    const existingIdx = cars.findIndex(c => String(c.id) === String(vehiculo.id));
+    if (existingIdx !== -1) cars[existingIdx] = vehiculo;
+    else cars.unshift(vehiculo);
     localStorage.setItem('renteasy_cars', JSON.stringify(cars));
     return vehiculo;
 }
@@ -148,6 +198,16 @@ async function dbUpdateVehiculo(vehiculo) {
     const client = getSupabaseClient();
     if (client && vehiculo && vehiculo.id) {
         try {
+            const rawGallery = Array.isArray(vehiculo.images) && vehiculo.images.length > 0 ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'];
+            const uploadedGallery = [];
+            for (let i = 0; i < rawGallery.length; i++) {
+                uploadedGallery.push(await dbUploadDataUrlToStorage(rawGallery[i], 'vehiculos', `car_${vehiculo.brand || 'auto'}_${i}`));
+            }
+            vehiculo.images = uploadedGallery;
+            vehiculo.image = uploadedGallery[0] || vehiculo.image;
+            if (vehiculo.soatImage) vehiculo.soatImage = await dbUploadDataUrlToStorage(vehiculo.soatImage, 'documentos', `soat_${vehiculo.plate || 'auto'}`);
+            if (vehiculo.policyImage) vehiculo.policyImage = await dbUploadDataUrlToStorage(vehiculo.policyImage, 'documentos', `poliza_${vehiculo.plate || 'auto'}`);
+
             const row = {
                 marca: vehiculo.brand,
                 modelo: vehiculo.model,
@@ -162,14 +222,17 @@ async function dbUpdateVehiculo(vehiculo) {
                 kilometraje_limite: vehiculo.mileage || '200 km/día',
                 descripcion: vehiculo.description || vehiculo.desc || '',
                 imagen_url: vehiculo.image || 'img/car-rent-1.png',
-                galeria_imagenes: Array.isArray(vehiculo.images) && vehiculo.images.length > 0 ? vehiculo.images : [vehiculo.image || 'img/car-rent-1.png'],
+                galeria_imagenes: uploadedGallery,
                 estado: vehiculo.status || 'Activo',
                 tipo_anfitrion: vehiculo.hostType || 'Rentadora Aliada',
                 tiene_gps: vehiculo.hasGps !== false,
                 capacidad_maletas: parseInt(vehiculo.luggage, 10) || 3,
                 fechas_bloqueadas: Array.isArray(vehiculo.blockedDates) ? vehiculo.blockedDates : [],
                 soat_imagen: vehiculo.soatImage || null,
-                poliza_imagen: vehiculo.policyImage || null
+                poliza_imagen: vehiculo.policyImage || null,
+                placa: vehiculo.plate || null,
+                soat_vencimiento: vehiculo.soatExpiry || null,
+                soat_estado: vehiculo.soatStatus || 'Pendiente'
             };
             await client.from('vehiculos').update(row).eq('id', vehiculo.id);
         } catch (err) {
@@ -243,6 +306,8 @@ async function dbSaveReserva(reserva) {
     const client = getSupabaseClient();
     if (client) {
         try {
+            if (reserva.driverIdImg) reserva.driverIdImg = await dbUploadDataUrlToStorage(reserva.driverIdImg, 'kyc', 'cedula');
+            if (reserva.driverLicenseImg) reserva.driverLicenseImg = await dbUploadDataUrlToStorage(reserva.driverLicenseImg, 'kyc', 'licencia');
             const row = {
                 vehiculo_id: reserva.carId,
                 propietario_id: reserva.ownerId,
