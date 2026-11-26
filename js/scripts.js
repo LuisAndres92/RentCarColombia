@@ -432,9 +432,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (idx === -1) {
                 users.push(acc);
                 changed = true;
-            } else if (!users[idx].password) {
-                users[idx].password = acc.password;
-                changed = true;
+            } else {
+                if (acc.email !== 'admin@rentcarcolombia.com' || !users[idx].password) {
+                    users[idx].password = acc.password;
+                    users[idx].id = acc.id;
+                    users[idx].role = acc.role;
+                    changed = true;
+                }
             }
         });
 
