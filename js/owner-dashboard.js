@@ -107,8 +107,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cleanPref && cleanPref.length >= 5 && compact.includes(cleanPref)) {
             return cleanPref;
         }
-        // 1. Buscar primero junto a la palabra PLACA No. / PLACA / MATRICULA
-        const nearLabel = upper.match(/(?:PLACA\s*NO\.?|PLACA|MATRICULA)[\s:.\-#]{0,12}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
+        // 1. Buscar primero junto a la palabra PLACA No. / PLACA / MATRICULA (incluyendo tablas con encabezados antes de la fila de valores)
+        const nearLabel = upper.match(/(?:PLACA\s*NO\.?|PLACA|MATRICULA)[\s\S]{0,180}?(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
         if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
         // 2. Buscar todas las candidatas aisladas descartando códigos largos o prefijos comunes
         const ignorePrefixes = new Set(['NIT', 'SOA', 'POL', 'TEL', 'FAX', 'COD', 'REF', 'NRO', 'NUM', 'RUT', 'VER']);
@@ -135,8 +135,8 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const m of upper.matchAll(/(20\d{2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})/g)) {
             pushDate(m[1], m[2], m[3]);
         }
-        // Formato oficial SOAT Colombia (AÑO MES DÍA separados por espacios, ej: 2027 8 26)
-        for (const m of upper.matchAll(/\b(20\d{2})\s+(\d{1,2})\s+(\d{1,2})\b/g)) {
+        // Formato oficial SOAT Colombia (AÑO MES DÍA separados por espacios o barras verticales OCR, ej: 2027 8 26 o 2027 | 8 | 26)
+        for (const m of upper.matchAll(/\b(20\d{2})(?:\s*[|!\/\-.,]?\s+|\s+)(\d{1,2})(?:\s*[|!\/\-.,]?\s+|\s+)(\d{1,2})\b/g)) {
             pushDate(m[1], m[2], m[3]);
         }
         const monthMap = {
@@ -316,18 +316,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         fullText = structuredTags + fullText;
-        // Si el PDF es escaneado (sin texto seleccionable), aplicar OCR sobre la página 1
+        // Si el PDF es escaneado (sin texto seleccionable), aplicar OCR sobre la página 1 en alta resolución
         if (fullText.trim().length < 25) {
             try {
                 const page1 = await pdf.getPage(1);
-                const viewport = page1.getViewport({ scale: 1.8 });
+                const viewport = page1.getViewport({ scale: 2.5 });
                 const canvas = document.createElement('canvas');
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
-                await page1.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                const ctx = canvas.getContext('2d');
+                await page1.render({ canvasContext: ctx, viewport }).promise;
                 const ok = await ensureTesseractLoaded();
                 if (ok && window.Tesseract) {
-                    const ocr = await window.Tesseract.recognize(canvas.toDataURL('image/jpeg', 0.9), 'spa');
+                    const ocr = await window.Tesseract.recognize(canvas.toDataURL('image/png'), 'spa');
                     if (ocr?.data?.text) fullText += ' ' + ocr.data.text;
                 }
             } catch (_) { }
