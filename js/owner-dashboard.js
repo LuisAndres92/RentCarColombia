@@ -100,13 +100,15 @@ document.addEventListener('DOMContentLoaded', function () {
     function extractPlateFromText(rawText, preferredPlate) {
         if (!rawText) return '';
         const upper = String(rawText).toUpperCase();
+        const structured = upper.match(/__SOAT_PLACA__:([A-Z]{3}(?:\d{3}|\d{2}[A-Z]))/);
+        if (structured) return structured[1];
         const compact = upper.replace(/[\s\-:]+/g, '');
         const cleanPref = String(preferredPlate || '').replace(/[\s\-]/g, '').toUpperCase();
         if (cleanPref && cleanPref.length >= 5 && compact.includes(cleanPref)) {
             return cleanPref;
         }
         // 1. Buscar primero junto a la palabra PLACA No. / PLACA / MATRICULA
-        const nearLabel = upper.match(/(?:PLACA\s*NO\.?|PLACA|MATRICULA)[\s:.\-#A-Z]{0,16}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
+        const nearLabel = upper.match(/(?:PLACA\s*NO\.?|PLACA|MATRICULA)[\s:.\-#]{0,12}?([A-Z]{3})[\s\-]*(\d{3}|\d{2}[A-Z])(?![A-Z0-9])/);
         if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
         // 2. Buscar todas las candidatas aisladas descartando códigos largos o prefijos comunes
         const ignorePrefixes = new Set(['NIT', 'SOA', 'POL', 'TEL', 'FAX', 'COD', 'REF', 'NRO', 'NUM', 'RUT', 'VER']);
@@ -167,12 +169,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Priorizar fecha junto a palabras de vencimiento/vigencia ("HASTA LAS 23:59 HORAS DEL 2027 8 26")
+        // Priorizar fecha extraída espacialmente junto a HASTA, o la fecha más lejana del documento (vigencia hasta)
         let chosenDate = '';
-        const expiryCtx = upper.match(/(?:VENCIMIENTO|VIGENCIA\s*HASTA|FIN\s*DE\s*VIGENCIA|HASTA(?:\s+LAS\s+23:59\s+HORAS\s+DEL)?)[\s:.\-A-Z0-9]{0,25}?(20\d{2}\s+\d{1,2}\s+\d{1,2}|\d{2}\s*[\/\-]\s*\d{2}\s*[\/\-]\s*20\d{2})/);
-        if (expiryCtx) {
-            const nearDates = extractAllDatesFromText(expiryCtx[1]);
-            if (nearDates.length > 0) chosenDate = nearDates[nearDates.length - 1];
+        const structuredDate = upper.match(/__SOAT_EXPIRY__:(\d{4}-\d{2}-\d{2})/);
+        if (structuredDate) {
+            chosenDate = structuredDate[1];
+        }
+        if (!chosenDate) {
+            const expiryCtx = upper.match(/(?:VENCIMIENTO|VIGENCIA\s*HASTA|FIN\s*DE\s*VIGENCIA|HASTA\s+LAS\s+23:59\s+HORAS\s+DEL)[\s:.\-]*(?:AÑO\s+MES\s+D[IÍ]A\s*)?(20\d{2}\s+\d{1,2}\s+\d{1,2}|\d{2}\s*[\/\-]\s*\d{2}\s*[\/\-]\s*20\d{2})/);
+            if (expiryCtx) {
+                const nearDates = extractAllDatesFromText(expiryCtx[1]);
+                if (nearDates.length > 0) chosenDate = nearDates[nearDates.length - 1];
+            }
         }
         if (!chosenDate) {
             const allDates = extractAllDatesFromText(upper);
@@ -253,11 +261,61 @@ document.addEventListener('DOMContentLoaded', function () {
         const opts = password ? { data: buf.slice(0), password } : { data: buf.slice(0) };
         const pdf = await window.pdfjsLib.getDocument(opts).promise;
         let fullText = '';
+        let structuredTags = '';
         for (let p = 1; p <= Math.min(2, pdf.numPages); p++) {
             const page = await pdf.getPage(p);
             const tc = await page.getTextContent();
-            fullText += ' ' + tc.items.map(it => it.str).join(' ');
+            const items = (tc.items || [])
+                .map(it => ({
+                    str: String(it.str || '').trim(),
+                    x: Array.isArray(it.transform) ? it.transform[4] : 0,
+                    y: Array.isArray(it.transform) ? it.transform[5] : 0
+                }))
+                .filter(it => it.str.length > 0);
+
+            // Orden visual: de arriba hacia abajo (Y descendente) y de izquierda a derecha (X ascendente)
+            const visual = [...items].sort((a, b) => (Math.abs(b.y - a.y) > 4 ? b.y - a.y : a.x - b.x));
+            fullText += ' ' + visual.map(it => it.str).join(' ');
+
+            if (p === 1) {
+                // Buscar placa ubicada debajo o a la derecha de la etiqueta "PLACA No."
+                const placaLabels = items.filter(it => /\bPLACA\b/i.test(it.str));
+                for (const lbl of placaLabels) {
+                    const nearby = items.filter(it => {
+                        if (it === lbl) return false;
+                        const dx = it.x - lbl.x;
+                        const dyBelow = lbl.y - it.y;
+                        const isBelow = dyBelow >= 2 && dyBelow <= 55 && dx >= -40 && dx <= 90;
+                        const isRight = Math.abs(dyBelow) <= 10 && dx > 5 && dx <= 160;
+                        return isBelow || isRight;
+                    });
+                    for (const cand of nearby) {
+                        const clean = cand.str.toUpperCase().replace(/[\s\-]/g, '');
+                        if (/^[A-Z]{3}(\d{3}|\d{2}[A-Z])$/.test(clean)) {
+                            structuredTags += ` __SOAT_PLACA__:${clean} `;
+                            break;
+                        }
+                    }
+                    if (structuredTags.includes('__SOAT_PLACA__:')) break;
+                }
+
+                // Buscar fecha de vencimiento a la derecha de "HASTA" (ej. HASTA LAS 23:59 HORAS DEL 2027 8 26)
+                const hastaLabels = items.filter(it => /\bHASTA\b/i.test(it.str));
+                for (const hLbl of hastaLabels) {
+                    const rightText = items
+                        .filter(it => it.x >= hLbl.x - 10 && Math.abs(it.y - hLbl.y) <= 32)
+                        .sort((a, b) => a.x - b.x)
+                        .map(it => it.str)
+                        .join(' ');
+                    const rightDates = extractAllDatesFromText(rightText);
+                    if (rightDates.length > 0) {
+                        structuredTags += ` __SOAT_EXPIRY__:${rightDates[rightDates.length - 1]} `;
+                        break;
+                    }
+                }
+            }
         }
+        fullText = structuredTags + fullText;
         // Si el PDF es escaneado (sin texto seleccionable), aplicar OCR sobre la página 1
         if (fullText.trim().length < 25) {
             try {
