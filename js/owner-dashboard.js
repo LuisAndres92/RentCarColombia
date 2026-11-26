@@ -10,6 +10,95 @@ document.addEventListener('DOMContentLoaded', function () {
     const navUserName = document.getElementById('nav-user-name');
     if (navUserName) navUserName.innerText = currentUser.name || 'Propietario';
 
+    // 1b. Si el usuario ingresó con Google u otro método sin Cédula/Teléfono, solicitar completar perfil
+    (function ensureOwnerIdentityComplete() {
+        const usersList = typeof getUsers === 'function' ? getUsers() : [];
+        const storedUser = usersList.find(u => u.id === currentUser.id) || {};
+        const docVal = currentUser.documentNumber || currentUser.cedula || storedUser.documentNumber || storedUser.cedula || '';
+        const phoneVal = currentUser.phone || storedUser.phone || '';
+        if (docVal && phoneVal) {
+            currentUser.documentNumber = docVal;
+            currentUser.phone = phoneVal;
+            return;
+        }
+        let mEl = document.getElementById('modalCompleteOwnerIdentity');
+        if (!mEl) {
+            const w = document.createElement('div');
+            w.innerHTML = `
+                <div class="modal fade" id="modalCompleteOwnerIdentity" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="z-index:10090;">
+                    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:440px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                            <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                                <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-id-card text-primary mr-2"></i>Completa tu Perfil</h5>
+                            </div>
+                            <form id="form-complete-owner-identity">
+                                <div class="modal-body p-4">
+                                    <p class="small text-muted mb-3">Para publicar vehículos, validar tu SOAT y consultar en el RUNT necesitamos tu documento de identidad y teléfono de contacto:</p>
+                                    <div class="form-group">
+                                        <label class="small font-weight-bold text-dark">Documento de Identidad (Cédula / NIT) *</label>
+                                        <input type="text" id="complete-owner-doc" class="form-control" placeholder="Ej. 1065609160" required>
+                                    </div>
+                                    <div class="form-group mb-0">
+                                        <label class="small font-weight-bold text-dark">Teléfono / WhatsApp *</label>
+                                        <input type="tel" id="complete-owner-phone" class="form-control" placeholder="+57 300 000 0000" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light py-2 px-4">
+                                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4">Guardar y Continuar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(w.firstElementChild);
+            mEl = document.getElementById('modalCompleteOwnerIdentity');
+        }
+        document.getElementById('complete-owner-doc').value = docVal;
+        document.getElementById('complete-owner-phone').value = phoneVal;
+        document.getElementById('form-complete-owner-identity').onsubmit = async function (e) {
+            e.preventDefault();
+            const newDoc = document.getElementById('complete-owner-doc').value.trim();
+            const newPhone = document.getElementById('complete-owner-phone').value.trim();
+            if (!newDoc || !newPhone) return;
+            currentUser.documentNumber = newDoc;
+            currentUser.phone = newPhone;
+            try { localStorage.setItem('renteasy_current_user', JSON.stringify(currentUser)); } catch (_) { }
+            try {
+                const list = typeof getUsers === 'function' ? getUsers() : [];
+                const idx = list.findIndex(u => u.id === currentUser.id);
+                if (idx >= 0) {
+                    list[idx].documentNumber = newDoc;
+                    list[idx].phone = newPhone;
+                    localStorage.setItem('renteasy_users', JSON.stringify(list));
+                }
+            } catch (_) { }
+            try {
+                if (typeof getSupabaseClient === 'function') {
+                    const client = getSupabaseClient();
+                    if (client) {
+                        const { error } = await client.from('perfiles').upsert({
+                            id: currentUser.id,
+                            email: currentUser.email,
+                            nombre_completo: currentUser.name,
+                            telefono: newPhone,
+                            documento: newDoc
+                        });
+                        if (error) {
+                            await client.from('perfiles').upsert({
+                                id: currentUser.id,
+                                email: currentUser.email,
+                                nombre_completo: currentUser.name,
+                                telefono: newPhone
+                            });
+                        }
+                    }
+                }
+            } catch (_) { }
+            $('#modalCompleteOwnerIdentity').modal('hide');
+        };
+        setTimeout(() => $('#modalCompleteOwnerIdentity').modal('show'), 250);
+    })();
+
     // 2. Inicializar base de datos local si no existe
     initDefaultCars();
     initDefaultBookings();
