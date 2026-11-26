@@ -73,7 +73,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderDocPreviewHtml(dataUrl, labelText, allowOpenLink) {
         if (!dataUrl) return '<span class="text-muted">Sin archivo adjunto</span>';
-        const isPdf = String(dataUrl).startsWith('data:application/pdf');
+        const s = String(dataUrl);
+        const isPdf = s.startsWith('data:application/pdf') || /\.pdf(\?|$)/i.test(s);
         const thumb = isPdf
             ? '<div class="rounded border d-flex align-items-center justify-content-center bg-white mr-2" style="width:48px;height:36px;"><i class="fa fa-file-pdf text-danger fa-lg"></i></div>'
             : `<img src="${dataUrl}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;cursor:pointer;">`;
@@ -109,16 +110,21 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 
-    function parseSoatTextAndFill(rawText) {
+    function parseSoatTextAndFill(rawText, targets) {
         if (!rawText) return;
+        const t = targets || {};
+        const plateEl = document.getElementById(t.plateInputId || 'car-plate');
+        const expiryEl = document.getElementById(t.expiryInputId || 'car-soat-expiry');
+        const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
+
         const upper = String(rawText).toUpperCase();
         // 1. Detectar placa colombiana (ABC123 o ABC12D)
         const foundPlate = extractPlateFromText(upper);
-        const plateInput = document.getElementById('car-plate');
         if (foundPlate) {
-            detectedSoatPlate = foundPlate;
-            if (plateInput && !plateInput.value.trim()) {
-                plateInput.value = foundPlate;
+            if (typeof t.onPlate === 'function') t.onPlate(foundPlate);
+            else detectedSoatPlate = foundPlate;
+            if (plateEl && !plateEl.value.trim()) {
+                plateEl.value = foundPlate;
             }
         }
 
@@ -135,19 +141,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!isNaN(Date.parse(iso))) dates.push(iso);
         }
 
-        const hint = document.getElementById('car-soat-ocr-hint');
-        const expiryInput = document.getElementById('car-soat-expiry');
-        if (dates.length > 0 && expiryInput) {
+        if (dates.length > 0 && expiryEl) {
             dates.sort();
             const latest = dates[dates.length - 1];
-            detectedSoatExpiry = latest;
-            expiryInput.value = latest;
+            if (!t.expiryInputId) detectedSoatExpiry = latest;
+            expiryEl.value = latest;
             const st = computeSoatStatus(latest);
-            if (hint) {
-                hint.innerHTML = `<i class="fa fa-magic mr-1"></i>Detectado del SOAT: <strong>${st}</strong> (vence ${latest})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}`;
+            if (hintEl) {
+                hintEl.innerHTML = `<i class="fa fa-magic mr-1"></i>Detectado del SOAT: <strong>${st}</strong> (vence ${latest})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}`;
             }
-        } else if (hint) {
-            hint.textContent = foundPlate
+        } else if (hintEl) {
+            hintEl.textContent = foundPlate
                 ? `Placa detectada en SOAT: ${foundPlate}. Ingresa manualmente la fecha de vencimiento.`
                 : 'Verifica o ingresa manualmente la fecha de vencimiento del SOAT.';
         }
@@ -271,8 +275,10 @@ document.addEventListener('DOMContentLoaded', function () {
         $('#modalPdfPasswordPrompt').modal('show');
     }
 
-    async function analyzeSoatDocument(file, dataUrl) {
-        const hint = document.getElementById('car-soat-ocr-hint');
+    async function analyzeSoatDocument(file, dataUrl, targets) {
+        const t = targets || {};
+        const hint = document.getElementById(t.hintId || 'car-soat-ocr-hint');
+        const plateEl = document.getElementById(t.plateInputId || 'car-plate');
         if (hint) hint.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i>Analizando documento SOAT automáticamente...';
         try {
             const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
@@ -281,31 +287,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 const buf = await file.arrayBuffer();
                 try {
                     const fullText = await extractPdfTextWithOptionalPassword(buf, null);
-                    parseSoatTextAndFill(fullText);
+                    parseSoatTextAndFill(fullText, t);
                     return;
                 } catch (pdfErr) {
                     if (pdfErr && (pdfErr.name === 'PasswordException' || String(pdfErr.message || '').toLowerCase().includes('password'))) {
-                        // Intentar automáticamente claves comunes (placa escrita o teléfono/documento del usuario)
-                        const plateVal = (document.getElementById('car-plate')?.value || '').trim();
+                        const plateVal = (plateEl?.value || '').trim();
                         const candidates = [plateVal.toUpperCase(), plateVal.toLowerCase(), currentUser.phone, currentUser.documentNumber].filter(Boolean);
                         for (const cand of candidates) {
                             try {
                                 const unlockedText = await extractPdfTextWithOptionalPassword(buf, cand);
-                                parseSoatTextAndFill(unlockedText);
+                                parseSoatTextAndFill(unlockedText, t);
                                 return;
                             } catch (_) { }
                         }
-                        // Si ninguna coincide, pedir la clave en un modal elegante
                         let unlocked = false;
                         askPdfPasswordModal(
                             async (pwd) => {
                                 try {
                                     const txt = await extractPdfTextWithOptionalPassword(buf, pwd);
                                     unlocked = true;
-                                    parseSoatTextAndFill(txt);
-                                    if (!detectedSoatPlate) {
-                                        const platePwd = extractPlateFromText(pwd);
-                                        if (platePwd) detectedSoatPlate = platePwd;
+                                    parseSoatTextAndFill(txt, t);
+                                    const platePwd = extractPlateFromText(pwd);
+                                    if (platePwd) {
+                                        if (typeof t.onPlate === 'function') t.onPlate(platePwd);
+                                        else if (!detectedSoatPlate) detectedSoatPlate = platePwd;
                                     }
                                     return true;
                                 } catch (_) { return false; }
@@ -319,20 +324,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     throw pdfErr;
                 }
             }
-            // OCR para imágenes con Tesseract.js bajo demanda
             if (!isPdf) {
-                if (!window.Tesseract) {
-                    await new Promise((res, rej) => {
-                        const s = document.createElement('script');
-                        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
-                        s.onload = res;
-                        s.onerror = rej;
-                        document.head.appendChild(s);
-                    });
-                }
-                if (window.Tesseract) {
+                if (await ensureTesseractLoaded() && window.Tesseract) {
                     const result = await window.Tesseract.recognize(dataUrl, 'spa');
-                    parseSoatTextAndFill(result?.data?.text || '');
+                    parseSoatTextAndFill(result?.data?.text || '', t);
                     return;
                 }
             }
@@ -1494,17 +1489,21 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div class="modal-body p-4" style="max-height: 75vh; overflow-y: auto;">
                                     <input type="hidden" id="edit-car-id">
                                     <div class="row">
-                                        <div class="col-md-4 form-group">
+                                        <div class="col-md-3 form-group">
                                             <label class="small font-weight-bold">Marca *</label>
                                             <input type="text" id="edit-car-brand" class="form-control" required>
                                         </div>
-                                        <div class="col-md-4 form-group">
+                                        <div class="col-md-3 form-group">
                                             <label class="small font-weight-bold">Modelo *</label>
                                             <input type="text" id="edit-car-model" class="form-control" required>
                                         </div>
-                                        <div class="col-md-4 form-group">
+                                        <div class="col-md-3 form-group">
                                             <label class="small font-weight-bold">Año *</label>
                                             <input type="number" id="edit-car-year" class="form-control" min="1990" max="2030" required>
+                                        </div>
+                                        <div class="col-md-3 form-group">
+                                            <label class="small font-weight-bold">Placa *</label>
+                                            <input type="text" id="edit-car-plate" class="form-control text-uppercase" maxlength="8" required>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -1577,9 +1576,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="col-md-4 form-group">
                                             <label class="small font-weight-bold">Estado</label>
                                             <select id="edit-car-status" class="form-control">
+                                                <option value="En Revision" disabled>En Revisión (Pendiente Admin)</option>
                                                 <option value="Activo">Activo (Visible)</option>
                                                 <option value="Pausado">Pausado (Oculto)</option>
                                                 <option value="En Renta">En Renta</option>
+                                                <option value="Rechazado" disabled>Rechazado</option>
                                             </select>
                                         </div>
                                         <div class="col-md-8 form-group">
@@ -1613,6 +1614,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <label class="small font-weight-semi-bold mb-1">Actualizar SOAT Vigente (Imagen o PDF)</label>
                                             <input type="file" id="edit-car-soat-file" accept="image/*,application/pdf,.pdf" class="form-control-file small">
                                             <small id="edit-car-soat-status" class="text-muted"></small>
+                                            <div class="mt-2">
+                                                <label class="small font-weight-bold mb-1">Fecha Vencimiento SOAT *</label>
+                                                <input type="date" id="edit-car-soat-expiry" class="form-control form-control-sm" required>
+                                                <small id="edit-car-soat-ocr-hint" class="text-info d-block"></small>
+                                            </div>
                                         </div>
                                         <div class="col-md-6 mb-2">
                                             <label class="small font-weight-semi-bold mb-1">Actualizar Póliza de Seguro (Imagen o PDF)</label>
@@ -1642,7 +1648,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             attachClearButtonToFields(['edit-car-brand', 'edit-car-model', 'edit-car-price', 'edit-car-city', 'edit-car-mileage']);
 
-            const bindEditDoc = (inputId, statusId, key) => {
+            const bindEditDoc = (inputId, statusId, key, isSoat) => {
                 const el = document.getElementById(inputId);
                 const st = document.getElementById(statusId);
                 if (!el) return;
@@ -1652,11 +1658,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     processDocFile(f, function (dataUrl) {
                         window[key] = dataUrl;
                         if (st) st.innerHTML = renderDocPreviewHtml(dataUrl, 'Nuevo documento listo para guardar', true);
+                        if (isSoat) {
+                            analyzeSoatDocument(f, dataUrl, {
+                                plateInputId: 'edit-car-plate',
+                                expiryInputId: 'edit-car-soat-expiry',
+                                hintId: 'edit-car-soat-ocr-hint',
+                                onPlate: (p) => { window._editingSoatPlate = p; }
+                            });
+                        }
                     });
                 });
             };
-            bindEditDoc('edit-car-soat-file', 'edit-car-soat-status', '_editingSoatImg');
-            bindEditDoc('edit-car-policy-file', 'edit-car-policy-status', '_editingPolicyImg');
+            bindEditDoc('edit-car-soat-file', 'edit-car-soat-status', '_editingSoatImg', true);
+            bindEditDoc('edit-car-policy-file', 'edit-car-policy-status', '_editingPolicyImg', false);
 
             document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
                 const files = Array.from(evt.target.files || []);
@@ -1691,6 +1705,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const brand = document.getElementById('edit-car-brand').value.trim();
                 const model = document.getElementById('edit-car-model').value.trim();
+                const plate = (document.getElementById('edit-car-plate')?.value || '').replace(/[\s\-]/g, '').trim().toUpperCase();
+                if (!plate || plate.length < 5) {
+                    alert('Por favor ingresa una placa válida del vehículo.');
+                    return;
+                }
+                if (window._editingSoatPlate && window._editingSoatPlate !== plate) {
+                    alert(`La placa ingresada (${plate}) NO coincide con la placa detectada en el nuevo SOAT (${window._editingSoatPlate}). Verifica los datos.`);
+                    return;
+                }
+                const soatExpiry = document.getElementById('edit-car-soat-expiry')?.value || '';
                 const gallery = window._editingCarGallery.length > 0 ? window._editingCarGallery.slice() : [all[idx].image || 'img/car-rent-1.png'];
 
                 all[idx].brand = brand;
@@ -1698,6 +1722,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 all[idx].fullName = `${brand} ${model}`.trim();
                 all[idx].name = all[idx].fullName;
                 all[idx].year = parseInt(document.getElementById('edit-car-year').value) || 2024;
+                all[idx].plate = plate;
+                all[idx].soatExpiry = soatExpiry;
+                all[idx].soatStatus = computeSoatStatus(soatExpiry);
                 all[idx].category = document.getElementById('edit-car-category').value;
                 all[idx].type = all[idx].category;
                 all[idx].transmission = document.getElementById('edit-car-transmission').value;
@@ -1769,6 +1796,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('edit-car-brand').value = car.brand || '';
         document.getElementById('edit-car-model').value = car.model || '';
         document.getElementById('edit-car-year').value = car.year || 2024;
+        document.getElementById('edit-car-plate').value = car.plate || '';
+        document.getElementById('edit-car-soat-expiry').value = car.soatExpiry || '';
+        const editHint = document.getElementById('edit-car-soat-ocr-hint');
+        if (editHint) editHint.textContent = car.soatExpiry ? `Estado actual: ${computeSoatStatus(car.soatExpiry)}` : '';
+        window._editingSoatPlate = '';
         document.getElementById('edit-car-category').value = car.category || 'SUV / Camioneta';
         document.getElementById('edit-car-transmission').value = car.transmission || 'Automático';
         document.getElementById('edit-car-fuel').value = car.fuel || 'Gasolina';
@@ -1789,7 +1821,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('edit-car-price').value = car.pricePerDay || car.price || 200000;
         document.getElementById('edit-car-city').value = car.city || 'Valledupar';
         document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';
-        document.getElementById('edit-car-status').value = car.status || 'Activo';
+        const editStatusEl = document.getElementById('edit-car-status');
+        editStatusEl.value = car.status || 'Activo';
+        editStatusEl.disabled = (car.status === 'En Revision' || car.status === 'Rechazado');
         document.getElementById('edit-car-description').value = car.description || car.desc || '';
         ['edit-car-brand', 'edit-car-model', 'edit-car-price', 'edit-car-city', 'edit-car-mileage'].forEach(fid => {
             const fel = document.getElementById(fid);
