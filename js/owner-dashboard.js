@@ -1168,6 +1168,26 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </div>
                                     <div class="row">
                                         <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Capacidad de Maletas</label>
+                                            <input type="number" id="edit-car-luggage" class="form-control" min="1" max="12" required>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">Tipo de Anfitrión</label>
+                                            <select id="edit-car-host-type" class="form-control">
+                                                <option value="Rentadora Aliada">Rentadora Aliada / Agencia</option>
+                                                <option value="Propietario Particular">Propietario Particular</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label class="small font-weight-bold">¿Cuenta con GPS activo?</label>
+                                            <select id="edit-car-has-gps" class="form-control">
+                                                <option value="true">Sí — Rastreo GPS Activo</option>
+                                                <option value="false">No — Sin GPS instalado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
                                             <label class="small font-weight-bold">Precio Diario (COP) *</label>
                                             <input type="number" id="edit-car-price" class="form-control" min="30000" step="1000" required>
                                         </div>
@@ -1213,6 +1233,20 @@ document.addEventListener('DOMContentLoaded', function () {
                                             </div>
                                         </div>
                                     </div>
+                                    <hr>
+                                    <div class="row p-2 bg-light border rounded">
+                                        <div class="col-12 mb-1 small font-weight-bold text-dark"><i class="fa fa-shield-alt text-primary mr-1"></i> Documentos de Respaldo (SOAT y Póliza)</div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="small font-weight-semi-bold mb-1">Actualizar SOAT Vigente</label>
+                                            <input type="file" id="edit-car-soat-file" accept="image/*" class="form-control-file small">
+                                            <small id="edit-car-soat-status" class="text-muted"></small>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="small font-weight-semi-bold mb-1">Actualizar Póliza de Seguro</label>
+                                            <input type="file" id="edit-car-policy-file" accept="image/*" class="form-control-file small">
+                                            <small id="edit-car-policy-status" class="text-muted"></small>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="modal-footer bg-light">
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -1230,9 +1264,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 brandEl: document.getElementById('edit-car-brand'),
                 modelEl: document.getElementById('edit-car-model'),
                 categoryEl: document.getElementById('edit-car-category'),
-                seatsEl: document.getElementById('edit-car-seats')
+                seatsEl: document.getElementById('edit-car-seats'),
+                luggageEl: document.getElementById('edit-car-luggage')
             });
             attachClearButtonToFields(['edit-car-brand', 'edit-car-model', 'edit-car-price', 'edit-car-city', 'edit-car-mileage']);
+
+            const bindEditDoc = (inputId, statusId, key) => {
+                const el = document.getElementById(inputId);
+                const st = document.getElementById(statusId);
+                if (!el) return;
+                el.addEventListener('change', function (evt) {
+                    const f = evt.target.files && evt.target.files[0];
+                    if (!f) return;
+                    const r = new FileReader();
+                    r.onload = function (ev) {
+                        window[key] = ev.target.result;
+                        if (st) st.innerHTML = '<span class="text-success font-weight-bold"><i class="fa fa-check-circle mr-1"></i>Nuevo documento listo para guardar</span>';
+                    };
+                    r.readAsDataURL(f);
+                });
+            };
+            bindEditDoc('edit-car-soat-file', 'edit-car-soat-status', '_editingSoatImg');
+            bindEditDoc('edit-car-policy-file', 'edit-car-policy-status', '_editingPolicyImg');
 
             document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
                 const files = Array.from(evt.target.files || []);
@@ -1279,6 +1332,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 all[idx].transmission = document.getElementById('edit-car-transmission').value;
                 all[idx].fuel = document.getElementById('edit-car-fuel').value;
                 all[idx].seats = parseInt(document.getElementById('edit-car-seats').value) || 5;
+                all[idx].luggage = parseInt(document.getElementById('edit-car-luggage').value) || 3;
+                all[idx].hostType = document.getElementById('edit-car-host-type').value || 'Rentadora Aliada';
+                all[idx].hasGps = (document.getElementById('edit-car-has-gps').value !== 'false');
+                if (window._editingSoatImg) all[idx].soatImage = window._editingSoatImg;
+                if (window._editingPolicyImg) all[idx].policyImage = window._editingPolicyImg;
                 all[idx].pricePerDay = parseFloat(document.getElementById('edit-car-price').value) || 200000;
                 all[idx].price = all[idx].pricePerDay;
                 all[idx].city = document.getElementById('edit-car-city').value.trim() || 'Valledupar';
@@ -1344,6 +1402,15 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('edit-car-transmission').value = car.transmission || 'Automático';
         document.getElementById('edit-car-fuel').value = car.fuel || 'Gasolina';
         document.getElementById('edit-car-seats').value = car.seats || 5;
+        document.getElementById('edit-car-luggage').value = car.luggage || (typeof window.getLuggageByCategory === 'function' ? window.getLuggageByCategory(car.category) : 3);
+        document.getElementById('edit-car-host-type').value = car.hostType || 'Rentadora Aliada';
+        document.getElementById('edit-car-has-gps').value = (car.hasGps === false) ? 'false' : 'true';
+        window._editingSoatImg = '';
+        window._editingPolicyImg = '';
+        const soatSt = document.getElementById('edit-car-soat-status');
+        const polSt = document.getElementById('edit-car-policy-status');
+        if (soatSt) soatSt.innerHTML = car.soatImage ? '<span class="text-success"><i class="fa fa-check-circle mr-1"></i>SOAT adjunto actualmente</span>' : 'Sin archivo adjunto';
+        if (polSt) polSt.innerHTML = car.policyImage ? '<span class="text-success"><i class="fa fa-check-circle mr-1"></i>Póliza adjunta actualmente</span>' : 'Sin archivo adjunto';
         document.getElementById('edit-car-price').value = car.pricePerDay || car.price || 200000;
         document.getElementById('edit-car-city').value = car.city || 'Valledupar';
         document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';
