@@ -1246,8 +1246,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Pago
             let payBadge = '';
-            if (b.paymentMethod === 'wompi') {
-                payBadge = '<span class="badge badge-success small mb-1"><i class="fa fa-credit-card mr-1"></i> Wompi PSE</span>';
+            const isWompi = String(b.paymentMethod || '').toLowerCase().includes('wompi') || String(b.paymentMethod || '').toLowerCase().includes('tarjeta');
+            if (isWompi) {
+                payBadge = '<span class="badge badge-success small mb-1"><i class="fa fa-credit-card mr-1"></i> Wompi / Tarjeta</span>';
             } else {
                 payBadge = '<span class="badge badge-info small mb-1"><i class="fa fa-university mr-1"></i> Transferencia</span>';
             }
@@ -1256,7 +1257,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 d-block mt-1 font-weight-bold" onclick="viewReceiptModal('${b.id}')">
                     <i class="fa fa-receipt mr-1"></i> Ver Comprobante
                 </button>
-            ` : '';
+            ` : (!isWompi ? `
+                <span class="badge badge-warning text-dark d-block mt-1" style="font-size:10px;"><i class="fa fa-exclamation-triangle mr-1"></i> Sin comprobante adjunto</span>
+            ` : '');
 
             // Acciones según estado
             let actionHtml = '';
@@ -2334,8 +2337,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const bookings = getAllBookings();
         const b = bookings.find(item => item.id === bookingId);
         if (b) {
+            const isWompi = String(b.paymentMethod || '').toLowerCase().includes('wompi') || String(b.paymentMethod || '').toLowerCase().includes('tarjeta');
+            if (newStatus === 'Aceptada' && !isWompi && !b.paymentReceipt) {
+                if (!confirm('Esta reserva por transferencia NO tiene comprobante adjunto.\n\n¿Confirmas que ya verificaste el pago con el conductor (por ejemplo por WhatsApp) antes de aceptar?')) {
+                    return;
+                }
+            }
             b.status = newStatus;
             localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
+            if (typeof dbUpdateReservaStatus === 'function') {
+                dbUpdateReservaStatus(b.id, newStatus);
+            }
             
             // Si se acepta la reserva, el auto pasa a estado 'En Renta'
             if (newStatus === 'Aceptada') {

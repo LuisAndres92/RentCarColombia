@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function () {
             mEl = document.getElementById('modalWompiCheckout');
         }
 
-        document.getElementById('wompi-total-display').textContent = `$${formatCop(totalAmount)} COP`;
+        document.getElementById('wompi-total-display').textContent = `$${formatPrice(totalAmount)} COP`;
         let mode = 'card';
         const tabs = mEl.querySelectorAll('#wompi-pay-tabs .nav-link');
         const cardDiv = document.getElementById('wompi-card-fields');

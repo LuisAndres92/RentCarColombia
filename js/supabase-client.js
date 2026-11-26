@@ -325,6 +325,7 @@ async function dbGetReservas() {
                         totalPrice: tot,
                         paymentMethod: r.metodo_pago,
                         paymentStatus: r.estado_pago,
+                        paymentReceipt: r.comprobante_pago || '',
                         status: r.estado_reserva,
                         extraDriverName: r.conductor_adicional_nombre || '',
                         extraDriverLicense: r.conductor_adicional_licencia || '',
@@ -355,6 +356,7 @@ async function dbSaveReserva(reserva) {
         try {
             if (reserva.driverIdImg) reserva.driverIdImg = await dbUploadDataUrlToStorage(reserva.driverIdImg, 'kyc', 'cedula');
             if (reserva.driverLicenseImg) reserva.driverLicenseImg = await dbUploadDataUrlToStorage(reserva.driverLicenseImg, 'kyc', 'licencia');
+            if (reserva.paymentReceipt) reserva.paymentReceipt = await dbUploadDataUrlToStorage(reserva.paymentReceipt, 'comprobantes', 'pago');
 
             // Asegurar UUID válido para conductor_id en perfiles
             let conductorUuid = isUuid(reserva.driverId) ? reserva.driverId : null;
@@ -405,7 +407,8 @@ async function dbSaveReserva(reserva) {
                 conductor_adicional_nombre: reserva.extraDriverName || null,
                 conductor_adicional_licencia: reserva.extraDriverLicense || null,
                 conductor_cedula_img: reserva.driverIdImg || null,
-                conductor_licencia_img: reserva.driverLicenseImg || null
+                conductor_licencia_img: reserva.driverLicenseImg || null,
+                comprobante_pago: reserva.paymentReceipt || null
             };
 
             let { data, error } = await client.from('reservas').insert([row]).select();
