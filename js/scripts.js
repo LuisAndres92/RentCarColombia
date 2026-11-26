@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const phone = document.getElementById('reg-phone').value.trim();
+            const documentNumber = document.getElementById('reg-document') ? document.getElementById('reg-document').value.trim() : '';
             const role = roleInput.value;
             const city = document.getElementById('reg-city') ? document.getElementById('reg-city').value.trim() : '';
             const password = document.getElementById('reg-password').value;
@@ -290,6 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 name: name,
                 email: email,
                 phone: phone,
+                documentNumber: documentNumber,
                 role: role,
                 city: city,
                 password: password,

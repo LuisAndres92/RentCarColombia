@@ -408,10 +408,10 @@ function renderFleetModeration(filterStatus = 'all') {
                         const cls = st === 'Vigente' ? 'badge-success' : st === 'Por vencer' ? 'badge-warning text-dark' : st === 'Vencido' ? 'badge-danger' : 'badge-secondary';
                         return `<span class="badge ${cls}" style="font-size:10px;">SOAT: ${st}${car.soatExpiry ? ` (${car.soatExpiry})` : ''}</span>`;
                     })()}
-                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'SOAT - ${car.plate || car.fullName}')" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
+                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'SOAT - ${car.plate || car.fullName}', this.dataset.pwd)" data-doc="${car.soatImage.replace(/"/g, '&quot;')}" data-pwd="${(car.soatPdfPassword || car.soatOwnerDoc || '').replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
                     ${car.platePhoto ? `<button type="button" class="badge badge-warning text-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'Foto de Placa - ${car.plate || car.fullName}')" data-doc="${car.platePhoto.replace(/"/g, '&quot;')}">Ver Placa</button>` : ''}
                     ${car.policyImage ? `<button type="button" class="badge badge-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'Póliza - ${car.plate || car.fullName}')" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
-                    ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}', '${car.ownerId || ''}')" title="Copiar datos y consultar en RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
+                    ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}', '${car.ownerId || ''}', '${(car.soatOwnerDoc || '').replace(/'/g, '')}')" title="Copiar datos y consultar en RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
                 </div>
             </td>
             <td>
@@ -708,15 +708,16 @@ window.toggleFeatureCar = function (carId) {
     }
 };
 
-window.verifyPlateInRunt = function (plate, ownerId) {
+window.verifyPlateInRunt = function (plate, ownerId, soatOwnerDoc) {
     const clean = String(plate || '').trim().toUpperCase();
     if (clean && navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(clean).catch(() => {});
     }
     const users = typeof getUsers === 'function' ? getUsers() : [];
     const owner = ownerId ? users.find(u => u.id === ownerId) : null;
-    const ownerDoc = owner?.documentNumber || owner?.cedula || owner?.nit || '';
-    const ownerName = owner?.name || 'Propietario';
+    const ownerDoc = owner?.documentNumber || owner?.cedula || owner?.nit || soatOwnerDoc || '';
+    const docSource = (owner?.documentNumber || owner?.cedula || owner?.nit) ? (owner?.name || 'Propietario') : (soatOwnerDoc ? 'Tomador en SOAT' : 'Propietario');
+    const ownerName = docSource;
 
     let mEl = document.getElementById('modalRuntHelper');
     if (!mEl) {

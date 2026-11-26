@@ -1281,11 +1281,12 @@ window.alert = function (msg) {
 };
 
 /** ================= VISOR SEGURO DE DOCUMENTOS EN MODAL (PDF E IMÁGENES) ================= **/
-window.openDocumentPreview = function (dataUrl, title) {
+window.openDocumentPreview = async function (dataUrl, title, passwordHint) {
     if (!dataUrl) return;
     let viewUrl = String(dataUrl);
     let isPdf = /\.pdf(\?|$)/i.test(viewUrl) || viewUrl.startsWith('data:application/pdf');
     let revocableBlobUrl = null;
+    let pdfUint8 = null;
 
     if (viewUrl.startsWith('data:')) {
         try {
@@ -1296,6 +1297,7 @@ window.openDocumentPreview = function (dataUrl, title) {
             const bin = atob(parts[1]);
             const arr = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            if (isPdf) pdfUint8 = arr;
             const blob = new Blob([arr], { type: mime });
             revocableBlobUrl = URL.createObjectURL(blob);
             viewUrl = revocableBlobUrl;
@@ -1324,7 +1326,7 @@ window.openDocumentPreview = function (dataUrl, title) {
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body p-3 text-center bg-light" id="modalGlobalDocBody" style="min-height:260px;"></div>
+                        <div class="modal-body p-3 text-center bg-light" id="modalGlobalDocBody" style="min-height:260px;max-height:76vh;overflow-y:auto;"></div>
                         <div class="modal-footer bg-white py-2 px-4 d-flex justify-content-between">
                             <a id="modalGlobalDocDownload" href="#" download="documento" class="btn btn-outline-primary btn-sm font-weight-bold">
                                 <i class="fa fa-download mr-1"></i> Descargar
@@ -1347,12 +1349,6 @@ window.openDocumentPreview = function (dataUrl, title) {
     dlEl.href = viewUrl;
     dlEl.download = isPdf ? 'documento.pdf' : 'imagen.jpg';
 
-    if (isPdf) {
-        bodyEl.innerHTML = `<iframe src="${viewUrl}" style="width:100%;height:72vh;border:0;border-radius:8px;background:#ffffff;"></iframe>`;
-    } else {
-        bodyEl.innerHTML = `<img src="${viewUrl}" alt="${safeTitle}" class="img-fluid rounded shadow-sm" style="max-height:72vh;object-fit:contain;background:#1C1E32;">`;
-    }
-
     window.jQuery(modalEl).off('hidden.bs.modal.docpreview').on('hidden.bs.modal.docpreview', function () {
         bodyEl.innerHTML = '';
         if (revocableBlobUrl) {
@@ -1360,4 +1356,112 @@ window.openDocumentPreview = function (dataUrl, title) {
         }
     });
     window.jQuery(modalEl).modal('show');
+
+    if (!isPdf) {
+        bodyEl.innerHTML = `<img src="${viewUrl}" alt="${safeTitle}" class="img-fluid rounded shadow-sm" style="max-height:72vh;object-fit:contain;background:#1C1E32;">`;
+        return;
+    }
+
+    bodyEl.innerHTML = `<div class="py-5 text-muted"><i class="fa fa-spinner fa-spin fa-2x text-primary mb-2"></i><div class="font-weight-bold">Abriendo documento PDF...</div><small>Desbloqueando automáticamente si tiene clave guardada</small></div>`;
+
+    const ensurePdfJs = async () => {
+        if (window.pdfjsLib) return true;
+        try {
+            await new Promise((res, rej) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                s.onload = res;
+                s.onerror = rej;
+                document.head.appendChild(s);
+            });
+            return !!window.pdfjsLib;
+        } catch (_) { return false; }
+    };
+
+    const renderPdfDoc = async (pdfDoc) => {
+        bodyEl.innerHTML = '';
+        const total = Math.min(10, pdfDoc.numPages || 1);
+        for (let p = 1; p <= total; p++) {
+            const page = await pdfDoc.getPage(p);
+            const viewport = page.getViewport({ scale: 1.5 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.className = 'img-fluid rounded shadow-sm mb-3 bg-white d-block mx-auto';
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            bodyEl.appendChild(canvas);
+        }
+    };
+
+    try {
+        if (await ensurePdfJs()) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const srcBytes = pdfUint8 || new Uint8Array(await (await fetch(viewUrl)).arrayBuffer());
+            const pwdList = [];
+            if (passwordHint) pwdList.push(passwordHint, String(passwordHint).toUpperCase(), String(passwordHint).toLowerCase());
+            if (window._lastSoatPdfPassword) pwdList.push(window._lastSoatPdfPassword);
+            pwdList.push(null);
+            const uniquePwds = Array.from(new Set(pwdList));
+
+            let openedDoc = null;
+            let neededPwd = false;
+            for (const pwd of uniquePwds) {
+                try {
+                    const opts = pwd ? { data: srcBytes.slice(0), password: pwd } : { data: srcBytes.slice(0) };
+                    openedDoc = await window.pdfjsLib.getDocument(opts).promise;
+                    if (pwd) window._lastSoatPdfPassword = pwd;
+                    break;
+                } catch (e) {
+                    if (e && (e.name === 'PasswordException' || String(e.message || '').toLowerCase().includes('password'))) {
+                        neededPwd = true;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+
+            if (openedDoc) {
+                await renderPdfDoc(openedDoc);
+                return;
+            }
+            if (neededPwd) {
+                bodyEl.innerHTML = `
+                    <div class="p-4 bg-white rounded border mx-auto my-3 text-left" style="max-width:420px;">
+                        <h6 class="font-weight-bold text-dark mb-2"><i class="fa fa-lock text-primary mr-2"></i>PDF Protegido con Clave</h6>
+                        <p class="small text-muted mb-3">Ingresa la contraseña del documento (cédula o placa) para visualizarlo aquí mismo:</p>
+                        <div class="input-group">
+                            <input type="text" id="inline-pdf-pwd-input" class="form-control text-uppercase" placeholder="Cédula o placa">
+                            <div class="input-group-append">
+                                <button type="button" id="inline-pdf-pwd-btn" class="btn btn-primary font-weight-bold">Abrir</button>
+                            </div>
+                        </div>
+                        <small id="inline-pdf-pwd-err" class="text-danger d-none mt-2">Contraseña incorrecta, intenta de nuevo.</small>
+                    </div>`;
+                const inp = document.getElementById('inline-pdf-pwd-input');
+                const btn = document.getElementById('inline-pdf-pwd-btn');
+                const errEl = document.getElementById('inline-pdf-pwd-err');
+                const tryManual = async () => {
+                    const val = (inp.value || '').trim();
+                    for (const v of [val, val.toUpperCase(), val.toLowerCase()]) {
+                        if (!v) continue;
+                        try {
+                            const doc = await window.pdfjsLib.getDocument({ data: srcBytes.slice(0), password: v }).promise;
+                            window._lastSoatPdfPassword = v;
+                            bodyEl.innerHTML = `<div class="py-5 text-muted"><i class="fa fa-spinner fa-spin fa-2x text-primary mb-2"></i><div>Abriendo documento...</div></div>`;
+                            await renderPdfDoc(doc);
+                            return;
+                        } catch (_) { }
+                    }
+                    errEl.classList.remove('d-none');
+                };
+                btn.onclick = tryManual;
+                inp.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); tryManual(); } };
+                return;
+            }
+        }
+    } catch (err) {
+        console.warn('Visor PDF.js fallback a iframe:', err);
+    }
+
+    bodyEl.innerHTML = `<iframe src="${viewUrl}" style="width:100%;height:72vh;border:0;border-radius:8px;background:#ffffff;"></iframe>`;
 };

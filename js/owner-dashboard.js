@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let uploadedPlatePhoto = '';
     let detectedSoatPlate = '';
     let detectedSoatExpiry = '';
+    let detectedSoatHolderDoc = '';
+    let detectedSoatPdfPassword = '';
     function processDocFile(file, callback) {
         if (!file) return;
         const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ? '<div class="rounded border d-flex align-items-center justify-content-center bg-white mr-2" style="width:48px;height:36px;"><i class="fa fa-file-pdf text-danger fa-lg"></i></div>'
             : `<img src="${dataUrl}" class="rounded border mr-2" style="width:48px;height:36px;object-fit:cover;cursor:pointer;">`;
         const openBtn = allowOpenLink
-            ? `<button type="button" class="btn btn-link btn-sm p-0 small text-primary font-weight-bold" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${dataUrl.replace(/"/g, '&quot;')}">${isPdf ? 'Abrir PDF' : 'Ver imagen'}</button>`
+            ? `<button type="button" class="btn btn-link btn-sm p-0 small text-primary font-weight-bold" onclick="window.openDocumentPreview(this.dataset.doc, '${labelText.replace(/'/g, '')}', this.dataset.pwd)" data-doc="${dataUrl.replace(/"/g, '&quot;')}" data-pwd="${(detectedSoatPdfPassword || window._lastSoatPdfPassword || '').replace(/"/g, '&quot;')}">${isPdf ? 'Abrir PDF' : 'Ver imagen'}</button>`
             : '';
         return `<div class="d-flex align-items-center mt-1">${thumb}<div><span class="text-success font-weight-bold d-block"><i class="fa fa-check-circle mr-1"></i>${labelText}</span>${openBtn}</div></div>`;
     }
@@ -159,6 +161,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
 
         const upper = String(rawText).toUpperCase();
+        const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
+        const docFallback = upper.match(/(?:DOCUMENTO\s+DEL\s+TOMADOR|NO\.?\s*DE\s*DOCUMENTO[\sA-Z]{0,18})[\s\S]{0,120}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
+        const foundHolderDoc = docStructured ? docStructured[1] : (docFallback ? docFallback[1] : '');
+        if (foundHolderDoc && !t.plateInputId) {
+            detectedSoatHolderDoc = foundHolderDoc;
+        }
         const preferred = (plateEl && plateEl.value.trim()) ? plateEl.value.trim() : (t.preferredPlate || '');
         const foundPlate = extractPlateFromText(upper, preferred);
         if (foundPlate) {
@@ -459,6 +467,25 @@ document.addEventListener('DOMContentLoaded', function () {
                         break;
                     }
                 }
+
+                // Buscar No. de documento del tomador (para RUNT)
+                const docLabels = items.filter(it => /DOCUMENTO\s+DEL\s+TOMADOR|NO\.?\s*DE\s*DOCUMENTO/i.test(it.str));
+                for (const dLbl of docLabels) {
+                    const nearbyDoc = items.filter(it => {
+                        if (it === dLbl) return false;
+                        const dx = it.x - dLbl.x;
+                        const dyBelow = dLbl.y - it.y;
+                        return (dyBelow >= 2 && dyBelow <= 55 && dx >= -40 && dx <= 100) || (Math.abs(dyBelow) <= 10 && dx > 5 && dx <= 160);
+                    });
+                    for (const cand of nearbyDoc) {
+                        const digits = cand.str.replace(/\D/g, '');
+                        if (digits.length >= 6 && digits.length <= 13) {
+                            structuredTags += ` __SOAT_TOMADOR_DOC__:${digits} `;
+                            break;
+                        }
+                    }
+                    if (structuredTags.includes('__SOAT_TOMADOR_DOC__:')) break;
+                }
             }
         }
         fullText = structuredTags + fullText;
@@ -562,6 +589,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         for (const cand of candidates) {
                             try {
                                 const unlockedText = await extractPdfTextWithOptionalPassword(buf, cand);
+                                detectedSoatPdfPassword = cand;
+                                window._lastSoatPdfPassword = cand;
                                 parseSoatTextAndFill(unlockedText, t);
                                 return;
                             } catch (_) { }
@@ -572,6 +601,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 try {
                                     const txt = await extractPdfTextWithOptionalPassword(buf, pwd);
                                     unlocked = true;
+                                    detectedSoatPdfPassword = pwd;
+                                    window._lastSoatPdfPassword = pwd;
                                     const platePwd = extractPlateFromText(pwd);
                                     parseSoatTextAndFill(txt, Object.assign({}, t, { preferredPlate: platePwd || pwd }));
                                     if (platePwd) {
@@ -919,6 +950,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 plate: plate,
                 soatExpiry: soatExpiry,
                 soatStatus: soatStatus,
+                soatOwnerDoc: detectedSoatHolderDoc || '',
+                soatPdfPassword: detectedSoatPdfPassword || window._lastSoatPdfPassword || '',
                 blockedDates: [],
                 pricePerDay: price,
                 city: city,
