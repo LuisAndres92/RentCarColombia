@@ -359,6 +359,50 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 
+    async function findDuplicateCarByPlate(plate, excludeCarId) {
+        const target = String(plate || '').replace(/[\s\-]/g, '').trim().toUpperCase();
+        if (!target || target.length < 5) return null;
+        const norm = (p) => String(p || '').replace(/[\s\-]/g, '').trim().toUpperCase();
+
+        const localMatch = (getAllCars() || []).find(c => String(c.id) !== String(excludeCarId || '') && norm(c.plate) === target);
+        if (localMatch) return localMatch;
+
+        try {
+            if (typeof getSupabaseClient === 'function') {
+                const sb = getSupabaseClient();
+                if (sb) {
+                    const { data } = await sb.from('cars').select('id, plate, status, owner_id, owner_name, brand, model, extra_data');
+                    if (Array.isArray(data)) {
+                        const remote = data.find(c => {
+                            if (String(c.id) === String(excludeCarId || '')) return false;
+                            const p = c.plate || (c.extra_data && c.extra_data.plate) || '';
+                            return norm(p) === target;
+                        });
+                        if (remote) {
+                            return {
+                                id: remote.id,
+                                plate: remote.plate || (remote.extra_data && remote.extra_data.plate) || target,
+                                status: remote.status || (remote.extra_data && remote.extra_data.status) || 'En Revisión',
+                                ownerId: remote.owner_id || (remote.extra_data && remote.extra_data.ownerId) || '',
+                                fullName: [remote.brand, remote.model].filter(Boolean).join(' ')
+                            };
+                        }
+                    }
+                }
+            }
+        } catch (_) { }
+        return null;
+    }
+
+    function buildDuplicatePlateMessage(dup, plate) {
+        const status = dup.status || 'En Revisión';
+        const carLabel = dup.fullName ? ` (${dup.fullName})` : '';
+        if (String(dup.ownerId) === String(currentUser.id)) {
+            return `Ya tienes un vehículo registrado con la placa ${plate}${carLabel}.\n\nEstado actual: ${status}.\nNo puedes subir el mismo vehículo dos veces; puedes editarlo desde "Mis Vehículos".`;
+        }
+        return `¡Vehículo duplicado! La placa ${plate}${carLabel} ya se encuentra registrada en la plataforma por otro propietario.\n\nEstado actual: ${status}.\nPor seguridad, no se permite registrar un mismo vehículo dos veces.`;
+    }
+
     async function extractPdfTextWithOptionalPassword(buf, password) {
         const opts = password ? { data: buf.slice(0), password } : { data: buf.slice(0) };
         const pdf = await window.pdfjsLib.getDocument(opts).promise;
@@ -792,6 +836,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            // 0. Validación anti-duplicados / anti-gemelado por placa
+            const existingByPlate = await findDuplicateCarByPlate(plate, null);
+            if (existingByPlate) {
+                restorePublishBtn();
+                alert(buildDuplicatePlateMessage(existingByPlate, plate));
+                document.getElementById('car-plate')?.focus();
+                return;
+            }
+
             // 1. Validación cruzada: Placa digitada vs Placa detectada en el archivo del SOAT
             if (detectedSoatPlate && detectedSoatPlate !== plate) {
                 restorePublishBtn();
@@ -843,11 +896,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const finalGalleryChecked = finalGallery;
             const image = finalGalleryChecked[0];
 
+            const freshOwner = (typeof getUsers === 'function' ? getUsers() : []).find(u => u.id === currentUser.id) || currentUser;
             const newCar = {
                 id: 'car_' + Date.now(),
                 ownerId: currentUser.id,
-                ownerName: currentUser.name,
-                ownerPhone: currentUser.phone || '+57 316 235 7871',
+                ownerName: freshOwner.name || currentUser.name,
+                ownerPhone: freshOwner.phone || currentUser.phone || '',
                 brand: brand,
                 model: model,
                 fullName: `${brand} ${model}`,
@@ -1967,6 +2021,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const plate = (document.getElementById('edit-car-plate')?.value || '').replace(/[\s\-]/g, '').trim().toUpperCase();
                 if (!plate || plate.length < 5) {
                     alert('Por favor ingresa una placa válida del vehículo.');
+                    return;
+                }
+                const dupEdit = await findDuplicateCarByPlate(plate, id);
+                if (dupEdit) {
+                    alert(buildDuplicatePlateMessage(dupEdit, plate));
                     return;
                 }
                 if (window._editingSoatPlate && window._editingSoatPlate !== plate) {

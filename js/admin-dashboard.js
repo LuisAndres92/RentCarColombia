@@ -370,7 +370,13 @@ function renderFleetModeration(filterStatus = 'all') {
         return;
     }
 
+    const usersList = typeof getUsers === 'function' ? getUsers() : [];
     container.innerHTML = cars.map(car => {
+        const ownerObj = usersList.find(u => u.id === car.ownerId) || null;
+        const displayOwnerName = car.ownerName || ownerObj?.name || 'Propietario';
+        const rawPhone = (car.ownerPhone && car.ownerPhone !== '+57 316 235 7871') ? car.ownerPhone : (ownerObj?.phone || car.ownerPhone || '');
+        const displayOwnerPhone = rawPhone || 'Sin teléfono';
+        const displayOwnerEmail = ownerObj?.email || '';
         const neg = car.priceNegotiation || null;
         let negHtml = '';
         if (neg && neg.status === 'admin_proposed') {
@@ -409,8 +415,9 @@ function renderFleetModeration(filterStatus = 'all') {
                 </div>
             </td>
             <td>
-                <div class="small font-weight-semi-bold">${car.ownerName || 'Propietario'}</div>
-                <small class="text-muted"><i class="fa fa-phone mr-1"></i>${car.ownerPhone || 'Sin teléfono'}</small>
+                <div class="small font-weight-semi-bold">${displayOwnerName}</div>
+                <small class="text-muted d-block"><i class="fa fa-phone mr-1 ${rawPhone ? 'text-success' : ''}"></i>${displayOwnerPhone}</small>
+                ${displayOwnerEmail ? `<small class="text-muted d-block" style="font-size:10px;">${displayOwnerEmail}</small>` : ''}
             </td>
             <td>
                 <span class="badge badge-light border text-dark font-weight-bold"><i class="fa fa-map-marker-alt text-primary mr-1"></i>${car.city}</span>
