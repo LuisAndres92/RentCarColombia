@@ -526,14 +526,25 @@ async function logSystemEvent(modulo, accion, detalle = '') {
     const client = getSupabaseClient();
     if (client) {
         try {
-            await client.from('logs_auditoria').insert([{
+            const { error } = await client.from('logs_auditoria').insert([{
                 usuario: entry.usuario,
                 rol: entry.rol,
                 modulo: entry.modulo,
                 accion: entry.accion,
                 detalle: entry.detalle,
+                detalle_cambios: entry.detalle_cambios || null,
                 creado_en: entry.creado_en
             }]);
+            if (error) {
+                await client.from('logs_auditoria').insert([{
+                    usuario: entry.usuario,
+                    rol: entry.rol,
+                    modulo: entry.modulo,
+                    accion: entry.accion,
+                    detalle: entry.detalle,
+                    creado_en: entry.creado_en
+                }]);
+            }
         } catch (e) { }
     }
 }

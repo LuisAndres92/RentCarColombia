@@ -459,7 +459,7 @@ function recordAdminLog(modulo, accion, detalle = '', cambios = null) {
         try {
             const client = getSupabaseClient();
             if (client) {
-                client.from('logs_auditoria').insert([{
+                const payload = {
                     usuario: entry.usuario,
                     rol: entry.rol,
                     modulo: entry.modulo,
@@ -467,7 +467,21 @@ function recordAdminLog(modulo, accion, detalle = '', cambios = null) {
                     detalle: entry.detalle,
                     detalle_cambios: entry.detalle_cambios,
                     creado_en: entry.creado_en
-                }]).then(() => {}).catch(() => {});
+                };
+                client.from('logs_auditoria').insert([payload]).then(({ error }) => {
+                    if (error) {
+                        // Respaldo automático si aún no se ha ejecutado el ALTER TABLE de detalle_cambios
+                        const fallbackPayload = {
+                            usuario: entry.usuario,
+                            rol: entry.rol,
+                            modulo: entry.modulo,
+                            accion: entry.accion,
+                            detalle: entry.detalle,
+                            creado_en: entry.creado_en
+                        };
+                        client.from('logs_auditoria').insert([fallbackPayload]).then(() => {}).catch(() => {});
+                    }
+                }).catch(() => {});
             }
         } catch (e) { }
     }
