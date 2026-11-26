@@ -985,3 +985,60 @@ if (RENTCAR_SYNC_CHANNEL) {
         handleLiveConfigSync();
     };
 }
+
+/** ================= MODAL UNIFICADO DE CIERRE DE SESIÓN ================= **/
+window.openLogoutConfirmModal = function (onConfirm) {
+    if (window.__logoutModalOpen) return;
+    window.__logoutModalOpen = true;
+
+    let modalEl = document.getElementById('modalGlobalLogoutConfirm');
+    if (!modalEl) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" id="modalGlobalLogoutConfirm" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm" role="document" style="max-width: 390px;">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                        <div class="modal-body text-center p-4">
+                            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%; background: rgba(247, 125, 10, 0.12); color: #F77D0A;">
+                                <i class="fa fa-sign-out-alt fa-2x"></i>
+                            </div>
+                            <h5 class="font-weight-bold mb-2" style="color: #1C1E32;">¿Cerrar sesión?</h5>
+                            <p class="text-muted small mb-4">Tu sesión actual en <strong>Rent Car Colombia</strong> se cerrará de forma segura.</p>
+                            <div class="d-flex justify-content-center" style="gap: 10px;">
+                                <button type="button" class="btn btn-light border font-weight-bold px-4 py-2" data-dismiss="modal" style="border-radius: 8px;">Cancelar</button>
+                                <button type="button" id="btn-confirm-global-logout" class="btn btn-danger font-weight-bold px-4 py-2" style="border-radius: 8px;">
+                                    <i class="fa fa-sign-out-alt mr-1"></i> Cerrar Sesión
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modalEl = document.getElementById('modalGlobalLogoutConfirm');
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-global-logout');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fa fa-sign-out-alt mr-1"></i> Cerrar Sesión';
+        confirmBtn.onclick = async function () {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Saliendo...';
+            if (typeof onConfirm === 'function') {
+                await onConfirm();
+            }
+        };
+    }
+
+    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+        const $m = window.jQuery(modalEl);
+        $m.off('hidden.bs.modal.rcLogout').on('hidden.bs.modal.rcLogout', function () {
+            window.__logoutModalOpen = false;
+        });
+        $m.modal('show');
+    } else {
+        window.__logoutModalOpen = false;
+        if (typeof onConfirm === 'function') onConfirm();
+    }
+};

@@ -695,12 +695,18 @@
     }
     window.performFullLogout = performFullLogout;
 
-    $(document).on('click', '.btn-logout-user, #btn-logout, .btn-admin-logout', async function(e) {
+    $(document).off('click.rcLogout').on('click.rcLogout', '.btn-logout-user, #btn-logout, .btn-admin-logout', function(e) {
         e.preventDefault();
-        if (confirm('¿Deseas cerrar tu sesión en Rent Car Colombia?')) {
-            const btn = $(this);
-            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-1"></i> Cerrando...');
-            await performFullLogout();
+        e.stopImmediatePropagation();
+        const btn = $(this);
+        if (typeof window.openLogoutConfirmModal === 'function') {
+            window.openLogoutConfirmModal(async function() {
+                btn.prop('disabled', true);
+                await performFullLogout();
+            });
+        } else {
+            btn.prop('disabled', true);
+            performFullLogout();
         }
     });
 

@@ -89,17 +89,25 @@ document.addEventListener('DOMContentLoaded', function () {
     // 5. Sincronizar en segundo plano con base de datos real en Supabase
     syncLiveDataFromSupabase();
 
-    // 6. Cerrar Sesión
+    // 6. Cerrar Sesión (modal unificado sin doble confirmación)
     document.querySelectorAll('.btn-admin-logout').forEach(btn => {
-        btn.addEventListener('click', async function (e) {
+        btn.addEventListener('click', function (e) {
             e.preventDefault();
-            if (confirm('¿Deseas cerrar tu sesión como Administrador?')) {
+            e.stopImmediatePropagation();
+            const doLogout = async function () {
                 if (typeof window.performFullLogout === 'function') {
                     await window.performFullLogout();
                 } else {
+                    sessionStorage.setItem('renteasy_explicit_logout', 'true');
                     localStorage.removeItem('renteasy_current_user');
+                    localStorage.removeItem('renteasy_last_activity');
                     window.location.href = 'LOGIN.html?action=logged_out';
                 }
+            };
+            if (typeof window.openLogoutConfirmModal === 'function') {
+                window.openLogoutConfirmModal(doLogout);
+            } else {
+                doLogout();
             }
         });
     });

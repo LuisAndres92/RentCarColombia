@@ -220,22 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 6. Cerrar Sesión
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async function (e) {
-            e.preventDefault();
-            if (confirm('¿Deseas cerrar tu sesión?')) {
-                if (typeof window.performFullLogout === 'function') {
-                    await window.performFullLogout();
-                } else {
-                    localStorage.removeItem('renteasy_current_user');
-                    localStorage.removeItem('renteasy_last_activity');
-                    window.location.href = 'LOGIN.html?action=logged_out';
-                }
-            }
-        });
-    }
+    // 6. Cerrar Sesión (gestionado por el modal unificado en main.js / config.js)
 
     // ================= FUNCIONES DE RENDERIZADO ================= //
 
