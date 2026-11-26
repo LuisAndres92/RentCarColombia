@@ -1280,24 +1280,84 @@ window.alert = function (msg) {
     window.showAppAlert(msg);
 };
 
-/** ================= VISOR SEGURO DE DOCUMENTOS (PDF E IMÁGENES) ================= **/
-window.openDocumentPreview = function (dataUrl) {
+/** ================= VISOR SEGURO DE DOCUMENTOS EN MODAL (PDF E IMÁGENES) ================= **/
+window.openDocumentPreview = function (dataUrl, title) {
     if (!dataUrl) return;
-    if (String(dataUrl).startsWith('data:')) {
+    let viewUrl = String(dataUrl);
+    let isPdf = /\.pdf(\?|$)/i.test(viewUrl) || viewUrl.startsWith('data:application/pdf');
+    let revocableBlobUrl = null;
+
+    if (viewUrl.startsWith('data:')) {
         try {
-            const parts = dataUrl.split(',');
+            const parts = viewUrl.split(',');
             const mimeMatch = parts[0].match(/:(.*?);/);
             const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+            if (mime.toLowerCase().includes('pdf')) isPdf = true;
             const bin = atob(parts[1]);
             const arr = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
             const blob = new Blob([arr], { type: mime });
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-            return;
+            revocableBlobUrl = URL.createObjectURL(blob);
+            viewUrl = revocableBlobUrl;
         } catch (e) {
-            console.warn('Error abriendo documento:', e);
+            console.warn('Error preparando documento:', e);
         }
     }
-    window.open(dataUrl, '_blank');
+
+    if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.modal !== 'function') {
+        window.open(viewUrl, '_blank');
+        return;
+    }
+
+    let modalEl = document.getElementById('modalGlobalDocumentPreview');
+    if (!modalEl) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" id="modalGlobalDocumentPreview" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 10095;">
+                <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                        <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                            <h5 class="modal-title font-weight-bold text-white mb-0" id="modalGlobalDocTitle">
+                                <i class="fa fa-file-alt text-primary mr-2"></i>Vista de Documento
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body p-3 text-center bg-light" id="modalGlobalDocBody" style="min-height:260px;"></div>
+                        <div class="modal-footer bg-white py-2 px-4 d-flex justify-content-between">
+                            <a id="modalGlobalDocDownload" href="#" download="documento" class="btn btn-outline-primary btn-sm font-weight-bold">
+                                <i class="fa fa-download mr-1"></i> Descargar
+                            </a>
+                            <button type="button" class="btn btn-secondary btn-sm font-weight-bold px-4" data-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modalEl = document.getElementById('modalGlobalDocumentPreview');
+    }
+
+    const titleEl = document.getElementById('modalGlobalDocTitle');
+    const bodyEl = document.getElementById('modalGlobalDocBody');
+    const dlEl = document.getElementById('modalGlobalDocDownload');
+    const safeTitle = String(title || (isPdf ? 'Documento PDF' : 'Imagen del Vehículo'));
+
+    titleEl.innerHTML = `<i class="fa ${isPdf ? 'fa-file-pdf text-danger' : 'fa-image text-primary'} mr-2"></i>${safeTitle}`;
+    dlEl.href = viewUrl;
+    dlEl.download = isPdf ? 'documento.pdf' : 'imagen.jpg';
+
+    if (isPdf) {
+        bodyEl.innerHTML = `<iframe src="${viewUrl}" style="width:100%;height:72vh;border:0;border-radius:8px;background:#ffffff;"></iframe>`;
+    } else {
+        bodyEl.innerHTML = `<img src="${viewUrl}" alt="${safeTitle}" class="img-fluid rounded shadow-sm" style="max-height:72vh;object-fit:contain;background:#1C1E32;">`;
+    }
+
+    window.jQuery(modalEl).off('hidden.bs.modal.docpreview').on('hidden.bs.modal.docpreview', function () {
+        bodyEl.innerHTML = '';
+        if (revocableBlobUrl) {
+            try { URL.revokeObjectURL(revocableBlobUrl); } catch (_) { }
+        }
+    });
+    window.jQuery(modalEl).modal('show');
 };

@@ -402,10 +402,10 @@ function renderFleetModeration(filterStatus = 'all') {
                         const cls = st === 'Vigente' ? 'badge-success' : st === 'Por vencer' ? 'badge-warning text-dark' : st === 'Vencido' ? 'badge-danger' : 'badge-secondary';
                         return `<span class="badge ${cls}" style="font-size:10px;">SOAT: ${st}${car.soatExpiry ? ` (${car.soatExpiry})` : ''}</span>`;
                     })()}
-                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
-                    ${car.platePhoto ? `<button type="button" class="badge badge-warning text-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.platePhoto.replace(/"/g, '&quot;')}">Ver Placa</button>` : ''}
-                    ${car.policyImage ? `<button type="button" class="badge badge-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc)" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
-                    ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}')" title="Copiar placa y abrir RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
+                    ${car.soatImage ? `<button type="button" class="badge badge-primary border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'SOAT - ${car.plate || car.fullName}')" data-doc="${car.soatImage.replace(/"/g, '&quot;')}">Ver SOAT</button>` : ''}
+                    ${car.platePhoto ? `<button type="button" class="badge badge-warning text-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'Foto de Placa - ${car.plate || car.fullName}')" data-doc="${car.platePhoto.replace(/"/g, '&quot;')}">Ver Placa</button>` : ''}
+                    ${car.policyImage ? `<button type="button" class="badge badge-dark border-0" style="font-size:10px;cursor:pointer;" onclick="window.openDocumentPreview(this.dataset.doc, 'Póliza - ${car.plate || car.fullName}')" data-doc="${car.policyImage.replace(/"/g, '&quot;')}">Ver Póliza</button>` : ''}
+                    ${car.plate ? `<button type="button" class="badge badge-info border-0" style="font-size:10px;cursor:pointer;" onclick="window.verifyPlateInRunt('${car.plate}', '${car.ownerId || ''}')" title="Copiar datos y consultar en RUNT"><i class="fa fa-search mr-1"></i>RUNT</button>` : ''}
                 </div>
             </td>
             <td>
@@ -701,13 +701,81 @@ window.toggleFeatureCar = function (carId) {
     }
 };
 
-window.verifyPlateInRunt = function (plate) {
+window.verifyPlateInRunt = function (plate, ownerId) {
     const clean = String(plate || '').trim().toUpperCase();
     if (clean && navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(clean).catch(() => {});
     }
-    notifySaved(`Placa "${clean}" copiada al portapapeles. Abriendo consulta oficial del RUNT...`);
-    window.open('https://www.runt.gov.co/consultaCiudadana/#/consultaVehiculo', '_blank');
+    const users = typeof getUsers === 'function' ? getUsers() : [];
+    const owner = ownerId ? users.find(u => u.id === ownerId) : null;
+    const ownerDoc = owner?.documentNumber || owner?.cedula || owner?.nit || '';
+    const ownerName = owner?.name || 'Propietario';
+
+    let mEl = document.getElementById('modalRuntHelper');
+    if (!mEl) {
+        const w = document.createElement('div');
+        w.innerHTML = `
+            <div class="modal fade" id="modalRuntHelper" tabindex="-1" role="dialog" aria-hidden="true" style="z-index:10090;">
+                <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                        <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                            <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-search text-info mr-2"></i>Validación en RUNT</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <p class="small text-muted mb-3">Por seguridad del portal oficial del <strong>RUNT</strong> (y su CAPTCHA), ningún sitio externo puede rellenar sus casillas automáticamente. Copia estos datos con 1 clic para pegarlos allá con <strong>Ctrl + V</strong>:</p>
+                            <div class="border rounded p-3 bg-light mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <small class="text-muted d-block">Placa del Vehículo (ya copiada)</small>
+                                        <strong class="h5 text-dark mb-0" id="runt-helper-plate">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" id="runt-copy-plate-btn"><i class="fa fa-copy mr-1"></i>Copiar Placa</button>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top" id="runt-helper-doc-row">
+                                    <div>
+                                        <small class="text-muted d-block">Documento / Cédula (<span id="runt-helper-owner">Propietario</span>)</small>
+                                        <strong class="text-dark" id="runt-helper-doc">-</strong>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold" id="runt-copy-doc-btn"><i class="fa fa-copy mr-1"></i>Copiar Doc.</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-2 px-4">
+                            <button type="button" class="btn btn-light border btn-sm" data-dismiss="modal">Cerrar</button>
+                            <a href="https://www.runt.gov.co/consultaCiudadana/#/consultaVehiculo" target="_blank" rel="noopener noreferrer" class="btn btn-info btn-sm font-weight-bold text-white" onclick="setTimeout(() => $('#modalRuntHelper').modal('hide'), 300);">
+                                <i class="fa fa-external-link-alt mr-1"></i> Abrir Portal RUNT
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(w.firstElementChild);
+        mEl = document.getElementById('modalRuntHelper');
+    }
+
+    document.getElementById('runt-helper-plate').textContent = clean || '-';
+    document.getElementById('runt-helper-owner').textContent = ownerName;
+    const docRow = document.getElementById('runt-helper-doc-row');
+    const docEl = document.getElementById('runt-helper-doc');
+    if (ownerDoc) {
+        docRow.classList.remove('d-none');
+        docEl.textContent = ownerDoc;
+    } else {
+        docRow.classList.add('d-none');
+    }
+
+    document.getElementById('runt-copy-plate-btn').onclick = function () {
+        if (clean && navigator.clipboard) navigator.clipboard.writeText(clean).catch(() => {});
+        notifySaved(`Placa "${clean}" copiada al portapapeles.`);
+    };
+    document.getElementById('runt-copy-doc-btn').onclick = function () {
+        if (ownerDoc && navigator.clipboard) navigator.clipboard.writeText(ownerDoc).catch(() => {});
+        notifySaved(`Documento "${ownerDoc}" copiado al portapapeles.`);
+    };
+
+    notifySaved(`Placa "${clean}" copiada al portapapeles.`);
+    $('#modalRuntHelper').modal('show');
 };
 
 window.deleteCarAdmin = function (carId) {
