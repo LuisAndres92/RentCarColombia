@@ -454,6 +454,26 @@ async function dbSaveReserva(reserva) {
     return reserva;
 }
 
+async function dbUpdateReservaFechas(id, payload) {
+    const client = getSupabaseClient();
+    if (client && id && payload) {
+        try {
+            const { error } = await client.from('reservas').update({
+                fecha_inicio: payload.startDate,
+                fecha_fin: payload.endDate,
+                total_dias: payload.totalDays,
+                subtotal_alquiler: payload.subtotal,
+                comision_plataforma_15: payload.commission15,
+                ganancia_propietario_85: payload.ownerEarning85,
+                total_cobrado: payload.totalPaid
+            }).eq('id', id);
+            if (error) console.warn('Error actualizando fechas en Supabase:', error);
+        } catch (err) {
+            console.warn('Error actualizando fechas en Supabase:', err);
+        }
+    }
+}
+
 async function dbUpdateReservaEstado(id, nuevoEstado) {
     const client = getSupabaseClient();
     if (client) {

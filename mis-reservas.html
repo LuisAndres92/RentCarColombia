@@ -11,11 +11,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css" rel="stylesheet">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .res-card { transition: transform 0.15s ease, box-shadow 0.15s ease; border-radius: 12px; }
         .res-card:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1.25rem rgba(28,30,50,0.09) !important; }
         .nav-pills .nav-link.active { background-color: #F77D0A; color: #fff; }
         .nav-pills .nav-link { color: #1C1E32; font-weight: 600; }
+        .flatpickr-calendar { border-radius: 14px; box-shadow: 0 12px 30px rgba(28,30,50,0.18); border: 1px solid #e9ecef; font-family: 'Rubik', sans-serif; }
+        .flatpickr-months { background: #1C1E32; border-radius: 13px 13px 0 0; padding: 6px 0; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { color: #fff !important; fill: #fff !important; }
+        .flatpickr-current-month input.cur-year { color: #fff !important; font-weight: 700; }
+        span.flatpickr-weekday { color: #1C1E32; font-weight: 700; }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected:hover { background: #F77D0A !important; border-color: #F77D0A !important; color: #fff !important; font-weight: 700; }
+        .flatpickr-day.today { border-color: #F77D0A; color: #F77D0A; font-weight: 700; }
+        .flatpickr-day:hover { background: #fff3e6; border-color: #F77D0A; }
+        .flatpickr-input.form-control[readonly] { background-color: #ffffff !important; color: #1C1E32 !important; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 
@@ -118,9 +128,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_58"></script>
+    <script src="js/supabase-client.js?v=20261125_64"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="js/main.js?v=20261125_58"></script>
     <script src="js/config.js?v=20261125_58"></script>
 
@@ -217,6 +229,8 @@
                                     <div class="text-muted small">Total Reserva (incl. fianza)</div>
                                     <h4 class="font-weight-bold text-primary mb-2">$${fmtCop(total)} COP</h4>
                                     <div class="d-flex justify-content-md-end flex-wrap" style="gap:6px;">
+                                        ${(b.status === 'Pendiente' || b.status === 'Aceptada' || b.status === 'En Curso') ? `<button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" onclick="openModifyBookingModal('${b.id}')"><i class="fa fa-calendar-alt mr-1"></i> Modificar</button>` : ''}
+                                        ${(b.status === 'Pendiente' || b.status === 'Aceptada') ? `<button type="button" class="btn btn-sm btn-outline-danger font-weight-bold" onclick="cancelDriverBooking('${b.id}')"><i class="fa fa-times mr-1"></i> Cancelar</button>` : ''}
                                         ${b.status === 'Finalizada' ? `<button type="button" class="btn btn-sm btn-warning font-weight-bold" onclick="openDriverReviewModal('${b.id}', '${b.carId}', '${(b.carName || '').replace(/'/g, '')}')"><i class="fa fa-star mr-1"></i> Calificar</button>` : ''}
                                         ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-sm btn-success font-weight-bold"><i class="fab fa-whatsapp mr-1"></i> Anfitrión</a>` : ''}
                                         <a href="detail.html?id=${encodeURIComponent(b.carId || '')}" class="btn btn-sm btn-outline-secondary font-weight-bold">Ver Auto</a>
@@ -236,6 +250,192 @@
                     renderList(this.dataset.filter);
                 });
             });
+
+            function refreshKpis() {
+                document.getElementById('kpi-res-total').textContent = mine.length;
+                document.getElementById('kpi-res-active').textContent = mine.filter(b => activeStates.has(b.status)).length;
+                document.getElementById('kpi-res-done').textContent = mine.filter(b => b.status === 'Finalizada').length;
+            }
+
+            window.cancelDriverBooking = function (bookingId) {
+                const b = mine.find(x => String(x.id) === String(bookingId));
+                if (!b) return;
+                const doCancel = async () => {
+                    b.status = 'Cancelada';
+                    const idx = allBookings.findIndex(x => String(x.id) === String(bookingId));
+                    if (idx >= 0) allBookings[idx].status = 'Cancelada';
+                    localStorage.setItem('renteasy_bookings', JSON.stringify(allBookings));
+                    if (typeof dbUpdateReservaEstado === 'function') {
+                        await dbUpdateReservaEstado(b.id, 'Cancelada');
+                    }
+                    try {
+                        const cars = JSON.parse(localStorage.getItem('renteasy_cars')) || [];
+                        const car = cars.find(c => String(c.id) === String(b.carId));
+                        if (car && car.status === 'En Renta') {
+                            car.status = 'Activo';
+                            localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+                            if (typeof dbUpdateVehiculo === 'function') dbUpdateVehiculo(car).catch(() => {});
+                        }
+                    } catch (_) { }
+                    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('bookings_updated');
+                    refreshKpis();
+                    const activeTab = document.querySelector('#res-filter-tabs .nav-link.active');
+                    renderList(activeTab ? activeTab.dataset.filter : 'all');
+                    if (typeof window.showAppAlert === 'function') window.showAppAlert('Reserva cancelada correctamente. Las fechas han sido liberadas.');
+                };
+
+                if (typeof window.openAppConfirmModal === 'function') {
+                    window.openAppConfirmModal({
+                        title: '¿Cancelar esta reserva?',
+                        message: `Vas a cancelar tu reserva del vehículo <strong>${b.carName || 'Auto'}</strong> (${b.startDate} al ${b.endDate}).`,
+                        confirmText: 'Sí, cancelar reserva',
+                        confirmClass: 'btn-danger',
+                        onConfirm: doCancel
+                    });
+                } else {
+                    doCancel();
+                }
+            };
+
+            window.openModifyBookingModal = function (bookingId) {
+                const b = mine.find(x => String(x.id) === String(bookingId));
+                if (!b) return;
+                let mEl = document.getElementById('modalModifyBookingDates');
+                if (!mEl) {
+                    const w = document.createElement('div');
+                    w.innerHTML = `
+                        <div class="modal fade" id="modalModifyBookingDates" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                                    <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                                        <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-calendar-alt text-primary mr-2"></i>Modificar / Extender Fechas</h5>
+                                        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                                    </div>
+                                    <form id="form-modify-booking-dates">
+                                        <div class="modal-body p-4">
+                                            <p class="small text-muted mb-3">Vehículo: <strong id="mod-book-car" class="text-dark"></strong></p>
+                                            <div class="row">
+                                                <div class="col-6 form-group">
+                                                    <label class="small font-weight-bold">Fecha de Recogida</label>
+                                                    <input type="date" id="mod-book-start" class="form-control" required>
+                                                </div>
+                                                <div class="col-6 form-group">
+                                                    <label class="small font-weight-bold">Fecha de Devolución</label>
+                                                    <input type="date" id="mod-book-end" class="form-control" required>
+                                                </div>
+                                            </div>
+                                            <div class="bg-light p-3 rounded border small">
+                                                <div class="d-flex justify-content-between mb-1"><span>Nuevos días:</span><strong id="mod-book-days">1 día</strong></div>
+                                                <div class="d-flex justify-content-between mb-1"><span>Alquiler + Seguro (15%):</span><strong id="mod-book-net">$0 COP</strong></div>
+                                                <div class="d-flex justify-content-between mb-1"><span>Depósito fianza:</span><strong id="mod-book-dep">$200.000 COP</strong></div>
+                                                <hr class="my-2">
+                                                <div class="d-flex justify-content-between font-weight-bold"><span>Nuevo Total:</span><span class="text-primary" id="mod-book-total">$0 COP</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light py-2 px-4">
+                                            <button type="button" class="btn btn-light border btn-sm" data-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4">Guardar Nuevas Fechas</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>`;
+                    document.body.appendChild(w.firstElementChild);
+                    mEl = document.getElementById('modalModifyBookingDates');
+                }
+
+                const sInp = document.getElementById('mod-book-start');
+                const eInp = document.getElementById('mod-book-end');
+                document.getElementById('mod-book-car').textContent = b.carName || 'Vehículo';
+                sInp.value = b.startDate;
+                eInp.value = b.endDate;
+                const isInProgress = b.status === 'En Curso';
+
+                const rate = Number(b.dailyRate) || Math.round((Number(b.subtotal) || 200000) / Math.max(1, Number(b.totalDays) || 1));
+                const dep = Number(b.deposit) || 200000;
+
+                function calcPreview() {
+                    const d1 = new Date(sInp.value);
+                    const d2 = new Date(eInp.value);
+                    let days = Math.ceil((d2.getTime() - d1.getTime()) / 86400000);
+                    if (isNaN(days) || days < 1) days = 1;
+                    const subtotal = days * rate;
+                    const fee15 = Math.round(subtotal * 0.15);
+                    const earn85 = subtotal - fee15;
+                    const netWithFee = subtotal + fee15;
+                    const total = netWithFee + dep;
+                    document.getElementById('mod-book-days').textContent = `${days} ${days === 1 ? 'día' : 'días'}`;
+                    document.getElementById('mod-book-net').textContent = `$${fmtCop(netWithFee)} COP`;
+                    document.getElementById('mod-book-dep').textContent = `$${fmtCop(dep)} COP`;
+                    document.getElementById('mod-book-total').textContent = `$${fmtCop(total)} COP`;
+                    return { days, subtotal, fee15, earn85, total };
+                }
+
+                // Deshabilitar fechas ocupadas por OTRAS reservas del mismo vehículo
+                const disabled = [];
+                allBookings.forEach(other => {
+                    if (String(other.id) !== String(b.id) && String(other.carId) === String(b.carId) && other.status !== 'Rechazada' && other.status !== 'Cancelada') {
+                        if (other.startDate && other.endDate) disabled.push({ from: other.startDate, to: other.endDate });
+                    }
+                });
+                if (typeof window.flatpickr === 'function') {
+                    if (sInp._flatpickr) sInp._flatpickr.destroy();
+                    if (eInp._flatpickr) eInp._flatpickr.destroy();
+                    const endFp = window.flatpickr(eInp, {
+                        locale: 'es', dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y',
+                        minDate: b.startDate || 'today', defaultDate: b.endDate, disable: disabled,
+                        onChange: calcPreview
+                    });
+                    if (!isInProgress) {
+                        window.flatpickr(sInp, {
+                            locale: 'es', dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y',
+                            minDate: 'today', defaultDate: b.startDate, disable: disabled,
+                            onChange: (sel) => {
+                                if (sel && sel[0]) {
+                                    const nxt = new Date(sel[0].getTime() + 86400000).toISOString().split('T')[0];
+                                    endFp.set('minDate', nxt);
+                                    if (eInp.value <= sInp.value) endFp.setDate(nxt, true);
+                                }
+                                calcPreview();
+                            }
+                        });
+                    } else {
+                        sInp.readOnly = true;
+                    }
+                }
+                sInp.onchange = calcPreview;
+                eInp.onchange = calcPreview;
+                calcPreview();
+
+                document.getElementById('form-modify-booking-dates').onsubmit = async function (ev) {
+                    ev.preventDefault();
+                    if (eInp.value <= sInp.value) {
+                        if (typeof window.showAppAlert === 'function') window.showAppAlert('La fecha de devolución debe ser posterior a la de recogida.', 'warning');
+                        return;
+                    }
+                    const vals = calcPreview();
+                    b.startDate = sInp.value;
+                    b.endDate = eInp.value;
+                    b.totalDays = vals.days;
+                    b.subtotal = vals.subtotal;
+                    b.commission15 = vals.fee15;
+                    b.platformFee = vals.fee15;
+                    b.ownerEarning85 = vals.earn85;
+                    b.ownerEarnings = vals.earn85;
+                    b.totalPaid = vals.total;
+                    b.totalPrice = vals.total;
+                    localStorage.setItem('renteasy_bookings', JSON.stringify(allBookings));
+                    if (typeof dbUpdateReservaFechas === 'function') {
+                        await dbUpdateReservaFechas(b.id, b);
+                    }
+                    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('bookings_updated');
+                    $('#modalModifyBookingDates').modal('hide');
+                    const activeTab = document.querySelector('#res-filter-tabs .nav-link.active');
+                    renderList(activeTab ? activeTab.dataset.filter : 'all');
+                    if (typeof window.showAppAlert === 'function') window.showAppAlert('¡Fechas y tarifa de tu reserva actualizadas correctamente!');
+                };
+                $('#modalModifyBookingDates').modal('show');
+            };
 
             window.openDriverReviewModal = function (bookingId, carId, carName) {
                 let mEl = document.getElementById('modalDriverReview');
