@@ -248,8 +248,18 @@ async function syncLiveDataFromSupabase() {
                     mileage: v.kilometraje_limite || '250 km/día',
                     description: v.descripcion || '',
                     image: v.imagen_url || 'img/car-rent-1.png',
+                    images: Array.isArray(v.galeria_imagenes) && v.galeria_imagenes.length > 0 ? v.galeria_imagenes : [v.imagen_url || 'img/car-rent-1.png'],
                     status: v.estado || 'Activo',
                     ownerId: v.propietario_id,
+                    hostType: v.tipo_anfitrion || 'Rentadora Aliada',
+                    hasGps: v.tiene_gps !== false,
+                    luggage: parseInt(v.capacidad_maletas, 10) || 3,
+                    blockedDates: Array.isArray(v.fechas_bloqueadas) ? v.fechas_bloqueadas : [],
+                    soatImage: v.soat_imagen || '',
+                    policyImage: v.poliza_imagen || '',
+                    plate: v.placa || '',
+                    soatExpiry: v.soat_vencimiento || '',
+                    soatStatus: v.soat_estado || 'Pendiente',
                     createdAt: v.creado_en
                 };
             });

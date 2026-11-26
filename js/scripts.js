@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (foundUser) {
+                sessionStorage.removeItem('renteasy_explicit_logout');
                 // Iniciar sesión en Supabase en segundo plano si es posible
                 if (typeof getSupabaseClient === 'function') {
                     const client = getSupabaseClient();
@@ -334,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Iniciar sesión automáticamente
+            sessionStorage.removeItem('renteasy_explicit_logout');
             localStorage.setItem('renteasy_current_user', JSON.stringify({
                 id: newUser.id,
                 name: newUser.name,
@@ -392,34 +394,49 @@ document.addEventListener('DOMContentLoaded', function () {
         let users = getUsers();
         let changed = false;
 
-        // Limpieza de usuarios demo ficticios para dejar la plataforma lista para producción
-        const prevLen = users.length;
-        users = users.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
-        if (users.length !== prevLen) {
-            changed = true;
-        }
+        const defaultAccounts = [
+            {
+                id: 'a0000000-0000-0000-0000-000000000001',
+                name: 'Administrador Principal',
+                email: 'admin@rentcarcolombia.com',
+                phone: '+57 316 235 7871',
+                role: 'admin',
+                city: 'Valledupar',
+                password: 'admin',
+                avatar: 'img/team-1.jpg'
+            },
+            {
+                id: 'b0000000-0000-0000-0000-000000000002',
+                name: 'Carlos Mendoza (Anfitrión)',
+                email: 'propietario@ejemplo.com',
+                phone: '3001234567',
+                role: 'propietario',
+                city: 'Valledupar',
+                password: '123456',
+                avatar: 'img/team-3.jpg'
+            },
+            {
+                id: 'c0000000-0000-0000-0000-000000000003',
+                name: 'Laura Gómez (Conductora)',
+                email: 'conductor@ejemplo.com',
+                phone: '3109876543',
+                role: 'conductor',
+                city: 'Bogotá',
+                password: '123456',
+                avatar: 'img/testimonial-2.jpg'
+            }
+        ];
 
-        const defaultAdminAccount = {
-            id: 'usr_admin',
-            name: 'Administrador Principal',
-            email: 'admin@rentcarcolombia.com',
-            phone: '+57 316 235 7871',
-            role: 'admin',
-            city: 'Valledupar',
-            password: 'admin',
-            avatar: 'img/team-1.jpg'
-        };
-
-        const idx = users.findIndex(u => (u.email || '').toLowerCase().trim() === defaultAdminAccount.email.toLowerCase().trim());
-        if (idx === -1) {
-            users.push(defaultAdminAccount);
-            changed = true;
-        } else {
-            if (!users[idx].password) {
-                users[idx].password = defaultAdminAccount.password;
+        defaultAccounts.forEach(acc => {
+            const idx = users.findIndex(u => (u.email || '').toLowerCase().trim() === acc.email.toLowerCase().trim());
+            if (idx === -1) {
+                users.push(acc);
+                changed = true;
+            } else if (!users[idx].password) {
+                users[idx].password = acc.password;
                 changed = true;
             }
-        }
+        });
 
         if (changed) {
             localStorage.setItem('renteasy_users', JSON.stringify(users));
