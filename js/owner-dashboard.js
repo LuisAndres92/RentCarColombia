@@ -973,12 +973,17 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.deleteCar = function (carId) {
-        if (confirm('¿Estás seguro de que deseas eliminar este vehículo de tu catálogo?')) {
+        const doDelete = function () {
             let cars = getAllCars();
             cars = cars.filter(c => c.id !== carId);
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
             renderDashboardStats();
             renderOwnerCars();
+        };
+        if (typeof window.openAppConfirmModal === 'function') {
+            window.openAppConfirmModal({ title: 'Eliminar vehículo', message: '¿Estás seguro de que deseas eliminar este vehículo de tu catálogo?', confirmText: 'Eliminar', onConfirm: doDelete });
+        } else {
+            doDelete();
         }
     };
 

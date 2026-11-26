@@ -381,10 +381,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const selectedPaymentMethod = payTransfer && payTransfer.checked ? 'transfer' : 'wompi';
 
             // Si es transferencia y no adjuntó comprobante, confirmamos si desea continuar
-            if (selectedPaymentMethod === 'transfer' && !receiptBase64) {
-                const confirmNoReceipt = confirm('¿Deseas enviar la reserva sin adjuntar el comprobante ahora? Podrás enviarlo luego al anfitrión por WhatsApp.');
-                if (!confirmNoReceipt) return;
+            if (selectedPaymentMethod === 'transfer' && !receiptBase64 && !window._allowNoReceiptSubmit) {
+                if (typeof window.openAppConfirmModal === 'function') {
+                    window.openAppConfirmModal({
+                        title: '¿Enviar sin comprobante?',
+                        message: '¿Deseas enviar la reserva sin adjuntar el comprobante ahora? Podrás enviarlo luego al anfitrión por WhatsApp.',
+                        confirmText: 'Sí, enviar reserva',
+                        confirmClass: 'btn-primary',
+                        onConfirm: function () {
+                            window._allowNoReceiptSubmit = true;
+                            formBooking.dispatchEvent(new Event('submit', { cancelable: true }));
+                        }
+                    });
+                    return;
+                }
             }
+            window._allowNoReceiptSubmit = false;
 
             // Generar código de reserva único
             const bookingId = 'RC-' + Math.floor(100000 + Math.random() * 900000);

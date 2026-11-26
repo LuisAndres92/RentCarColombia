@@ -676,8 +676,8 @@ window.toggleFeatureCar = function (carId) {
     }
 };
 
-window.deleteCarAdmin = async function (carId) {
-    if (confirm('¿Deseas eliminar permanentemente este auto de la plataforma?')) {
+window.deleteCarAdmin = function (carId) {
+    const doDelete = async function () {
         let cars = getCars();
         const target = cars.find(c => c.id === carId);
         cars = cars.filter(c => c.id !== carId);
@@ -692,6 +692,11 @@ window.deleteCarAdmin = async function (carId) {
         renderFleetModeration(document.getElementById('fleet-filter-status')?.value || 'all');
         renderFinancialOverview();
         notifySaved('Vehículo eliminado de la plataforma.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar vehículo', message: '¿Deseas eliminar permanentemente este auto de la plataforma?', confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
     }
 };
 
@@ -1051,17 +1056,23 @@ window.updateFeedbackStatusAdmin = function (feedbackId, newStatus) {
 };
 
 window.deleteFeedbackAdmin = function (feedbackId) {
-    if (!confirm('¿Eliminar permanentemente este reporte resuelto?')) return;
-    let items = [];
-    try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
-    const removed = items.find(i => i && i.id === feedbackId);
-    items = items.filter(i => i && i.id !== feedbackId);
-    localStorage.setItem('rentcar_feedback', JSON.stringify(items));
-    if (typeof dbDeleteFeedback === 'function') dbDeleteFeedback(feedbackId);
-    if (removed) recordAdminLog('Feedback', 'Reporte eliminado', `${removed.carName || ''} - ${removed.subject || ''}`, [{ field: `Reporte (${removed.carName || 'General'})`, before: `${removed.subject}: ${removed.message}`, after: '(Eliminado)' }]);
-    renderFeedbackAndAlertsAdmin();
-    renderFinancialOverview();
-    notifySaved('Reporte eliminado del historial.');
+    const doDelete = function () {
+        let items = [];
+        try { items = JSON.parse(localStorage.getItem('rentcar_feedback')) || []; } catch (e) { items = []; }
+        const removed = items.find(i => i && i.id === feedbackId);
+        items = items.filter(i => i && i.id !== feedbackId);
+        localStorage.setItem('rentcar_feedback', JSON.stringify(items));
+        if (typeof dbDeleteFeedback === 'function') dbDeleteFeedback(feedbackId);
+        if (removed) recordAdminLog('Feedback', 'Reporte eliminado', `${removed.carName || ''} - ${removed.subject || ''}`, [{ field: `Reporte (${removed.carName || 'General'})`, before: `${removed.subject}: ${removed.message}`, after: '(Eliminado)' }]);
+        renderFeedbackAndAlertsAdmin();
+        renderFinancialOverview();
+        notifySaved('Reporte eliminado del historial.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar reporte', message: '¿Eliminar permanentemente este reporte resuelto?', confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
+    }
 };
 
 /** ================= MÓDULO 9: LOGS Y AUDITORÍA DEL SISTEMA ================= **/
@@ -1399,11 +1410,16 @@ window.deleteHeroSlide = function(idx) {
             alert('El carrusel debe tener al menos una diapositiva activa.');
             return;
         }
-        if (confirm(`¿Deseas eliminar la diapositiva #${idx+1}?`)) {
+        const doDelete = function () {
             cfg.cms.slides.splice(idx, 1);
             saveSiteConfig(cfg);
             renderHeroSlidesAdmin();
             notifySaved(`Diapositiva #${idx+1} eliminada.`);
+        };
+        if (typeof window.openAppConfirmModal === 'function') {
+            window.openAppConfirmModal({ title: 'Eliminar diapositiva', message: `¿Deseas eliminar la diapositiva #${idx+1}?`, confirmText: 'Eliminar', onConfirm: doDelete });
+        } else {
+            doDelete();
         }
     }
 };
@@ -1489,11 +1505,16 @@ window.deleteTeamMember = function (idx) {
     const cfg = getSiteConfig();
     if (cfg.team && cfg.team[idx]) {
         const name = cfg.team[idx].name;
-        if (confirm(`¿Deseas eliminar a "${name}" del equipo?`)) {
+        const doDelete = function () {
             cfg.team.splice(idx, 1);
             saveSiteConfig(cfg);
             renderTeamListAdmin();
             notifySaved(`Integrante "${name}" eliminado del equipo.`);
+        };
+        if (typeof window.openAppConfirmModal === 'function') {
+            window.openAppConfirmModal({ title: 'Eliminar integrante', message: `¿Deseas eliminar a "${name}" del equipo?`, confirmText: 'Eliminar', onConfirm: doDelete });
+        } else {
+            doDelete();
         }
     }
 };
@@ -1589,19 +1610,27 @@ window.deleteTestimonialAdmin = function (idx) {
     if (!list[idx]) return;
     const tName = list[idx].name || list[idx].authorName || 'Usuario';
     const tText = list[idx].text || list[idx].quote || '';
-    if (!confirm(`¿Deseas eliminar el testimonio de comunidad de "${tName}"?`)) return;
-    const target = list[idx];
-    list.splice(idx, 1);
-    saveCommunityTestimonials(list);
-    if (typeof dbDeleteTestimonio === 'function' && target.id) {
-        dbDeleteTestimonio(target.id);
+    const doDelete = function () {
+        const curr = getCommunityTestimonials();
+        const target = curr[idx];
+        if (!target) return;
+        curr.splice(idx, 1);
+        saveCommunityTestimonials(curr);
+        if (typeof dbDeleteTestimonio === 'function' && target.id) {
+            dbDeleteTestimonio(target.id);
+        }
+        if (typeof window.logSystemEvent === 'function') {
+            window.logSystemEvent('Testimonios', 'Testimonio de comunidad eliminado', `${tName} — "${tText.slice(0, 60)}"`);
+        }
+        renderCommunityTestimonialsAdmin();
+        renderAuditLogsAdmin();
+        notifySaved('Testimonio eliminado de la base de datos.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar testimonio', message: `¿Deseas eliminar el testimonio de comunidad de "${tName}"?`, confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
     }
-    if (typeof window.logSystemEvent === 'function') {
-        window.logSystemEvent('Testimonios', 'Testimonio de comunidad eliminado', `${tName} — "${tText.slice(0, 60)}"`);
-    }
-    renderCommunityTestimonialsAdmin();
-    renderAuditLogsAdmin();
-    notifySaved('Testimonio eliminado de la base de datos.');
 };
 
 function saveVerifiedReviews(reviews) {
@@ -1668,10 +1697,14 @@ window.toggleReviewApproval = function(idx) {
 
 window.deleteReviewAdmin = function(idx) {
     const reviews = getVerifiedReviews();
-    if (reviews[idx] && confirm(`¿Deseas eliminar la opinión de "${reviews[idx].userName}"?`)) {
-        const target = reviews[idx];
-        reviews.splice(idx, 1);
-        saveVerifiedReviews(reviews);
+    if (!reviews[idx]) return;
+    const targetName = reviews[idx].userName;
+    const doDelete = function () {
+        const curr = getVerifiedReviews();
+        const target = curr[idx];
+        if (!target) return;
+        curr.splice(idx, 1);
+        saveVerifiedReviews(curr);
         if (typeof dbDeleteResena === 'function' && target.id) {
             dbDeleteResena(target.id);
         }
@@ -1681,6 +1714,11 @@ window.deleteReviewAdmin = function(idx) {
         renderVerifiedReviewsModeration();
         renderAuditLogsAdmin();
         notifySaved('Reseña eliminada.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar reseña', message: `¿Deseas eliminar la opinión de "${targetName}"?`, confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
     }
 };
 
@@ -1761,23 +1799,29 @@ function renderInquiriesAdmin() {
 }
 
 window.deleteInquiryAdmin = function (index) {
-    if (!confirm('¿Eliminar esta consulta del buzón?')) return;
-    let inquiries = [];
-    try {
-        inquiries = JSON.parse(localStorage.getItem('renteasy_inquiries')) || [];
-    } catch (e) { inquiries = []; }
-    const removed = inquiries[index];
-    inquiries.splice(index, 1);
-    localStorage.setItem('renteasy_inquiries', JSON.stringify(inquiries));
-    if (typeof dbDeleteMensajeContacto === 'function' && removed && removed.id) {
-        dbDeleteMensajeContacto(removed.id);
+    const doDelete = function () {
+        let inquiries = [];
+        try {
+            inquiries = JSON.parse(localStorage.getItem('renteasy_inquiries')) || [];
+        } catch (e) { inquiries = []; }
+        const removed = inquiries[index];
+        inquiries.splice(index, 1);
+        localStorage.setItem('renteasy_inquiries', JSON.stringify(inquiries));
+        if (typeof dbDeleteMensajeContacto === 'function' && removed && removed.id) {
+            dbDeleteMensajeContacto(removed.id);
+        }
+        if (typeof window.logSystemEvent === 'function' && removed) {
+            window.logSystemEvent('Contacto', 'Mensaje de contacto eliminado', `${removed.name} (${removed.email})`);
+        }
+        renderInquiriesAdmin();
+        renderAuditLogsAdmin();
+        notifySaved('Consulta eliminada del buzón.');
+    };
+    if (typeof window.openAppConfirmModal === 'function') {
+        window.openAppConfirmModal({ title: 'Eliminar consulta', message: '¿Eliminar esta consulta del buzón?', confirmText: 'Eliminar', onConfirm: doDelete });
+    } else {
+        doDelete();
     }
-    if (typeof window.logSystemEvent === 'function' && removed) {
-        window.logSystemEvent('Contacto', 'Mensaje de contacto eliminado', `${removed.name} (${removed.email})`);
-    }
-    renderInquiriesAdmin();
-    renderAuditLogsAdmin();
-    notifySaved('Consulta eliminada del buzón.');
 };
 
 /** ================= MÓDULO 8: LEGAL Y CONTRATOS ================= **/

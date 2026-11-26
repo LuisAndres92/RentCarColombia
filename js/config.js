@@ -1055,3 +1055,124 @@ window.openLogoutConfirmModal = function (onConfirm) {
         if (typeof onConfirm === 'function') onConfirm();
     }
 };
+
+/** ================= MODALES GLOBALES UNIFICADOS (ALERT & CONFIRM) ================= **/
+window.openAppConfirmModal = function (opts) {
+    const options = opts || {};
+    const title = options.title || 'Confirmar acción';
+    const message = options.message || '¿Deseas continuar con esta acción?';
+    const confirmText = options.confirmText || 'Confirmar';
+    const confirmClass = options.confirmClass || 'btn-danger';
+    const iconClass = options.iconClass || 'fa-exclamation-triangle';
+
+    let modalEl = document.getElementById('modalGlobalAppConfirm');
+    if (!modalEl) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" id="modalGlobalAppConfirm" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 10070;">
+                <div class="modal-dialog modal-dialog-centered modal-sm" role="document" style="max-width: 410px;">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                        <div class="modal-body text-center p-4">
+                            <div id="global-confirm-icon-wrap" class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%; background: rgba(247, 125, 10, 0.12); color: #F77D0A;">
+                                <i id="global-confirm-icon" class="fa fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                            <h5 id="global-confirm-title" class="font-weight-bold mb-2" style="color: #1C1E32;"></h5>
+                            <p id="global-confirm-msg" class="text-muted small mb-4"></p>
+                            <div class="d-flex justify-content-center" style="gap: 10px;">
+                                <button type="button" class="btn btn-light border font-weight-bold px-4 py-2" data-dismiss="modal" style="border-radius: 8px;">Cancelar</button>
+                                <button type="button" id="btn-global-app-confirm" class="btn font-weight-bold px-4 py-2" style="border-radius: 8px;"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modalEl = document.getElementById('modalGlobalAppConfirm');
+    }
+
+    document.getElementById('global-confirm-title').textContent = title;
+    document.getElementById('global-confirm-msg').textContent = message;
+    document.getElementById('global-confirm-icon').className = `fa ${iconClass} fa-2x`;
+    const btn = document.getElementById('btn-global-app-confirm');
+    btn.className = `btn ${confirmClass} font-weight-bold px-4 py-2`;
+    btn.textContent = confirmText;
+    btn.disabled = false;
+    btn.onclick = async function () {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+            window.jQuery(modalEl).modal('hide');
+        }
+        if (typeof options.onConfirm === 'function') {
+            await options.onConfirm();
+        }
+    };
+
+    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+        window.jQuery(modalEl).modal('show');
+    } else if (typeof options.onConfirm === 'function') {
+        options.onConfirm();
+    }
+};
+
+window.showAppAlert = function (message, type) {
+    const text = String(message || '').trim();
+    if (!text) return;
+    if (!document.body) {
+        document.addEventListener('DOMContentLoaded', function () { window.showAppAlert(text, type); });
+        return;
+    }
+
+    let detectedType = type;
+    if (!detectedType) {
+        const lower = text.toLowerCase();
+        if (lower.includes('correctamente') || lower.includes('exitos') || lower.includes('¡excelente') || lower.includes('guardado') || lower.includes('actualizado') || lower.includes('recibida')) {
+            detectedType = 'success';
+        } else if (lower.includes('error') || lower.includes('no puedes') || lower.includes('debe ') || lower.includes('por favor') || lower.includes('inválid') || lower.includes('expirad') || lower.includes('máximo')) {
+            detectedType = 'warning';
+        } else {
+            detectedType = 'info';
+        }
+    }
+
+    const palette = detectedType === 'success'
+        ? { bg: 'rgba(40, 167, 69, 0.12)', color: '#28a745', icon: 'fa-check-circle', title: '¡Listo!' }
+        : detectedType === 'warning'
+            ? { bg: 'rgba(247, 125, 10, 0.14)', color: '#F77D0A', icon: 'fa-exclamation-triangle', title: 'Atención' }
+            : { bg: 'rgba(28, 30, 50, 0.10)', color: '#1C1E32', icon: 'fa-info-circle', title: 'Aviso' };
+
+    let modalEl = document.getElementById('modalGlobalAppAlert');
+    if (!modalEl) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" id="modalGlobalAppAlert" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 10075;">
+                <div class="modal-dialog modal-dialog-centered modal-sm" role="document" style="max-width: 400px;">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                        <div class="modal-body text-center p-4">
+                            <div id="global-alert-icon-wrap" class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%;">
+                                <i id="global-alert-icon" class="fa fa-2x"></i>
+                            </div>
+                            <h5 id="global-alert-title" class="font-weight-bold mb-2" style="color: #1C1E32;"></h5>
+                            <p id="global-alert-msg" class="text-muted small mb-4" style="white-space: pre-line;"></p>
+                            <button type="button" class="btn btn-primary font-weight-bold px-5 py-2" data-dismiss="modal" style="border-radius: 8px;">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modalEl = document.getElementById('modalGlobalAppAlert');
+    }
+
+    const iconWrap = document.getElementById('global-alert-icon-wrap');
+    iconWrap.style.background = palette.bg;
+    iconWrap.style.color = palette.color;
+    document.getElementById('global-alert-icon').className = `fa ${palette.icon} fa-2x`;
+    document.getElementById('global-alert-title').textContent = palette.title;
+    document.getElementById('global-alert-msg').textContent = text;
+
+    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+        window.jQuery(modalEl).modal('show');
+    }
+};
+
+window.alert = function (msg) {
+    window.showAppAlert(msg);
+};
