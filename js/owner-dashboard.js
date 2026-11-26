@@ -251,9 +251,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const upper = String(rawText).toUpperCase();
         const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
-        const docByTipo = upper.match(/(?:^|[^A-Z])(?:CC|CE|NIT|TI)[\s:.\-|]{1,25}(\d{6,12})(?:[^0-9]|$)/);
-        const docFallback = upper.match(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,120}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
-        const foundHolderDoc = docStructured ? docStructured[1] : (docFallback ? docFallback[1] : (docByTipo ? docByTipo[1] : ''));
+        const docByTipo = upper.match(/(?:^|[^A-Z0-9])(?:CC|CE|NIT|TI)[\s:.\-|]{1,25}(\d{6,12})(?:[^0-9]|$)/);
+        const docFallback = upper.match(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,160}?(?:CC|CE|NIT|TI)?[\s:.\-|]*(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
+        const rawDoc = docStructured ? docStructured[1] : (docByTipo ? docByTipo[1] : (docFallback ? docFallback[1] : ''));
+        // Evitar confundir con el teléfono celular del tomador (ej. 3162357871 o fragmento 162357871)
+        const phonesInText = [...upper.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g)].map(m => m[1]);
+        const isPhoneFragment = rawDoc && phonesInText.some(ph => ph === rawDoc || ph.endsWith(rawDoc));
+        const foundHolderDoc = isPhoneFragment ? '' : rawDoc;
         if (foundHolderDoc) {
             if (typeof t.onHolderDoc === 'function') t.onHolderDoc(foundHolderDoc);
             else if (!t.plateInputId) detectedSoatHolderDoc = foundHolderDoc;
