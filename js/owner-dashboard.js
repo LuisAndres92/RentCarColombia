@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (nearLabel) return `${nearLabel[1]}${nearLabel[2]}`;
         // 2. Buscar todas las candidatas aisladas descartando códigos largos o prefijos comunes
         const ignorePrefixes = new Set(['NIT', 'SOA', 'POL', 'TEL', 'FAX', 'COD', 'REF', 'NRO', 'NUM', 'RUT', 'VER']);
-        const matches = [...upper.matchAll(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-]?(\d{3}|\d{2}[A-Z])(?:[^A-Z0-9]|$)/g)];
+        const matches = [...upper.matchAll(/(?:^|[^A-Z0-9])([A-Z]{3})[\s\-\.\u00B7]{0,3}(\d{3}|\d{2}[A-Z])(?:[^A-Z0-9]|$)/g)];
         for (const m of matches) {
             if (!ignorePrefixes.has(m[1])) return `${m[1]}${m[2]}`;
         }
@@ -221,38 +221,140 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function preprocessPlateForOcr(dataUrl) {
+    async function preprocessPlateForOcr(dataUrl, cropBox) {
         return new Promise((resolve) => {
             const img = new Image();
             img.onload = function () {
                 const canvas = document.createElement('canvas');
-                const scale = Math.min(1.5, 1200 / Math.max(img.width, img.height, 1));
-                canvas.width = Math.round(img.width * scale);
-                canvas.height = Math.round(img.height * scale);
+                let sx = 0, sy = 0, sw = img.width, sh = img.height;
+                if (cropBox) {
+                    sx = Math.max(0, Math.round(cropBox.x * img.width));
+                    sy = Math.max(0, Math.round(cropBox.y * img.height));
+                    sw = Math.max(1, Math.round(cropBox.w * img.width));
+                    sh = Math.max(1, Math.round(cropBox.h * img.height));
+                }
+                const targetMax = cropBox ? 640 : 1200;
+                const scale = Math.min(3.0, targetMax / Math.max(sw, sh, 1));
+                canvas.width = Math.round(sw * scale);
+                canvas.height = Math.round(sh * scale);
                 const ctx = canvas.getContext('2d');
-                ctx.filter = 'grayscale(100%) contrast(170%) brightness(110%)';
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL('image/jpeg', 0.92));
+                ctx.filter = 'grayscale(100%) contrast(185%) brightness(112%)';
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = function () { resolve(dataUrl); };
             img.src = dataUrl;
         });
     }
 
-    async function detectPlateInVehiclePhotos(galleryUrls, preferredPlate) {
-        const list = (galleryUrls || []).filter(src => src && String(src).startsWith('data:image'));
-        if (list.length === 0) return '';
+    async function findYellowPlateCropBox(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function () {
+                try {
+                    const aw = 360;
+                    const ah = Math.max(1, Math.round(img.height * (aw / Math.max(1, img.width))));
+                    const c = document.createElement('canvas');
+                    c.width = aw;
+                    c.height = ah;
+                    const ctx = c.getContext('2d');
+                    ctx.drawImage(img, 0, 0, aw, ah);
+                    const data = ctx.getImageData(0, 0, aw, ah).data;
+                    const cell = 8;
+                    const cols = Math.ceil(aw / cell);
+                    const rows = Math.ceil(ah / cell);
+                    const counts = new Int32Array(cols * rows);
+                    for (let y = 0; y < ah; y++) {
+                        for (let x = 0; x < aw; x++) {
+                            const idx = (y * aw + x) * 4;
+                            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                            if (r > 150 && g > 105 && b < 105 && (r - b) > 55 && (g - b) > 35 && r >= g * 0.85) {
+                                const gx = Math.floor(x / cell);
+                                const gy = Math.floor(y / cell);
+                                counts[gy * cols + gx]++;
+                            }
+                        }
+                    }
+                    const visited = new Uint8Array(cols * rows);
+                    let bestScore = 0;
+                    let bestBox = null;
+                    const threshold = (cell * cell) * 0.25;
+                    for (let gy = 0; gy < rows; gy++) {
+                        for (let gx = 0; gx < cols; gx++) {
+                            const i = gy * cols + gx;
+                            if (visited[i] || counts[i] < threshold) continue;
+                            const queue = [[gx, gy]];
+                            visited[i] = 1;
+                            let minX = gx, maxX = gx, minY = gy, maxY = gy, score = 0;
+                            while (queue.length > 0) {
+                                const [cx, cy] = queue.pop();
+                                score += counts[cy * cols + cx];
+                                if (cx < minX) minX = cx;
+                                if (cx > maxX) maxX = cx;
+                                if (cy < minY) minY = cy;
+                                if (cy > maxY) maxY = cy;
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    for (let dx = -1; dx <= 1; dx++) {
+                                        const nx = cx + dx, ny = cy + dy;
+                                        if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+                                        const ni = ny * cols + nx;
+                                        if (!visited[ni] && counts[ni] >= threshold) {
+                                            visited[ni] = 1;
+                                            queue.push([nx, ny]);
+                                        }
+                                    }
+                                }
+                            }
+                            const bw = (maxX - minX + 1) * cell;
+                            const bh = (maxY - minY + 1) * cell;
+                            const ratio = bw / Math.max(1, bh);
+                            if (score > bestScore && bw >= 20 && bh >= 12 && ratio >= 0.8 && ratio <= 4.5) {
+                                bestScore = score;
+                                bestBox = {
+                                    x: Math.max(0, (minX * cell - 16) / aw),
+                                    y: Math.max(0, (minY * cell - 12) / ah),
+                                    w: Math.min(1, (bw + 32) / aw),
+                                    h: Math.min(1, (bh + 24) / ah)
+                                };
+                            }
+                        }
+                    }
+                    resolve(bestBox);
+                } catch (_) {
+                    resolve(null);
+                }
+            };
+            img.onerror = function () { resolve(null); };
+            img.src = dataUrl;
+        });
+    }
+
+    async function detectPlateInSinglePhoto(dataUrl, preferredPlate) {
+        if (!dataUrl || !String(dataUrl).startsWith('data:image')) return '';
         const ok = await ensureTesseractLoaded();
         if (!ok) return '';
-        for (let i = 0; i < Math.min(3, list.length); i++) {
+        const ocrOpts = { tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- ' };
+        const yellowBox = await findYellowPlateCropBox(dataUrl);
+        const attempts = [];
+        if (yellowBox) attempts.push(yellowBox);
+        attempts.push(null);
+        attempts.push({ x: 0.15, y: 0.35, w: 0.70, h: 0.55 });
+        for (const box of attempts) {
             try {
-                const prepped = await preprocessPlateForOcr(list[i]);
-                const res = await window.Tesseract.recognize(prepped, 'eng', {
-                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- '
-                });
+                const prepped = await preprocessPlateForOcr(dataUrl, box);
+                const res = await window.Tesseract.recognize(prepped, 'eng', ocrOpts);
                 const found = extractPlateFromText(res?.data?.text || '', preferredPlate);
                 if (found) return found;
             } catch (_) { }
+        }
+        return '';
+    }
+
+    async function detectPlateInVehiclePhotos(galleryUrls, preferredPlate) {
+        const list = (galleryUrls || []).filter(src => src && String(src).startsWith('data:image'));
+        for (let i = 0; i < Math.min(4, list.length); i++) {
+            const found = await detectPlateInSinglePhoto(list[i], preferredPlate);
+            if (found) return found;
         }
         return '';
     }
@@ -698,17 +800,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // 2. Validación rápida por OCR priorizando la foto frontal de verificación de placa
-            const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [typedUrl];
-            const photoPlate = await detectPlateInVehiclePhotos([uploadedPlatePhoto].concat(finalGallery), plate);
-            if (photoPlate && photoPlate !== plate) {
+            // 2. Validación estricta e independiente de la foto privada de verificación de placa
+            const privatePhotoPlate = await detectPlateInSinglePhoto(uploadedPlatePhoto, plate);
+            if (!privatePhotoPlate) {
                 restorePublishBtn();
-                alert(`La placa detectada en las fotografías del vehículo (${photoPlate}) NO coincide con la placa ingresada (${plate}).\n\nAsegúrate de subir fotos reales de este mismo vehículo y su SOAT correspondiente.`);
+                alert('No pudimos leer claramente la placa en la foto privada de verificación.\n\nPor favor toma una foto más cercana y de frente al vehículo donde la placa sea nítida y legible.');
                 return;
             }
-            if (photoPlate && detectedSoatPlate && photoPlate !== detectedSoatPlate) {
+            if (privatePhotoPlate !== plate) {
                 restorePublishBtn();
-                alert(`La placa visible en las fotos (${photoPlate}) no coincide con la del SOAT (${detectedSoatPlate}). Verifica tus archivos.`);
+                alert(`La placa detectada en la foto privada de verificación (${privatePhotoPlate}) NO coincide con la placa ingresada (${plate}).\n\nAsegúrate de subir una foto real de este mismo vehículo.`);
+                return;
+            }
+            if (detectedSoatPlate && privatePhotoPlate !== detectedSoatPlate) {
+                restorePublishBtn();
+                alert(`La placa de la foto privada (${privatePhotoPlate}) no coincide con la del SOAT (${detectedSoatPlate}). Verifica tus archivos.`);
+                return;
+            }
+
+            // 3. Validar también que ninguna foto pública de la galería tenga una placa diferente
+            const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [typedUrl];
+            const photoPlate = await detectPlateInVehiclePhotos(finalGallery, plate);
+            if (photoPlate && photoPlate !== plate) {
+                restorePublishBtn();
+                alert(`La placa detectada en las fotografías públicas del vehículo (${photoPlate}) NO coincide con la placa ingresada (${plate}).\n\nAsegúrate de subir fotos reales de este mismo vehículo.`);
                 return;
             }
             const soatExpiry = document.getElementById('car-soat-expiry')?.value || '';
