@@ -132,13 +132,16 @@ function initCarCatalog() {
                         </div>
 
                         <!-- Especificaciones -->
-                        <div class="mb-2">
+                        <div class="mb-2 d-flex flex-wrap" style="gap: 4px;">
                             <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1" style="font-size: 10px;">
                                 <i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}
                             </span>
-                            <span class="badge badge-light border text-dark ml-1" style="font-size: 10px;">
+                            <span class="badge badge-light border text-dark" style="font-size: 10px;">
                                 <i class="fa fa-satellite-dish ${car.hasGps !== false ? 'text-primary' : 'text-muted'} mr-1"></i>${car.hasGps !== false ? 'GPS Activo' : 'Sin GPS'}
                             </span>
+                            ${car.policyImage
+                                ? '<span class="badge badge-primary" style="font-size: 10px;"><i class="fa fa-shield-alt mr-1"></i>Todo Riesgo</span>'
+                                : '<span class="badge badge-light border text-muted" style="font-size: 10px;">Solo SOAT</span>'}
                         </div>
                         <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
                             <div class="px-1">
@@ -228,7 +231,10 @@ function initCarDetail() {
     setElemText('detail-owner-name', car.ownerName || 'Anfitrión Certificado');
     const hostBadgeEl = document.getElementById('detail-host-badge');
     if (hostBadgeEl) {
-        hostBadgeEl.innerHTML = `<span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1"><i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}</span>`;
+        const covBadge = car.policyImage
+            ? '<span class="badge badge-primary px-2 py-1 ml-1"><i class="fa fa-shield-alt mr-1"></i>Todo Riesgo Verificado</span>'
+            : '<span class="badge badge-light border text-muted px-2 py-1 ml-1">Solo SOAT (Sin Todo Riesgo)</span>';
+        hostBadgeEl.innerHTML = `<span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1"><i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}</span>${covBadge}`;
     }
     setElemText('detail-price-day', `$${formatPrice(car.pricePerDay)} COP`);
 

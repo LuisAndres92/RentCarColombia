@@ -443,8 +443,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Por favor sube al menos una fotografía de tu vehículo (o agrega un enlace URL) para elegir la imagen principal.');
                 return;
             }
-            if (!uploadedSoatImg || !uploadedPolicyImg) {
-                alert('Por seguridad de la plataforma, debes adjuntar la foto o escaneo del SOAT vigente y la Póliza de Seguro antes de publicar.');
+            if (!uploadedSoatImg) {
+                alert('Por ley en Colombia, debes adjuntar la foto o PDF del SOAT vigente antes de publicar el vehículo.');
                 return;
             }
 
