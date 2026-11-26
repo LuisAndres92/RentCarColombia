@@ -408,7 +408,30 @@ async function dbSaveReserva(reserva) {
                 conductor_licencia_img: reserva.driverLicenseImg || null
             };
 
-            const { data, error } = await client.from('reservas').insert([row]).select();
+            let { data, error } = await client.from('reservas').insert([row]).select();
+            if (error) {
+                console.warn('Reintentando insert reserva sin columnas extendidas:', error.message);
+                const baseRow = {
+                    vehiculo_id: row.vehiculo_id,
+                    propietario_id: row.propietario_id,
+                    conductor_id: row.conductor_id,
+                    fecha_inicio: row.fecha_inicio,
+                    fecha_fin: row.fecha_fin,
+                    total_dias: row.total_dias,
+                    tarifa_diaria: row.tarifa_diaria,
+                    subtotal_alquiler: row.subtotal_alquiler,
+                    comision_plataforma_15: row.comision_plataforma_15,
+                    ganancia_propietario_85: row.ganancia_propietario_85,
+                    deposito_garantia: row.deposito_garantia,
+                    total_cobrado: row.total_cobrado,
+                    metodo_pago: row.metodo_pago,
+                    estado_pago: row.estado_pago,
+                    estado_reserva: row.estado_reserva
+                };
+                const retry = await client.from('reservas').insert([baseRow]).select();
+                data = retry.data;
+                error = retry.error;
+            }
             if (error) {
                 console.warn('Error insertando reserva en Supabase:', error);
             } else if (data && data[0]) {

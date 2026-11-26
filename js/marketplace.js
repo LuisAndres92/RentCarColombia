@@ -291,10 +291,32 @@ function initCarDetail() {
     })();
     setElemText('detail-price-day', `$${formatPrice(car.pricePerDay)} COP`);
 
-    const mainImg = document.getElementById('detail-main-img');
-    if (mainImg) {
-        mainImg.src = car.image;
-        mainImg.onerror = function() { this.src = 'img/car-rent-1.png'; };
+    const galleryWrap = document.getElementById('detail-gallery-wrap');
+    const galleryImgs = (Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image]).filter(Boolean);
+    if (galleryWrap && galleryImgs.length > 1) {
+        const slidesHtml = galleryImgs.map((src, i) => `
+            <div class="carousel-item ${i === 0 ? 'active' : ''}">
+                <img src="${src}" alt="${car.fullName} foto ${i + 1}" class="d-block w-100" style="height:420px;object-fit:cover;" onerror="this.src='img/car-rent-1.png'">
+            </div>`).join('');
+        const thumbsHtml = galleryImgs.map((src, i) => `
+            <img src="${src}" onclick="$('#detail-car-carousel').carousel(${i})" class="rounded border" style="width:74px;height:52px;object-fit:cover;cursor:pointer;" onerror="this.src='img/car-rent-1.png'">`).join('');
+        galleryWrap.innerHTML = `
+            <div id="detail-car-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
+                <div class="carousel-inner">${slidesHtml}</div>
+                <a class="carousel-control-prev" href="#detail-car-carousel" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                </a>
+                <a class="carousel-control-next" href="#detail-car-carousel" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                </a>
+            </div>
+            <div class="d-flex flex-wrap p-2 bg-white border-top" style="gap:8px;">${thumbsHtml}</div>`;
+    } else {
+        const mainImg = document.getElementById('detail-main-img');
+        if (mainImg) {
+            mainImg.src = galleryImgs[0] || car.image;
+            mainImg.onerror = function() { this.src = 'img/car-rent-1.png'; };
+        }
     }
 
     // Calculadora dinámica de precio en la barra lateral
