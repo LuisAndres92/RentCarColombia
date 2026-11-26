@@ -569,10 +569,10 @@ function renderCommunityTestimonialsOnHome() {
     sections.forEach(el => { el.style.display = ''; });
 
     const html = visibleItems.map(t => {
-        const avatar = t.avatar || 'img/testimonial-1.jpg';
-        const name = (t.authorName || 'Usuario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const role = (t.authorRole || 'Conductor / Propietario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const quote = (t.quote || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const avatar = t.photo || t.avatar || 'img/testimonial-1.jpg';
+        const name = (t.name || t.authorName || 'Usuario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const role = (t.roleOrCity || t.authorRole || 'Conductor / Propietario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const quote = (t.text || t.quote || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return `
         <div class="testimonial-item d-flex flex-column justify-content-center px-4">
             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -622,7 +622,8 @@ function getCleanActiveCars() {
         cars = [];
     }
     cars = cars.filter(c => c && c.id !== 'car_mod_demo' && c.ownerName !== 'Felipe Daza' && c.ownerId !== 'usr_demo_host_2');
-    if (cars.length === 0) {
+    const syncedFromDb = localStorage.getItem('rentcar_supabase_cars_synced') === '1';
+    if (cars.length === 0 && !syncedFromDb) {
         cars = [{
             id: 'car_valledupar_01',
             brand: 'Renault',

@@ -1526,20 +1526,25 @@ function renderCommunityTestimonialsAdmin() {
         return;
     }
 
-    container.innerHTML = list.map((t, idx) => `
+    container.innerHTML = list.map((t, idx) => {
+        const tName = t.name || t.authorName || 'Usuario';
+        const tRole = t.roleOrCity || t.authorRole || 'Comunidad';
+        const tPhoto = t.photo || t.avatar || 'img/testimonial-1.jpg';
+        const tText = t.text || t.quote || '';
+        return `
         <div class="p-3 border rounded mb-2 bg-white shadow-sm">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex align-items-center">
-                    <img src="${t.avatar || 'img/testimonial-1.jpg'}" alt="${t.authorName}" class="rounded-circle mr-2" style="width:38px;height:38px;object-fit:cover;" onerror="this.src='img/testimonial-1.jpg'">
+                    <img src="${tPhoto}" alt="${tName}" class="rounded-circle mr-2" style="width:38px;height:38px;object-fit:cover;" onerror="this.src='img/testimonial-1.jpg'">
                     <div>
-                        <div class="font-weight-bold text-dark">${t.authorName || 'Usuario'} <span class="badge badge-light border text-muted">${t.authorRole || 'Comunidad'}</span></div>
+                        <div class="font-weight-bold text-dark">${tName} <span class="badge badge-light border text-muted">${tRole}</span></div>
                     </div>
                 </div>
                 <span class="badge ${t.verified !== false ? 'badge-success' : 'badge-secondary'} px-2 py-1">
                     ${t.verified !== false ? '<i class="fa fa-check-circle mr-1"></i> Visible en Portada' : '<i class="fa fa-eye-slash mr-1"></i> Oculto'}
                 </span>
             </div>
-            <p class="small text-dark font-italic bg-light p-2 rounded mb-2 border">"${t.quote || ''}"</p>
+            <p class="small text-dark font-italic bg-light p-2 rounded mb-2 border">"${tText}"</p>
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-sm ${t.verified !== false ? 'btn-outline-secondary' : 'btn-outline-success'} mr-2" onclick="toggleTestimonialVerified(${idx})">
                     <i class="fa ${t.verified !== false ? 'fa-eye-slash' : 'fa-check'} mr-1"></i> ${t.verified !== false ? 'Ocultar de Portada' : 'Mostrar en Portada'}
@@ -1549,7 +1554,8 @@ function renderCommunityTestimonialsAdmin() {
                 </button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 window.toggleTestimonialVerified = function (idx) {
@@ -1560,8 +1566,10 @@ window.toggleTestimonialVerified = function (idx) {
     if (typeof dbUpdateTestimonioVerified === 'function' && list[idx].id) {
         dbUpdateTestimonioVerified(list[idx].id, list[idx].verified);
     }
+    const tName = list[idx].name || list[idx].authorName || 'Usuario';
+    const tRole = list[idx].roleOrCity || list[idx].authorRole || '';
     if (typeof window.logSystemEvent === 'function') {
-        window.logSystemEvent('Testimonios', list[idx].verified ? 'Testimonio activado en portada' : 'Testimonio oculto en portada', `${list[idx].authorName} (${list[idx].authorRole || ''})`);
+        window.logSystemEvent('Testimonios', list[idx].verified ? 'Testimonio activado en portada' : 'Testimonio oculto en portada', `${tName} (${tRole})`);
     }
     renderCommunityTestimonialsAdmin();
     renderAuditLogsAdmin();
@@ -1571,7 +1579,9 @@ window.toggleTestimonialVerified = function (idx) {
 window.deleteTestimonialAdmin = function (idx) {
     const list = getCommunityTestimonials();
     if (!list[idx]) return;
-    if (!confirm(`¿Deseas eliminar el testimonio de comunidad de "${list[idx].authorName}"?`)) return;
+    const tName = list[idx].name || list[idx].authorName || 'Usuario';
+    const tText = list[idx].text || list[idx].quote || '';
+    if (!confirm(`¿Deseas eliminar el testimonio de comunidad de "${tName}"?`)) return;
     const target = list[idx];
     list.splice(idx, 1);
     saveCommunityTestimonials(list);
@@ -1579,7 +1589,7 @@ window.deleteTestimonialAdmin = function (idx) {
         dbDeleteTestimonio(target.id);
     }
     if (typeof window.logSystemEvent === 'function') {
-        window.logSystemEvent('Testimonios', 'Testimonio de comunidad eliminado', `${target.authorName} — "${(target.quote || '').slice(0, 60)}"`);
+        window.logSystemEvent('Testimonios', 'Testimonio de comunidad eliminado', `${tName} — "${tText.slice(0, 60)}"`);
     }
     renderCommunityTestimonialsAdmin();
     renderAuditLogsAdmin();

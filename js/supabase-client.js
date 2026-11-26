@@ -35,8 +35,8 @@ async function dbGetVehiculos() {
                 .select('*')
                 .order('creado_en', { ascending: false });
 
-            if (!error && data && data.length > 0) {
-                // Adaptar nombres de campos al modelo del frontend
+            if (!error && data) {
+                // Adaptar nombres de campos al modelo del frontend (incluso si la tabla quedó vacía [])
                 const mapped = data.map(v => {
                     const rawCat = v.categoria || v.category || v.tipo || v.type;
                     const cleanCat = (rawCat && rawCat !== 'undefined' && rawCat !== 'null') ? rawCat : 'SUV / Camioneta';
@@ -73,8 +73,9 @@ async function dbGetVehiculos() {
                         ownerId: v.propietario_id || v.ownerId
                     };
                 });
-                // Sincronizar copia local
+                // Sincronizar copia local (incluye lista vacía si se borraron todos en Supabase)
                 localStorage.setItem('renteasy_cars', JSON.stringify(mapped));
+                localStorage.setItem('rentcar_supabase_cars_synced', '1');
                 return mapped;
             }
         } catch (err) {
