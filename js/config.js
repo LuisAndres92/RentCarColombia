@@ -538,8 +538,79 @@ function applyGlobalConfig() {
     // 12. Vehículos Destacados en Portada (Solo vehículos reales registrados)
     try { renderFeaturedCarsOnHome(); } catch (e) { console.warn('Featured cars:', e); }
 
+    // 12b. Testimonios de Comunidad en Portada (public.testimonios)
+    try { renderCommunityTestimonialsOnHome(); } catch (e) { console.warn('Testimonials:', e); }
+
     // 13. Renumeración Dinámica y Secuencial de Secciones Visibles (01, 02, 03...)
     try { renumberVisibleSections(); } catch (e) { console.warn('Renumber sections:', e); }
+}
+
+function renderCommunityTestimonialsOnHome() {
+    const carousels = document.querySelectorAll('.site-testimonial-carousel');
+    const sections = document.querySelectorAll('.site-testimonials-section');
+    if (carousels.length === 0) return;
+
+    let testimonials = [];
+    try {
+        testimonials = JSON.parse(localStorage.getItem('rentcar_community_testimonials')) || [];
+    } catch (e) {
+        testimonials = [];
+    }
+
+    const visibleItems = testimonials.filter(t => t && t.verified !== false);
+    const cfg = typeof getSiteConfig === 'function' ? getSiteConfig() : {};
+    const visEnabled = !cfg.visibility || cfg.visibility.testimonials !== false;
+
+    if (!visEnabled || visibleItems.length === 0) {
+        sections.forEach(el => { el.style.display = 'none'; });
+        return;
+    }
+
+    sections.forEach(el => { el.style.display = ''; });
+
+    const html = visibleItems.map(t => {
+        const avatar = t.avatar || 'img/testimonial-1.jpg';
+        const name = (t.authorName || 'Usuario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const role = (t.authorRole || 'Conductor / Propietario').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const quote = (t.quote || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `
+        <div class="testimonial-item d-flex flex-column justify-content-center px-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <img class="img-fluid ml-n4 rounded-circle" src="${avatar}" alt="${name}" style="width: 80px; height: 80px; object-fit: cover;" onerror="this.src='img/testimonial-1.jpg'">
+                <h1 class="display-2 text-white m-0 fa fa-quote-right"></h1>
+            </div>
+            <h4 class="text-uppercase mb-2">${name}</h4>
+            <i class="mb-2 text-primary font-weight-bold">${role}</i>
+            <p class="m-0">"${quote}"</p>
+        </div>`;
+    }).join('');
+
+    carousels.forEach(c => {
+        if (window.jQuery && window.jQuery.fn && window.jQuery.fn.owlCarousel) {
+            const $c = window.jQuery(c);
+            if ($c.data('owl.carousel')) {
+                $c.trigger('destroy.owl.carousel');
+            }
+            $c.removeClass('owl-loaded owl-hidden owl-drag');
+            c.innerHTML = html;
+            $c.owlCarousel({
+                autoplay: true,
+                smartSpeed: 1500,
+                margin: 30,
+                dots: true,
+                loop: visibleItems.length > 3,
+                center: visibleItems.length > 2,
+                responsive: {
+                    0: { items: 1 },
+                    576: { items: 1 },
+                    768: { items: Math.min(2, visibleItems.length) },
+                    992: { items: Math.min(3, visibleItems.length) }
+                }
+            });
+        } else {
+            c.innerHTML = html;
+        }
+    });
 }
 
 /** ================= 12. AUTOS REALES EN PORTADA PRINCIPAL ================= **/
@@ -871,6 +942,15 @@ function initGlobalConfigAndLiveCars() {
         dbGetResenas().then(() => {
             try {
                 if (document.getElementById('featured-cars-row')) renderFeaturedCarsOnHome();
+            } catch (e) { }
+        }).catch(() => { });
+    }
+
+    if (typeof dbGetTestimonios === 'function') {
+        dbGetTestimonios().then(() => {
+            try {
+                renderCommunityTestimonialsOnHome();
+                renumberVisibleSections();
             } catch (e) { }
         }).catch(() => { });
     }

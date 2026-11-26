@@ -108,8 +108,42 @@ INSERT INTO public.resenas (vehiculo_nombre, autor_nombre, rol_autor, ciudad, ca
 SELECT 'Renault Duster 4x4 Turbo', 'Laura Gómez', 'Conductora Turista', 'Bogotá D.C.', 5, 'Trato directo con el dueño, vehículo impecable y tarifa mucho mejor que una agencia tradicional.', true
 WHERE (SELECT count(*) FROM public.resenas) = 1;
 
--- 8. Verificación rápida de tablas
+-- 9. Asegurar tabla testimonios (Opiniones de la Comunidad en Portada, separada de resenas por vehículo)
+CREATE TABLE IF NOT EXISTS public.testimonios (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre_cliente text NOT NULL,
+    rol_o_ciudad text NOT NULL,
+    foto_url text DEFAULT 'img/testimonial-1.jpg',
+    calificacion int DEFAULT 5,
+    comentario text NOT NULL,
+    vehiculo_alquilado text,
+    verificado boolean DEFAULT true,
+    creado_en timestamptz DEFAULT now()
+);
+ALTER TABLE public.testimonios ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Gestion total testimonios" ON public.testimonios;
+CREATE POLICY "Gestion total testimonios" ON public.testimonios FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.testimonios (nombre_cliente, rol_o_ciudad, foto_url, calificacion, comentario, vehiculo_alquilado, verificado)
+SELECT 'Carlos Mendoza', 'Propietario en Valledupar', 'img/testimonial-1.jpg', 5, 'Tener mi camioneta trabajando con Rent Car Colombia ha sido una bendición. Recibo mis ganancias puntual y la fianza me da total tranquilidad.', 'Renault Duster 4x4 Turbo', true
+WHERE NOT EXISTS (SELECT 1 FROM public.testimonios);
+
+INSERT INTO public.testimonios (nombre_cliente, rol_o_ciudad, foto_url, calificacion, comentario, vehiculo_alquilado, verificado)
+SELECT 'Laura Gómez', 'Conductora Turista', 'img/testimonial-2.jpg', 5, 'Alquilé un auto para recorrer el Cesar y La Guajira durante el Festival Vallenato. Trato directo, auto impecable y mucho más económico.', 'Renault Duster 4x4 Turbo', true
+WHERE (SELECT count(*) FROM public.testimonios) = 1;
+
+INSERT INTO public.testimonios (nombre_cliente, rol_o_ciudad, foto_url, calificacion, comentario, vehiculo_alquilado, verificado)
+SELECT 'Andrés Restrepo', 'Empresario / Propietario', 'img/testimonial-3.jpg', 5, 'Tengo dos autos publicados. El proceso de aprobación y verificación de clientes es muy estricto y profesional. Recomiendo 100% esta plataforma.', 'Mazda CX-30', true
+WHERE (SELECT count(*) FROM public.testimonios) = 2;
+
+INSERT INTO public.testimonios (nombre_cliente, rol_o_ciudad, foto_url, calificacion, comentario, vehiculo_alquilado, verificado)
+SELECT 'Diana Paternina', 'Conductora Frecuente', 'img/testimonial-4.jpg', 5, 'Excelente atención al cliente por WhatsApp. Reservé un sedán para un viaje de negocios y todo estuvo listo a mi llegada. La mejor opción en Colombia.', 'Chevrolet Onix', true
+WHERE (SELECT count(*) FROM public.testimonios) = 3;
+
+-- 10. Verificación rápida de tablas
 SELECT 'vehiculos' AS tabla, count(*) AS registros FROM public.vehiculos
+UNION ALL
+SELECT 'testimonios', count(*) FROM public.testimonios
 UNION ALL
 SELECT 'resenas', count(*) FROM public.resenas
 UNION ALL

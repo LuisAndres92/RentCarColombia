@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadCmsConfig();
     loadVisibilityConfig();
     renderTeamListAdmin();
+    renderCommunityTestimonialsAdmin();
     renderVerifiedReviewsModeration();
     loadCompanySettings();
     renderInquiriesAdmin();
@@ -299,6 +300,9 @@ async function syncLiveDataFromSupabase() {
         if (typeof dbGetResenas === 'function') {
             await dbGetResenas();
         }
+        if (typeof dbGetTestimonios === 'function') {
+            await dbGetTestimonios();
+        }
         if (typeof dbGetMensajesContacto === 'function') {
             await dbGetMensajesContacto();
         }
@@ -314,6 +318,7 @@ async function syncLiveDataFromSupabase() {
         renderFleetModeration();
         renderBookingsAndDisputes();
         renderFeedbackAndAlertsAdmin();
+        renderCommunityTestimonialsAdmin();
         renderVerifiedReviewsModeration();
         renderInquiriesAdmin();
         renderAuditLogsAdmin();
@@ -1314,6 +1319,7 @@ function loadCmsConfig() {
     updatePromoStatusPreview();
 
     renderFaqList(cms.faqs || []);
+    renderCommunityTestimonialsAdmin();
     renderVerifiedReviewsModeration();
 }
 
@@ -1496,6 +1502,89 @@ function getVerifiedReviews() {
     }
     return [];
 }
+
+function getCommunityTestimonials() {
+    try {
+        return JSON.parse(localStorage.getItem('rentcar_community_testimonials')) || [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveCommunityTestimonials(list) {
+    localStorage.setItem('rentcar_community_testimonials', JSON.stringify(list));
+    if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('testimonials_updated');
+}
+
+function renderCommunityTestimonialsAdmin() {
+    const container = document.getElementById('community-testimonials-admin-list');
+    if (!container) return;
+
+    const list = getCommunityTestimonials();
+    if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-3 text-muted small border rounded bg-light"><i class="fa fa-comment-slash mr-1"></i> No hay testimonios de comunidad en la base de datos.</div>';
+        return;
+    }
+
+    container.innerHTML = list.map((t, idx) => `
+        <div class="p-3 border rounded mb-2 bg-white shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center">
+                    <img src="${t.avatar || 'img/testimonial-1.jpg'}" alt="${t.authorName}" class="rounded-circle mr-2" style="width:38px;height:38px;object-fit:cover;" onerror="this.src='img/testimonial-1.jpg'">
+                    <div>
+                        <div class="font-weight-bold text-dark">${t.authorName || 'Usuario'} <span class="badge badge-light border text-muted">${t.authorRole || 'Comunidad'}</span></div>
+                    </div>
+                </div>
+                <span class="badge ${t.verified !== false ? 'badge-success' : 'badge-secondary'} px-2 py-1">
+                    ${t.verified !== false ? '<i class="fa fa-check-circle mr-1"></i> Visible en Portada' : '<i class="fa fa-eye-slash mr-1"></i> Oculto'}
+                </span>
+            </div>
+            <p class="small text-dark font-italic bg-light p-2 rounded mb-2 border">"${t.quote || ''}"</p>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-sm ${t.verified !== false ? 'btn-outline-secondary' : 'btn-outline-success'} mr-2" onclick="toggleTestimonialVerified(${idx})">
+                    <i class="fa ${t.verified !== false ? 'fa-eye-slash' : 'fa-check'} mr-1"></i> ${t.verified !== false ? 'Ocultar de Portada' : 'Mostrar en Portada'}
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTestimonialAdmin(${idx})" title="Eliminar testimonio">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.toggleTestimonialVerified = function (idx) {
+    const list = getCommunityTestimonials();
+    if (!list[idx]) return;
+    list[idx].verified = !(list[idx].verified !== false);
+    saveCommunityTestimonials(list);
+    if (typeof dbUpdateTestimonioVerified === 'function' && list[idx].id) {
+        dbUpdateTestimonioVerified(list[idx].id, list[idx].verified);
+    }
+    if (typeof window.logSystemEvent === 'function') {
+        window.logSystemEvent('Testimonios', list[idx].verified ? 'Testimonio activado en portada' : 'Testimonio oculto en portada', `${list[idx].authorName} (${list[idx].authorRole || ''})`);
+    }
+    renderCommunityTestimonialsAdmin();
+    renderAuditLogsAdmin();
+    notifySaved(list[idx].verified ? 'Testimonio visible en portada.' : 'Testimonio oculto de portada.');
+};
+
+window.deleteTestimonialAdmin = function (idx) {
+    const list = getCommunityTestimonials();
+    if (!list[idx]) return;
+    if (!confirm(`¿Deseas eliminar el testimonio de comunidad de "${list[idx].authorName}"?`)) return;
+    const target = list[idx];
+    list.splice(idx, 1);
+    saveCommunityTestimonials(list);
+    if (typeof dbDeleteTestimonio === 'function' && target.id) {
+        dbDeleteTestimonio(target.id);
+    }
+    if (typeof window.logSystemEvent === 'function') {
+        window.logSystemEvent('Testimonios', 'Testimonio de comunidad eliminado', `${target.authorName} — "${(target.quote || '').slice(0, 60)}"`);
+    }
+    renderCommunityTestimonialsAdmin();
+    renderAuditLogsAdmin();
+    notifySaved('Testimonio eliminado de la base de datos.');
+};
 
 function saveVerifiedReviews(reviews) {
     localStorage.setItem('rentcar_verified_reviews', JSON.stringify(reviews));

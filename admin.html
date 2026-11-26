@@ -1121,10 +1121,10 @@
                                                     <label class="custom-control-label font-weight-bold text-dark"
                                                         for="vis-testimonials">
                                                         <i class="fa fa-comments text-success mr-1"></i> Sección de
-                                                        Reseñas Reales
+                                                        Testimonios (Comunidad)
                                                     </label>
-                                                    <div class="small text-muted mt-1">Muestra u oculta opiniones de
-                                                        usuarios reales.</div>
+                                                    <div class="small text-muted mt-1">Muestra u oculta "La opinión de
+                                                        nuestra comunidad" en portada.</div>
                                                 </div>
                                             </div>
                                             <div class="col-md-4 mb-3">
@@ -1582,8 +1582,8 @@
                                 aria-expanded="false" aria-controls="collapseCmsReviews">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="font-weight-bold text-dark">
-                                        <i class="fa fa-star text-warning mr-2"></i> 5. Gestión y Moderación de Reseñas
-                                        de Clientes (100% Reales)
+                                        <i class="fa fa-star text-warning mr-2"></i> 5. Testimonios de Comunidad
+                                        (Portada) y Reseñas por Vehículo
                                     </div>
                                     <i class="fa fa-chevron-down text-muted"></i>
                                 </div>
@@ -1607,10 +1607,10 @@
                                         class="p-3 border rounded bg-light d-flex justify-content-between align-items-center mb-3">
                                         <div>
                                             <div class="font-weight-bold text-dark"><i
-                                                    class="fa fa-eye text-primary mr-1"></i> Visibilidad de la Sección
-                                                de Reseñas en la Web</div>
-                                            <small class="text-muted">Si la apagas, el bloque completo de opiniones
-                                                desaparecerá de la página de inicio.</small>
+                                                    class="fa fa-eye text-primary mr-1"></i> Visibilidad de Testimonios
+                                                de Comunidad en Portada</div>
+                                            <small class="text-muted">Si la apagas, la sección "La Opinión de Nuestra
+                                                Comunidad" desaparecerá de la página de inicio.</small>
                                         </div>
                                         <div class="custom-control custom-switch">
                                             <input type="checkbox" class="custom-control-input"
@@ -1620,9 +1620,18 @@
                                         </div>
                                     </div>
 
-                                    <!-- Bandeja de Moderación de Reseñas Reales -->
-                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">Bandeja de
-                                        Moderación de Opiniones Verificadas:</div>
+                                    <!-- A. Testimonios de Comunidad en Portada (public.testimonios) -->
+                                    <div class="font-weight-bold text-primary small text-uppercase mb-2">
+                                        <i class="fa fa-comments mr-1"></i> A. Testimonios de Comunidad en Portada (Tabla: public.testimonios)
+                                    </div>
+                                    <div id="community-testimonials-admin-list" class="mb-4">
+                                        <!-- Renderizado dinámicamente por js/admin-dashboard.js -->
+                                    </div>
+
+                                    <!-- B. Reseñas de Alquileres por Vehículo (public.resenas) -->
+                                    <div class="font-weight-bold text-muted small text-uppercase mb-2">
+                                        <i class="fa fa-car mr-1"></i> B. Reseñas de Alquileres por Vehículo (Tabla: public.resenas)
+                                    </div>
                                     <div id="verified-reviews-moderation-list">
                                         <!-- Renderizado dinámicamente por js/admin-dashboard.js -->
                                     </div>
@@ -2138,15 +2147,15 @@
 
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_10"></script>
+    <script src="js/supabase-client.js?v=20261125_11"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <!-- Motor de Configuración y Panel de Administración -->
-    <script src="js/config.js?v=20261125_10"></script>
-    <script src="js/admin-dashboard.js?v=20261125_10"></script>
+    <script src="js/config.js?v=20261125_11"></script>
+    <script src="js/admin-dashboard.js?v=20261125_11"></script>
 </body>
 
 </html>

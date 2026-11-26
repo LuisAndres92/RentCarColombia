@@ -671,3 +671,43 @@ async function dbDeleteMensajeContacto(id) {
         try { await client.from('mensajes_contacto').delete().eq('id', id); } catch (e) { }
     }
 }
+
+/** ================= 10. TESTIMONIOS DE COMUNIDAD (PORTADA) ================= **/
+async function dbGetTestimonios() {
+    const client = getSupabaseClient();
+    if (client) {
+        try {
+            const { data, error } = await client.from('testimonios').select('*').order('creado_en', { ascending: false });
+            if (!error && data) {
+                const mapped = data.map(t => ({
+                    id: t.id,
+                    name: t.nombre_cliente,
+                    roleOrCity: t.rol_o_ciudad,
+                    photo: t.foto_url || 'img/testimonial-1.jpg',
+                    rating: parseInt(t.calificacion, 10) || 5,
+                    text: t.comentario,
+                    car: t.vehiculo_alquilado || '',
+                    verified: t.verificado !== false,
+                    createdAt: t.creado_en
+                }));
+                localStorage.setItem('rentcar_community_testimonials', JSON.stringify(mapped));
+                return mapped;
+            }
+        } catch (e) { console.warn("Cargando testimonios desde Supabase:", e); }
+    }
+    try { return JSON.parse(localStorage.getItem('rentcar_community_testimonials')) || []; } catch (e) { return []; }
+}
+
+async function dbUpdateTestimonioVerified(id, verified) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('testimonios').update({ verificado: !!verified }).eq('id', id); } catch (e) { }
+    }
+}
+
+async function dbDeleteTestimonio(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try { await client.from('testimonios').delete().eq('id', id); } catch (e) { }
+    }
+}
