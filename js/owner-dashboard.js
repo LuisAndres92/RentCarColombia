@@ -254,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hintEl = document.getElementById(t.hintId || 'car-soat-ocr-hint');
 
         const upper = String(rawText).toUpperCase();
+        console.log('[SOAT DEBUG] extracted text:', upper.slice(0, 1200));
         const compactDigits = upper.replace(/[\s\-().]/g, '');
         const phonesInText = [
             ...upper.matchAll(/(?:^|[^0-9])(3\d{9})(?:[^0-9]|$)/g),
@@ -262,14 +263,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const isPhoneLike = (val) => {
             if (!val) return true;
             if (/^3\d{9}$/.test(val)) return true;
-            return phonesInText.some(ph => ph === val || ph.endsWith(val) || ph.includes(val));
+            if (phonesInText.some(ph => ph === val || ph.endsWith(val) || ph.includes(val))) return true;
+            // Si aparece un "3" separado justo antes (ej. "3 162357871" o "B162357871" por OCR del teléfono)
+            if (val.length === 9 && new RegExp('(?:3|B|S)\\s*' + val + '(?:[^0-9]|$)').test(upper)) return true;
+            return false;
         };
 
         const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
-        const ccCandidates = [...upper.matchAll(/(?:^|[^A-Z0-9])(?:CC|CE|NIT|TI)[\s\S]{0,60}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
+        const ccCandidates = [...upper.matchAll(/(?:^|[^A-Z0-9])(?:C\.?\s*C\.?|C\.?\s*E\.?|NIT|T\.?\s*I\.?)[\s\S]{0,60}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
             .map(m => m[1])
             .filter(d => !isPhoneLike(d));
-        const fallbackCandidates = [...upper.matchAll(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,180}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
+        const fallbackCandidates = [...upper.matchAll(/(?:NO\.?\s*DE\s*DOCUMENTO|DOCUMENTO\s+DEL\s+TOMADOR)[\s\S]{0,180}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/g)]
             .map(m => m[1])
             .filter(d => !isPhoneLike(d));
 
@@ -568,14 +572,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // Buscar No. de documento del tomador (para RUNT): primero debajo de "No.DE DOCUMENTO", o a la derecha de "CC"
-                const docLabels = items.filter(it => /NO\.?\s*DE\s*DOCUMENTO/i.test(it.str));
+                // Buscar No. de documento del tomador (para RUNT): debajo de "No.DE DOCUMENTO" / "DOCUMENTO" (sin confundir con "TIPO DE DOCUMENTO")
+                const docLabels = items.filter(it => /DOCUMENTO/i.test(it.str) && !/TIPO/i.test(it.str));
                 for (const dLbl of docLabels) {
                     const nearbyDoc = items.filter(it => {
                         if (it === dLbl) return false;
                         const dx = it.x - dLbl.x;
                         const dyBelow = dLbl.y - it.y;
-                        return dyBelow >= 2 && dyBelow <= 55 && dx >= -15 && dx <= 85;
+                        return dyBelow >= 2 && dyBelow <= 65 && dx >= -25 && dx <= 95;
                     }).sort((a, b) => (Math.abs(a.x - dLbl.x) + (dLbl.y - a.y)) - (Math.abs(b.x - dLbl.x) + (dLbl.y - b.y)));
                     for (const cand of nearbyDoc) {
                         const digits = cand.str.replace(/\D/g, '');
