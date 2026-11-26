@@ -408,6 +408,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const selectedPaymentMethod = payTransfer && payTransfer.checked ? 'transfer' : 'wompi';
 
+            // Si eligió Pasarela Digital (Tarjeta / PSE), abrir checkout interactivo antes de registrar
+            if (selectedPaymentMethod === 'wompi' && !window._wompiCheckoutAuthorized) {
+                openWompiCheckoutModal(calc.total, function () {
+                    window._wompiCheckoutAuthorized = true;
+                    formBooking.dispatchEvent(new Event('submit', { cancelable: true }));
+                });
+                return;
+            }
+            window._wompiCheckoutAuthorized = false;
+
             // Si es transferencia y no adjuntó comprobante, confirmamos si desea continuar
             if (selectedPaymentMethod === 'transfer' && !receiptBase64 && !window._allowNoReceiptSubmit) {
                 if (typeof window.openAppConfirmModal === 'function') {
@@ -439,6 +449,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ownerId: car.ownerId,
                 ownerName: car.ownerName || 'Anfitrión Verificado',
                 ownerPhone: car.ownerPhone || '3162357871',
+                driverId: currentUser ? currentUser.id : '',
                 renterName: renterName,
                 renterEmail: renterEmail,
                 renterPhone: renterPhone,
@@ -456,13 +467,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 discountAmount: calc.discount,
                 netRental: calc.netRental,
                 platformFee: calc.platformFee,
+                commission15: calc.platformFee,
                 platformFeePercent: calc.commissionPercent,
                 ownerEarnings: calc.ownerEarnings,
+                ownerEarning85: calc.ownerEarnings,
                 deposit: calc.deposit,
                 totalPrice: calc.total,
+                totalPaid: calc.total,
                 paymentMethod: selectedPaymentMethod,
                 paymentReceipt: receiptBase64,
-                paymentStatus: selectedPaymentMethod === 'wompi' ? 'Aprobado (Pasarela Wompi)' : (receiptBase64 ? 'Comprobante Adjunto (Pendiente Verificación)' : 'Pendiente de Pago'),
+                paymentStatus: selectedPaymentMethod === 'wompi' ? 'Autorizado' : 'Pendiente',
                 status: 'Pendiente', // 'Pendiente', 'Aceptada', 'En Curso', 'Finalizada', 'Rechazada'
                 contractAccepted: true,
                 contractDate: new Date().toISOString(),
@@ -500,14 +514,130 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Sincronizar en tiempo real con Supabase en la nube
+            // Sincronizar en tiempo real con Supabase en la nube antes de mostrar confirmación
             if (typeof dbSaveReserva === 'function') {
-                dbSaveReserva(newBooking).catch(err => console.warn("Sincronización Supabase:", err));
+                await dbSaveReserva(newBooking).catch(err => console.warn("Sincronización Supabase:", err));
             }
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('bookings_updated');
 
             // Mostrar modal de confirmación con voucher
             showSuccessModal(newBooking);
         });
+    }
+
+    function openWompiCheckoutModal(totalAmount, onAuthorized) {
+        let mEl = document.getElementById('modalWompiCheckout');
+        if (!mEl) {
+            const w = document.createElement('div');
+            w.innerHTML = `
+                <div class="modal fade" id="modalWompiCheckout" tabindex="-1" role="dialog" aria-hidden="true" style="z-index:10090;">
+                    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                            <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                                <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-lock text-primary mr-2"></i>Pasarela Segura Wompi / PSE</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                            </div>
+                            <form id="form-wompi-checkout">
+                                <div class="modal-body p-4">
+                                    <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3">
+                                        <span class="small font-weight-bold text-dark">Total a autorizar (incluye fianza):</span>
+                                        <strong class="h5 text-primary mb-0" id="wompi-total-display">$0 COP</strong>
+                                    </div>
+                                    <ul class="nav nav-pills nav-fill mb-3 small" id="wompi-pay-tabs">
+                                        <li class="nav-item"><a class="nav-link active font-weight-bold" data-mode="card" href="javascript:void(0)"><i class="fa fa-credit-card mr-1"></i>Tarjeta</a></li>
+                                        <li class="nav-item"><a class="nav-link font-weight-bold" data-mode="pse" href="javascript:void(0)"><i class="fa fa-university mr-1"></i>PSE / Nequi</a></li>
+                                    </ul>
+                                    <div id="wompi-card-fields">
+                                        <div class="form-group mb-2">
+                                            <label class="small font-weight-bold">Número de Tarjeta *</label>
+                                            <input type="text" id="wompi-card-num" class="form-control" maxlength="19" placeholder="4532 0000 0000 0000" required>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 form-group mb-2">
+                                                <label class="small font-weight-bold">Vencimiento (MM/AA) *</label>
+                                                <input type="text" id="wompi-card-exp" class="form-control" maxlength="5" placeholder="12/28" required>
+                                            </div>
+                                            <div class="col-6 form-group mb-2">
+                                                <label class="small font-weight-bold">CVV *</label>
+                                                <input type="password" id="wompi-card-cvv" class="form-control" maxlength="4" placeholder="123" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label class="small font-weight-bold">Nombre en la Tarjeta *</label>
+                                            <input type="text" id="wompi-card-holder" class="form-control text-uppercase" placeholder="COMO APARECE EN LA TARJETA" required>
+                                        </div>
+                                    </div>
+                                    <div id="wompi-pse-fields" class="d-none">
+                                        <div class="form-group mb-2">
+                                            <label class="small font-weight-bold">Banco / Billetera *</label>
+                                            <select id="wompi-pse-bank" class="form-control">
+                                                <option value="Bancolombia">Bancolombia</option>
+                                                <option value="Nequi">Nequi</option>
+                                                <option value="Davivienda">Davivienda / Daviplata</option>
+                                                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                                <option value="BBVA">BBVA Colombia</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label class="small font-weight-bold">Celular o Cuenta PSE *</label>
+                                            <input type="text" id="wompi-pse-account" class="form-control" placeholder="Ej. 300 000 0000">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-2"><i class="fa fa-info-circle mr-1"></i>Modo simulación Sandbox: autoriza el cupo de prueba sin cobro real hasta conectar tu llave pública de Wompi.</small>
+                                </div>
+                                <div class="modal-footer bg-light py-2 px-4">
+                                    <button type="button" class="btn btn-light border btn-sm" data-dismiss="modal">Cancelar</button>
+                                    <button type="submit" id="wompi-submit-btn" class="btn btn-primary btn-sm font-weight-bold px-4"><i class="fa fa-shield-alt mr-1"></i> Autorizar Pago</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(w.firstElementChild);
+            mEl = document.getElementById('modalWompiCheckout');
+        }
+
+        document.getElementById('wompi-total-display').textContent = `$${formatCop(totalAmount)} COP`;
+        let mode = 'card';
+        const tabs = mEl.querySelectorAll('#wompi-pay-tabs .nav-link');
+        const cardDiv = document.getElementById('wompi-card-fields');
+        const pseDiv = document.getElementById('wompi-pse-fields');
+        const cardInputs = cardDiv.querySelectorAll('input');
+        const pseAcc = document.getElementById('wompi-pse-account');
+
+        tabs.forEach(t => {
+            t.onclick = function () {
+                tabs.forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                mode = t.dataset.mode;
+                if (mode === 'card') {
+                    cardDiv.classList.remove('d-none');
+                    pseDiv.classList.add('d-none');
+                    cardInputs.forEach(i => i.required = true);
+                    pseAcc.required = false;
+                } else {
+                    cardDiv.classList.add('d-none');
+                    pseDiv.classList.remove('d-none');
+                    cardInputs.forEach(i => i.required = false);
+                    pseAcc.required = true;
+                }
+            };
+        });
+
+        document.getElementById('form-wompi-checkout').onsubmit = function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('wompi-submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Autorizando...';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt mr-1"></i> Autorizar Pago';
+                $('#modalWompiCheckout').modal('hide');
+                if (typeof onAuthorized === 'function') onAuthorized();
+            }, 700);
+        };
+
+        $('#modalWompiCheckout').modal('show');
     }
 
     function showSuccessModal(b) {

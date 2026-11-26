@@ -286,29 +286,53 @@ async function dbGetReservas() {
                 .order('creado_en', { ascending: false });
 
             if (!error && data) {
-                const mapped = data.map(r => ({
-                    id: r.id,
-                    carId: r.vehiculo_id,
-                    ownerId: r.propietario_id,
-                    driverId: r.conductor_id,
-                    startDate: r.fecha_inicio,
-                    endDate: r.fecha_fin,
-                    totalDays: r.total_dias,
-                    dailyRate: parseFloat(r.tarifa_diaria),
-                    subtotal: parseFloat(r.subtotal_alquiler),
-                    commission15: parseFloat(r.comision_plataforma_15),
-                    ownerEarning85: parseFloat(r.ganancia_propietario_85),
-                    deposit: parseFloat(r.deposito_garantia),
-                    totalPaid: parseFloat(r.total_cobrado),
-                    paymentMethod: r.metodo_pago,
-                    paymentStatus: r.estado_pago,
-                    status: r.estado_reserva,
-                    extraDriverName: r.conductor_adicional_nombre || '',
-                    extraDriverLicense: r.conductor_adicional_licencia || '',
-                    driverIdImg: r.conductor_cedula_img || '',
-                    driverLicenseImg: r.conductor_licencia_img || '',
-                    createdAt: r.creado_en
-                }));
+                let carsCache = [];
+                let usersCache = [];
+                try { carsCache = JSON.parse(localStorage.getItem('renteasy_cars')) || []; } catch (_) { }
+                try { usersCache = JSON.parse(localStorage.getItem('renteasy_users')) || []; } catch (_) { }
+
+                const mapped = data.map(r => {
+                    const carObj = carsCache.find(c => String(c.id) === String(r.vehiculo_id)) || {};
+                    const driverObj = usersCache.find(u => String(u.id) === String(r.conductor_id)) || {};
+                    const ownerObj = usersCache.find(u => String(u.id) === String(r.propietario_id)) || {};
+                    const fee15 = parseFloat(r.comision_plataforma_15) || 0;
+                    const earn85 = parseFloat(r.ganancia_propietario_85) || 0;
+                    const tot = parseFloat(r.total_cobrado) || 0;
+                    return {
+                        id: r.id,
+                        carId: r.vehiculo_id,
+                        carName: carObj.fullName ? `${carObj.fullName} (${carObj.year || ''})`.trim() : (carObj.name || 'Vehículo'),
+                        carImage: carObj.image || 'img/car-rent-1.png',
+                        carCity: carObj.city || 'Colombia',
+                        ownerId: r.propietario_id,
+                        ownerName: carObj.ownerName || ownerObj.name || 'Anfitrión',
+                        ownerPhone: carObj.ownerPhone || ownerObj.phone || '',
+                        driverId: r.conductor_id,
+                        renterName: driverObj.name || 'Conductor',
+                        renterEmail: driverObj.email || '',
+                        renterPhone: driverObj.phone || '',
+                        startDate: r.fecha_inicio,
+                        endDate: r.fecha_fin,
+                        totalDays: r.total_dias,
+                        dailyRate: parseFloat(r.tarifa_diaria) || 0,
+                        subtotal: parseFloat(r.subtotal_alquiler) || 0,
+                        commission15: fee15,
+                        platformFee: fee15,
+                        ownerEarning85: earn85,
+                        ownerEarnings: earn85,
+                        deposit: parseFloat(r.deposito_garantia) || 200000,
+                        totalPaid: tot,
+                        totalPrice: tot,
+                        paymentMethod: r.metodo_pago,
+                        paymentStatus: r.estado_pago,
+                        status: r.estado_reserva,
+                        extraDriverName: r.conductor_adicional_nombre || '',
+                        extraDriverLicense: r.conductor_adicional_licencia || '',
+                        driverIdImg: r.conductor_cedula_img || '',
+                        driverLicenseImg: r.conductor_licencia_img || '',
+                        createdAt: r.creado_en
+                    };
+                });
                 localStorage.setItem('renteasy_bookings', JSON.stringify(mapped));
                 return mapped;
             }
@@ -326,25 +350,57 @@ async function dbGetReservas() {
 
 async function dbSaveReserva(reserva) {
     const client = getSupabaseClient();
+    const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
     if (client) {
         try {
             if (reserva.driverIdImg) reserva.driverIdImg = await dbUploadDataUrlToStorage(reserva.driverIdImg, 'kyc', 'cedula');
             if (reserva.driverLicenseImg) reserva.driverLicenseImg = await dbUploadDataUrlToStorage(reserva.driverLicenseImg, 'kyc', 'licencia');
+
+            // Asegurar UUID válido para conductor_id en perfiles
+            let conductorUuid = isUuid(reserva.driverId) ? reserva.driverId : null;
+            if (!conductorUuid && reserva.renterEmail) {
+                const { data: prof } = await client.from('perfiles').select('id').eq('email', reserva.renterEmail).maybeSingle();
+                if (prof && prof.id) {
+                    conductorUuid = prof.id;
+                } else {
+                    const { data: createdProf } = await client.from('perfiles').upsert([{
+                        email: reserva.renterEmail,
+                        nombre_completo: reserva.renterName || reserva.renterEmail.split('@')[0],
+                        telefono: reserva.renterPhone || '',
+                        rol: 'conductor'
+                    }], { onConflict: 'email' }).select('id');
+                    if (createdProf && createdProf[0]) conductorUuid = createdProf[0].id;
+                }
+            }
+
+            // Asegurar UUID válido para propietario_id desde vehiculos si hace falta
+            let ownerUuid = isUuid(reserva.ownerId) ? reserva.ownerId : null;
+            if (!ownerUuid && isUuid(reserva.carId)) {
+                const { data: veh } = await client.from('vehiculos').select('propietario_id').eq('id', reserva.carId).maybeSingle();
+                if (veh && veh.propietario_id) ownerUuid = veh.propietario_id;
+            }
+
+            // Normalizar estado_pago al CHECK constraint ('Pendiente', 'Autorizado', 'Capturado', 'Reembolsado')
+            const rawPay = String(reserva.paymentStatus || '').toLowerCase();
+            const safePayStatus = rawPay.includes('autoriz') || rawPay.includes('aprob') || reserva.paymentMethod === 'wompi'
+                ? 'Autorizado'
+                : (rawPay.includes('captur') ? 'Capturado' : (rawPay.includes('reembols') ? 'Reembolsado' : 'Pendiente'));
+
             const row = {
                 vehiculo_id: reserva.carId,
-                propietario_id: reserva.ownerId,
-                conductor_id: reserva.driverId,
+                propietario_id: ownerUuid || reserva.ownerId,
+                conductor_id: conductorUuid || reserva.driverId,
                 fecha_inicio: reserva.startDate,
                 fecha_fin: reserva.endDate,
-                total_dias: parseInt(reserva.totalDays) || 1,
+                total_dias: parseInt(reserva.totalDays, 10) || 1,
                 tarifa_diaria: parseFloat(reserva.dailyRate) || 0,
                 subtotal_alquiler: parseFloat(reserva.subtotal) || 0,
-                comision_plataforma_15: parseFloat(reserva.commission15) || 0,
-                ganancia_propietario_85: parseFloat(reserva.ownerEarning85) || 0,
+                comision_plataforma_15: parseFloat(reserva.commission15 ?? reserva.platformFee) || 0,
+                ganancia_propietario_85: parseFloat(reserva.ownerEarning85 ?? reserva.ownerEarnings) || 0,
                 deposito_garantia: parseFloat(reserva.deposit) || 200000,
-                total_cobrado: parseFloat(reserva.totalPaid) || 0,
-                metodo_pago: reserva.paymentMethod || 'PSE / Wompi',
-                estado_pago: reserva.paymentStatus || 'Autorizado',
+                total_cobrado: parseFloat(reserva.totalPaid ?? reserva.totalPrice) || 0,
+                metodo_pago: reserva.paymentMethod === 'wompi' ? 'Tarjeta / Wompi' : (reserva.paymentMethod || 'Transferencia'),
+                estado_pago: safePayStatus,
                 estado_reserva: reserva.status || 'Pendiente',
                 conductor_adicional_nombre: reserva.extraDriverName || null,
                 conductor_adicional_licencia: reserva.extraDriverLicense || null,
@@ -353,7 +409,9 @@ async function dbSaveReserva(reserva) {
             };
 
             const { data, error } = await client.from('reservas').insert([row]).select();
-            if (!error && data && data[0]) {
+            if (error) {
+                console.warn('Error insertando reserva en Supabase:', error);
+            } else if (data && data[0]) {
                 reserva.id = data[0].id;
             }
         } catch (err) {
@@ -363,8 +421,10 @@ async function dbSaveReserva(reserva) {
 
     let bookings = [];
     try { bookings = JSON.parse(localStorage.getItem('renteasy_bookings')) || []; } catch(e) {}
-    bookings.unshift(reserva);
-    localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
+    if (!bookings.some(b => String(b.id) === String(reserva.id))) {
+        bookings.unshift(reserva);
+        localStorage.setItem('renteasy_bookings', JSON.stringify(bookings));
+    }
     return reserva;
 }
 
