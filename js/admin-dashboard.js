@@ -715,8 +715,8 @@ window.verifyPlateInRunt = function (plate, ownerId, soatOwnerDoc) {
     }
     const users = typeof getUsers === 'function' ? getUsers() : [];
     const owner = ownerId ? users.find(u => u.id === ownerId) : null;
-    const ownerDoc = owner?.documentNumber || owner?.cedula || owner?.nit || soatOwnerDoc || '';
-    const docSource = (owner?.documentNumber || owner?.cedula || owner?.nit) ? (owner?.name || 'Propietario') : (soatOwnerDoc ? 'Tomador en SOAT' : 'Propietario');
+    const ownerDoc = soatOwnerDoc || owner?.documentNumber || owner?.cedula || owner?.nit || '';
+    const docSource = soatOwnerDoc ? 'Tomador en SOAT' : (owner?.name || 'Propietario');
     const ownerName = docSource;
 
     let mEl = document.getElementById('modalRuntHelper');

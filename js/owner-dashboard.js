@@ -162,8 +162,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const upper = String(rawText).toUpperCase();
         const docStructured = upper.match(/__SOAT_TOMADOR_DOC__:(\d{5,15})/);
-        const docFallback = upper.match(/(?:DOCUMENTO\s+DEL\s+TOMADOR|NO\.?\s*DE\s*DOCUMENTO[\sA-Z]{0,18})[\s\S]{0,120}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
-        const foundHolderDoc = docStructured ? docStructured[1] : (docFallback ? docFallback[1] : '');
+        const docByTipo = upper.match(/(?:^|[^A-Z])(?:CC|CE|NIT|TI)[\s:.\-|]{1,25}(\d{6,12})(?:[^0-9]|$)/);
+        const docFallback = upper.match(/NO\.?\s*DE\s*DOCUMENTO[\s\S]{0,120}?(?:^|[^0-9])(\d{6,12})(?:[^0-9]|$)/);
+        const foundHolderDoc = docStructured ? docStructured[1] : (docFallback ? docFallback[1] : (docByTipo ? docByTipo[1] : ''));
         if (foundHolderDoc && !t.plateInputId) {
             detectedSoatHolderDoc = foundHolderDoc;
         }
@@ -372,34 +373,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!target || target.length < 5) return null;
         const norm = (p) => String(p || '').replace(/[\s\-]/g, '').trim().toUpperCase();
 
-        const localMatch = (getAllCars() || []).find(c => String(c.id) !== String(excludeCarId || '') && norm(c.plate) === target);
-        if (localMatch) return localMatch;
-
+        // Consultar siempre la lista fresca de Supabase (si está conectado) para no usar caché obsoleta si el admin borró el auto
+        let carsList = [];
         try {
-            if (typeof getSupabaseClient === 'function') {
-                const sb = getSupabaseClient();
-                if (sb) {
-                    const { data } = await sb.from('cars').select('id, plate, status, owner_id, owner_name, brand, model, extra_data');
-                    if (Array.isArray(data)) {
-                        const remote = data.find(c => {
-                            if (String(c.id) === String(excludeCarId || '')) return false;
-                            const p = c.plate || (c.extra_data && c.extra_data.plate) || '';
-                            return norm(p) === target;
-                        });
-                        if (remote) {
-                            return {
-                                id: remote.id,
-                                plate: remote.plate || (remote.extra_data && remote.extra_data.plate) || target,
-                                status: remote.status || (remote.extra_data && remote.extra_data.status) || 'En Revisión',
-                                ownerId: remote.owner_id || (remote.extra_data && remote.extra_data.ownerId) || '',
-                                fullName: [remote.brand, remote.model].filter(Boolean).join(' ')
-                            };
-                        }
-                    }
-                }
+            if (typeof dbGetVehiculos === 'function') {
+                carsList = await dbGetVehiculos();
+            } else {
+                carsList = getAllCars() || [];
             }
-        } catch (_) { }
-        return null;
+        } catch (_) {
+            carsList = getAllCars() || [];
+        }
+
+        const match = (carsList || []).find(c => String(c.id) !== String(excludeCarId || '') && norm(c.plate) === target);
+        return match || null;
     }
 
     function buildDuplicatePlateMessage(dup, plate) {

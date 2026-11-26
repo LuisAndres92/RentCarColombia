@@ -68,7 +68,9 @@ async function dbGetVehiculos() {
                         description: v.descripcion || v.description || '',
                         image: v.imagen_url || v.image || 'img/car-rent-1.png',
                         images: Array.isArray(v.galeria_imagenes) && v.galeria_imagenes.length > 0 ? v.galeria_imagenes : [v.imagen_url || v.image || 'img/car-rent-1.png'],
-                        priceNegotiation: v.negociacion_tarifa || null,
+                        priceNegotiation: (v.negociacion_tarifa && v.negociacion_tarifa.status) ? v.negociacion_tarifa : null,
+                        soatOwnerDoc: (v.negociacion_tarifa && v.negociacion_tarifa._soatMeta && v.negociacion_tarifa._soatMeta.ownerDoc) || v.soat_tomador_doc || '',
+                        soatPdfPassword: (v.negociacion_tarifa && v.negociacion_tarifa._soatMeta && v.negociacion_tarifa._soatMeta.pdfPwd) || v.soat_pdf_clave || '',
                         status: v.estado || v.status || 'Activo',
                         ownerId: v.propietario_id || v.ownerId,
                         hostType: v.tipo_anfitrion || 'Rentadora Aliada',
@@ -163,7 +165,14 @@ async function dbSaveVehiculo(vehiculo) {
                 descripcion: vehiculo.description || vehiculo.desc || '',
                 imagen_url: vehiculo.image || 'img/car-rent-1.png',
                 galeria_imagenes: uploadedGallery,
-                negociacion_tarifa: vehiculo.priceNegotiation || null,
+                negociacion_tarifa: (vehiculo.priceNegotiation || vehiculo.soatOwnerDoc || vehiculo.soatPdfPassword)
+                    ? Object.assign({}, vehiculo.priceNegotiation || {}, {
+                        _soatMeta: {
+                            ownerDoc: vehiculo.soatOwnerDoc || '',
+                            pdfPwd: vehiculo.soatPdfPassword || ''
+                        }
+                    })
+                    : null,
                 propietario_id: vehiculo.ownerId || null,
                 estado: vehiculo.status || 'En Revision',
                 tipo_anfitrion: vehiculo.hostType || 'Rentadora Aliada',
