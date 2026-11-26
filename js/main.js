@@ -288,19 +288,28 @@
                 }
             });
 
+            // Garantizar que la cuenta maestra admin@rentcarcolombia.com nunca pierda su rol admin
+            if ((u.email || '').toLowerCase().trim() === 'admin@rentcarcolombia.com' && u.role !== 'admin') {
+                u.role = 'admin';
+                localStorage.setItem('renteasy_current_user', JSON.stringify(u));
+            }
+
             // En dashboard-propietario.html, actualizar nombre e icono en la barra si existe
             const ownerNavName = document.getElementById('nav-user-name');
             if (ownerNavName) {
                 ownerNavName.innerText = u.name;
             }
 
-            // 2. Si ya existe el dropdown dinámico renderizado, actualizar datos
+            // 2. Si ya existe el dropdown dinámico renderizado, actualizar datos (y recrear si cambió el rol)
             const existingDropdown = document.querySelector('.user-profile-nav-item');
             if (existingDropdown) {
-                existingDropdown.querySelectorAll('.user-current-avatar').forEach(img => img.src = userPhoto);
-                existingDropdown.querySelectorAll('.user-current-name').forEach(span => span.textContent = firstName);
-                existingDropdown.querySelectorAll('.user-full-name').forEach(div => div.textContent = u.name);
-                return;
+                if (existingDropdown.dataset.userRole === u.role) {
+                    existingDropdown.querySelectorAll('.user-current-avatar').forEach(img => img.src = userPhoto);
+                    existingDropdown.querySelectorAll('.user-current-name').forEach(span => span.textContent = firstName);
+                    existingDropdown.querySelectorAll('.user-full-name').forEach(div => div.textContent = u.name);
+                    return;
+                }
+                existingDropdown.remove();
             }
 
             // 3. Localizar el botón/enlace de inicio de sesión de forma infalible
@@ -346,6 +355,7 @@
             const userDropdown = document.createElement('div');
             userDropdown.className = 'nav-item dropdown user-profile-nav-item d-inline-block';
             userDropdown.id = 'nav-user-dropdown';
+            userDropdown.dataset.userRole = u.role || 'conductor';
             userDropdown.innerHTML = `
                 <a href="javascript:void(0)" class="nav-link dropdown-toggle d-flex align-items-center py-2 text-white font-weight-bold" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="cursor: pointer;">
                     <img src="${userPhoto}" alt="${u.name}" class="rounded-circle border mr-2 user-current-avatar" style="width: 34px; height: 34px; object-fit: cover; border-color: rgba(255,255,255,0.4) !important;" onerror="this.src='img/team-1.jpg'">
@@ -421,7 +431,8 @@
                             const meta = sbUser.user_metadata || {};
                             let curUser = null;
                             try { curUser = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) {}
-                            const currentRole = (curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
+                            const isMasterAdmin = (sbUser.email || '').toLowerCase().trim() === 'admin@rentcarcolombia.com';
+                            const currentRole = isMasterAdmin ? 'admin' : ((curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor');
                             const syncedUser = {
                                 id: sbUser.id,
                                 name: meta.full_name || meta.name || (curUser && curUser.name) || sbUser.email.split('@')[0],
@@ -451,7 +462,8 @@
                         const meta = sbUser.user_metadata || {};
                         let curUser = null;
                         try { curUser = JSON.parse(localStorage.getItem('renteasy_current_user')); } catch (e) {}
-                        const currentRole = (curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor';
+                        const isMasterAdmin = (sbUser.email || '').toLowerCase().trim() === 'admin@rentcarcolombia.com';
+                        const currentRole = isMasterAdmin ? 'admin' : ((curUser && curUser.role) || meta.role || localStorage.getItem('renteasy_pending_role') || 'conductor');
                         const syncedUser = {
                             id: sbUser.id,
                             name: meta.full_name || meta.name || (curUser && curUser.name) || sbUser.email.split('@')[0],
