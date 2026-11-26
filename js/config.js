@@ -1465,3 +1465,102 @@ window.openDocumentPreview = async function (dataUrl, title, passwordHint) {
 
     bodyEl.innerHTML = `<iframe src="${viewUrl}" style="width:100%;height:72vh;border:0;border-radius:8px;background:#ffffff;"></iframe>`;
 };
+
+/** ================= CONTROL GLOBAL DE INACTIVIDAD (30 MINUTOS REALES) ================= **/
+(function initGlobalInactivityGuard() {
+    if (window._rentcarInactivityInitialized) return;
+    window._rentcarInactivityInitialized = true;
+
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+    let lastWrite = 0;
+
+    function isTimedOut() {
+        const currentUser = localStorage.getItem('renteasy_current_user');
+        if (!currentUser) return false;
+        const storedLast = parseInt(localStorage.getItem('renteasy_last_activity'), 10);
+        if (!storedLast || isNaN(storedLast)) {
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
+            return false;
+        }
+        return (Date.now() - storedLast) >= INACTIVITY_LIMIT_MS;
+    }
+
+    async function doInactivityLogout() {
+        if (window._rentcarLoggingOutByInactivity) return;
+        window._rentcarLoggingOutByInactivity = true;
+        try {
+            sessionStorage.setItem('renteasy_explicit_logout', 'true');
+            localStorage.removeItem('renteasy_current_user');
+            localStorage.removeItem('renteasy_last_activity');
+            localStorage.removeItem('renteasy_pending_role');
+            const toDel = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('sb-') || k.includes('auth-token') || k.startsWith('renteasy_current_user'))) {
+                    toDel.push(k);
+                }
+            }
+            toDel.forEach(k => localStorage.removeItem(k));
+            if (typeof getSupabaseClient === 'function') {
+                const client = getSupabaseClient();
+                if (client && client.auth) {
+                    await Promise.race([
+                        client.auth.signOut({ scope: 'local' }),
+                        new Promise(r => setTimeout(r, 400))
+                    ]);
+                }
+            }
+        } catch (_) { }
+        const path = window.location.pathname.toLowerCase();
+        if (!path.includes('login.html')) {
+            const redir = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `LOGIN.html?reason=timeout&redirect=${redir}`;
+        } else if (new URLSearchParams(window.location.search).get('reason') !== 'timeout') {
+            window.location.href = 'LOGIN.html?reason=timeout';
+        }
+    }
+
+    function markActivity() {
+        if (!localStorage.getItem('renteasy_current_user')) return;
+        const now = Date.now();
+        if (now - lastWrite > 2500) {
+            lastWrite = now;
+            try { localStorage.setItem('renteasy_last_activity', now.toString()); } catch (_) { }
+        }
+    }
+
+    window.isSessionTimedOut = isTimedOut;
+    window.performInactivityLogout = doInactivityLogout;
+
+    if (isTimedOut()) {
+        doInactivityLogout();
+        return;
+    }
+
+    // Capturar interacción física real incluso dentro de modales o contenedores con scroll
+    ['mousedown', 'keydown', 'touchstart', 'scroll', 'click', 'input', 'change', 'wheel'].forEach(evt => {
+        window.addEventListener(evt, markActivity, { passive: true, capture: true });
+    });
+
+    let lastMove = 0;
+    window.addEventListener('mousemove', function () {
+        const now = Date.now();
+        if (now - lastMove > 10000) {
+            lastMove = now;
+            markActivity();
+        }
+    }, { passive: true, capture: true });
+
+    setInterval(function () {
+        if (isTimedOut()) doInactivityLogout();
+    }, 10000);
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && isTimedOut()) {
+            doInactivityLogout();
+        }
+    });
+    window.addEventListener('focus', function () {
+        if (isTimedOut()) doInactivityLogout();
+    });
+})();

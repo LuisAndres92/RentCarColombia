@@ -771,6 +771,7 @@
      * =========================================================================
      */
     (function setupInactivityMonitor() {
+        if (window._rentcarInactivityInitialized) return;
         const CHECK_INTERVAL_MS = 10 * 1000; // Verificar cada 10 segundos
         let lastInteraction = 0;
 

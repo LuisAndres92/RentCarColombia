@@ -339,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Iniciar sesión automáticamente
             sessionStorage.removeItem('renteasy_explicit_logout');
+            localStorage.setItem('renteasy_last_activity', Date.now().toString());
             localStorage.setItem('renteasy_current_user', JSON.stringify({
                 id: newUser.id,
                 name: newUser.name,
