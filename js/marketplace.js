@@ -254,7 +254,8 @@ function initCarDetail() {
                             city: prof.ciudad,
                             avatar: prof.avatar_url,
                             verified: prof.identidad_verificada,
-                            rating: prof.calificacion_promedio
+                            rating: prof.calificacion_promedio,
+                            createdAt: prof.creado_en
                         };
                     }
                 }
@@ -265,13 +266,23 @@ function initCarDetail() {
         const realAvatar = ownerObj?.avatar || '';
         const realPhone = (car.ownerPhone && car.ownerPhone !== '+57 316 235 7871') ? car.ownerPhone : (ownerObj?.phone || car.ownerPhone || '');
         const ownerCarsCount = allCars.filter(c => String(c.ownerId) === String(car.ownerId) && c.status === 'Activo').length || 1;
-        const ratingVal = ownerObj?.rating ? Number(ownerObj.rating).toFixed(1) : '5.0';
+        let realReviews = [];
+        try {
+            if (typeof dbGetResenas === 'function') await dbGetResenas();
+            const allRevs = JSON.parse(localStorage.getItem('renteasy_reviews')) || [];
+            realReviews = allRevs.filter(r => r.approved !== false && String(r.carId) === String(car.id));
+        } catch (_) { }
+        const ratingText = realReviews.length > 0
+            ? `${(realReviews.reduce((s, r) => s + (Number(r.rating) || 5), 0) / realReviews.length).toFixed(1)} (${realReviews.length})`
+            : 'Sin reseñas aún';
+        const sinceYear = ownerObj?.createdAt ? new Date(ownerObj.createdAt).getFullYear() : new Date().getFullYear();
 
         setElemText('detail-owner-name', realName);
         setElemText('detail-owner-city', realCity);
         setElemText('detail-owner-cars-count', `${ownerCarsCount} ${ownerCarsCount === 1 ? 'vehículo activo' : 'vehículos activos'}`);
+        setElemText('detail-owner-since', isNaN(sinceYear) ? '2026' : String(sinceYear));
         const ratingEl = document.getElementById('detail-owner-rating');
-        if (ratingEl) ratingEl.innerHTML = `<i class="fa fa-star mr-1"></i>${ratingVal}`;
+        if (ratingEl) ratingEl.innerHTML = `<i class="fa fa-star mr-1"></i>${ratingText}`;
         const verEl = document.getElementById('detail-owner-verified');
         if (verEl) verEl.textContent = (ownerObj?.verified || car.soatImage) ? 'Identidad y documentos verificados' : 'Anfitrión registrado en plataforma';
 

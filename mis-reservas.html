@@ -217,6 +217,7 @@
                                     <div class="text-muted small">Total Reserva (incl. fianza)</div>
                                     <h4 class="font-weight-bold text-primary mb-2">$${fmtCop(total)} COP</h4>
                                     <div class="d-flex justify-content-md-end flex-wrap" style="gap:6px;">
+                                        ${b.status === 'Finalizada' ? `<button type="button" class="btn btn-sm btn-warning font-weight-bold" onclick="openDriverReviewModal('${b.id}', '${b.carId}', '${(b.carName || '').replace(/'/g, '')}')"><i class="fa fa-star mr-1"></i> Calificar</button>` : ''}
                                         ${waUrl ? `<a href="${waUrl}" target="_blank" class="btn btn-sm btn-success font-weight-bold"><i class="fab fa-whatsapp mr-1"></i> Anfitrión</a>` : ''}
                                         <a href="detail.html?id=${encodeURIComponent(b.carId || '')}" class="btn btn-sm btn-outline-secondary font-weight-bold">Ver Auto</a>
                                     </div>
@@ -235,6 +236,71 @@
                     renderList(this.dataset.filter);
                 });
             });
+
+            window.openDriverReviewModal = function (bookingId, carId, carName) {
+                let mEl = document.getElementById('modalDriverReview');
+                if (!mEl) {
+                    const w = document.createElement('div');
+                    w.innerHTML = `
+                        <div class="modal fade" id="modalDriverReview" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:440px;">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                                    <div class="modal-header text-white py-3 px-4" style="background:#1C1E32;">
+                                        <h5 class="modal-title font-weight-bold text-white mb-0"><i class="fa fa-star text-warning mr-2"></i>Calificar Experiencia</h5>
+                                        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                                    </div>
+                                    <form id="form-driver-review">
+                                        <div class="modal-body p-4">
+                                            <p class="small text-muted mb-3">Vehículo: <strong id="rev-car-name" class="text-dark"></strong></p>
+                                            <div class="form-group">
+                                                <label class="small font-weight-bold">Calificación (1 a 5 estrellas) *</label>
+                                                <select id="rev-stars" class="form-control" required>
+                                                    <option value="5">★★★★★ (5 - Excelente)</option>
+                                                    <option value="4">★★★★☆ (4 - Muy bueno)</option>
+                                                    <option value="3">★★★☆☆ (3 - Bueno)</option>
+                                                    <option value="2">★★☆☆☆ (2 - Regular)</option>
+                                                    <option value="1">★☆☆☆☆ (1 - Malo)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-0">
+                                                <label class="small font-weight-bold">Tu comentario *</label>
+                                                <textarea id="rev-comment" class="form-control" rows="3" placeholder="¿Cómo estuvo el vehículo y la atención del anfitrión?" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light py-2 px-4">
+                                            <button type="button" class="btn btn-light border btn-sm" data-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-4">Enviar Reseña</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>`;
+                    document.body.appendChild(w.firstElementChild);
+                    mEl = document.getElementById('modalDriverReview');
+                }
+                document.getElementById('rev-car-name').textContent = carName || 'Vehículo';
+                document.getElementById('rev-comment').value = '';
+                document.getElementById('form-driver-review').onsubmit = async function (e) {
+                    e.preventDefault();
+                    const rev = {
+                        id: 'rev_' + Date.now(),
+                        bookingId: bookingId,
+                        carId: carId,
+                        carName: carName,
+                        userName: user.name || user.email,
+                        rating: parseInt(document.getElementById('rev-stars').value, 10) || 5,
+                        comment: document.getElementById('rev-comment').value.trim(),
+                        approved: true,
+                        createdAt: new Date().toISOString()
+                    };
+                    if (typeof dbSaveResena === 'function') {
+                        await dbSaveResena(rev).catch(() => {});
+                    }
+                    $('#modalDriverReview').modal('hide');
+                    alert('¡Gracias por tu calificación! Tu reseña ha sido registrada.');
+                };
+                $('#modalDriverReview').modal('show');
+            };
         });
     </script>
 </body>
