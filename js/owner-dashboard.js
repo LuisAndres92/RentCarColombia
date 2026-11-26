@@ -213,6 +213,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Por favor sube al menos una fotografía de tu vehículo (o agrega un enlace URL) para elegir la imagen principal.');
                 return;
             }
+            if (!uploadedSoatImg || !uploadedPolicyImg) {
+                alert('Por seguridad de la plataforma, debes adjuntar la foto o escaneo del SOAT vigente y la Póliza de Seguro antes de publicar.');
+                return;
+            }
 
             const brand = document.getElementById('car-brand').value.trim();
             const model = document.getElementById('car-model').value.trim();
@@ -1426,12 +1430,21 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.deleteCar = function (carId) {
-        const doDelete = function () {
+        const doDelete = async function () {
             let cars = getAllCars();
-            cars = cars.filter(c => c.id !== carId);
+            const target = cars.find(c => String(c.id) === String(carId));
+            cars = cars.filter(c => String(c.id) !== String(carId));
             localStorage.setItem('renteasy_cars', JSON.stringify(cars));
+            if (typeof dbDeleteVehiculo === 'function') {
+                await dbDeleteVehiculo(carId);
+            }
+            if (typeof window.logSystemEvent === 'function' && target) {
+                window.logSystemEvent('Flota', 'Vehículo eliminado por propietario', target.fullName || carId);
+            }
+            if (typeof window.broadcastLiveSync === 'function') window.broadcastLiveSync('cars_updated');
             renderDashboardStats();
             renderOwnerCars();
+            alert('Vehículo eliminado permanentemente.');
         };
         if (typeof window.openAppConfirmModal === 'function') {
             window.openAppConfirmModal({ title: 'Eliminar vehículo', message: '¿Estás seguro de que deseas eliminar este vehículo de tu catálogo?', confirmText: 'Eliminar', onConfirm: doDelete });

@@ -249,10 +249,19 @@
                                     <span class="text-muted font-weight-normal ml-1">(${ratingStats.count} ${ratingStats.count === 1 ? 'reseña' : 'reseñas'})</span>
                                 </div>
                             ` : ''}
+                            <div class="mb-2">
+                                <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1" style="font-size: 10px;">
+                                    <i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}
+                                </span>
+                                <span class="badge badge-light border text-dark ml-1" style="font-size: 10px;">
+                                    <i class="fa fa-satellite-dish ${car.hasGps !== false ? 'text-primary' : 'text-muted'} mr-1"></i>${car.hasGps !== false ? 'GPS Activo' : 'Sin GPS'}
+                                </span>
+                            </div>
                             <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-2 border">
                                 <div><i class="fa fa-cog text-primary"></i> ${displayTrans}</div>
                                 <div class="border-left border-right px-2"><i class="fa fa-gas-pump text-primary"></i> ${displayFuel}</div>
-                                <div><i class="fa fa-users text-primary"></i> ${displaySeats} Puestos</div>
+                                <div class="border-right pr-2"><i class="fa fa-users text-primary"></i> ${displaySeats}</div>
+                                <div><i class="fa fa-suitcase text-primary"></i> ${car.luggage || 3}</div>
                             </div>
                         </div>
                     </div>
@@ -528,7 +537,7 @@
         document.getElementById('qv-trans').textContent = car.transmission || 'Automático';
         document.getElementById('qv-fuel').textContent = car.fuel || 'Gasolina';
         document.getElementById('qv-seats').textContent = `${car.seats || 5} Puestos`;
-        document.getElementById('qv-mileage').textContent = car.mileage || '250 km/día';
+        document.getElementById('qv-mileage').textContent = `${car.mileage || '250 km/día'} • ${car.luggage || 3} Maletas • ${car.hasGps !== false ? 'GPS Activo' : 'Sin GPS'}`;
         document.getElementById('qv-desc').textContent = car.description || 'Vehículo en excelentes condiciones mecánicas y estéticas, listo para entregar.';
 
         const qvRentBtn = document.getElementById('qv-rent-btn');

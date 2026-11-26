@@ -498,17 +498,17 @@
 
                             <div class="row p-3 bg-light border rounded mb-4">
                                 <div class="col-12 mb-2">
-                                    <div class="font-weight-bold text-dark small"><i class="fa fa-shield-alt text-primary mr-1"></i> Documentación de Respaldo (Para verificación de Admin)</div>
+                                    <div class="font-weight-bold text-dark small"><i class="fa fa-shield-alt text-primary mr-1"></i> Documentación de Respaldo Obligatoria (Para verificación de Admin)</div>
                                 </div>
                                 <div class="col-md-6 mb-2">
-                                    <label class="small font-weight-semi-bold">Foto / Escaneo del SOAT Vigente (Opcional)</label>
-                                    <input type="file" id="car-soat-file" accept="image/*" class="form-control-file small">
-                                    <small id="car-soat-status" class="text-muted"></small>
+                                    <label class="small font-weight-semi-bold">Foto / Escaneo del SOAT Vigente *</label>
+                                    <input type="file" id="car-soat-file" accept="image/*" class="form-control-file small" required>
+                                    <small id="car-soat-status" class="text-muted">Obligatorio para publicar el vehículo</small>
                                 </div>
                                 <div class="col-md-6 mb-2">
-                                    <label class="small font-weight-semi-bold">Foto / Escaneo Póliza Todo Riesgo o Comercial (Opcional)</label>
-                                    <input type="file" id="car-policy-file" accept="image/*" class="form-control-file small">
-                                    <small id="car-policy-status" class="text-muted"></small>
+                                    <label class="small font-weight-semi-bold">Foto / Escaneo Póliza Todo Riesgo o Comercial *</label>
+                                    <input type="file" id="car-policy-file" accept="image/*" class="form-control-file small" required>
+                                    <small id="car-policy-status" class="text-muted">Obligatorio para publicar el vehículo</small>
                                 </div>
                             </div>
 
@@ -794,15 +794,15 @@
 
     <!-- Supabase SDK & Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-client.js?v=20261125_15"></script>
+    <script src="js/supabase-client.js?v=20261125_28"></script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js?v=20261125_25"></script>
-    <script src="js/config.js?v=20261125_17"></script>
+    <script src="js/config.js?v=20261125_28"></script>
     <script src="js/car-catalog.js?v=20261125_26"></script>
-    <script src="js/owner-dashboard.js?v=20261125_27"></script>
+    <script src="js/owner-dashboard.js?v=20261125_28"></script>
 </body>
 
 </html>

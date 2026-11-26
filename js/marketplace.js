@@ -132,6 +132,14 @@ function initCarCatalog() {
                         </div>
 
                         <!-- Especificaciones -->
+                        <div class="mb-2">
+                            <span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1" style="font-size: 10px;">
+                                <i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}
+                            </span>
+                            <span class="badge badge-light border text-dark ml-1" style="font-size: 10px;">
+                                <i class="fa fa-satellite-dish ${car.hasGps !== false ? 'text-primary' : 'text-muted'} mr-1"></i>${car.hasGps !== false ? 'GPS Activo' : 'Sin GPS'}
+                            </span>
+                        </div>
                         <div class="d-flex justify-content-around py-2 px-1 bg-light rounded text-center small mb-3 border">
                             <div class="px-1">
                                 <i class="fa fa-cog text-primary"></i>
@@ -141,9 +149,13 @@ function initCarCatalog() {
                                 <i class="fa fa-gas-pump text-primary"></i>
                                 <div class="font-weight-semi-bold">${displayFuel}</div>
                             </div>
-                            <div class="px-1">
+                            <div class="px-1 border-right">
                                 <i class="fa fa-users text-primary"></i>
-                                <div class="font-weight-semi-bold">${displaySeats} Puestos</div>
+                                <div class="font-weight-semi-bold">${displaySeats}</div>
+                            </div>
+                            <div class="px-1">
+                                <i class="fa fa-suitcase text-primary"></i>
+                                <div class="font-weight-semi-bold">${car.luggage || 3}</div>
                             </div>
                         </div>
 
@@ -209,9 +221,15 @@ function initCarDetail() {
     setElemText('detail-trans', car.transmission);
     setElemText('detail-fuel', car.fuel);
     setElemText('detail-seats', `${car.seats} Pasajeros`);
+    setElemText('detail-luggage', `${car.luggage || 3} Maletas`);
+    setElemText('detail-gps', car.hasGps !== false ? 'GPS Activo' : 'Sin GPS');
     setElemText('detail-mileage', car.mileage || '200 km/día');
     setElemText('detail-description', car.description || 'Vehículo verificado en excelentes condiciones.');
     setElemText('detail-owner-name', car.ownerName || 'Anfitrión Certificado');
+    const hostBadgeEl = document.getElementById('detail-host-badge');
+    if (hostBadgeEl) {
+        hostBadgeEl.innerHTML = `<span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1"><i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}</span>`;
+    }
     setElemText('detail-price-day', `$${formatPrice(car.pricePerDay)} COP`);
 
     const mainImg = document.getElementById('detail-main-img');

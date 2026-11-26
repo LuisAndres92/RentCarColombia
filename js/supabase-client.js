@@ -179,6 +179,17 @@ async function dbUpdateVehiculo(vehiculo) {
     return vehiculo;
 }
 
+async function dbDeleteVehiculo(id) {
+    const client = getSupabaseClient();
+    if (client && id) {
+        try {
+            await client.from('vehiculos').delete().eq('id', id);
+        } catch (err) {
+            console.warn("Error eliminando vehículo en Supabase:", err);
+        }
+    }
+}
+
 /** ================= 2. RESERVAS ================= **/
 async function dbGetReservas() {
     const client = getSupabaseClient();
