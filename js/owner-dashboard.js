@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
         categoryEl: document.getElementById('car-category'),
         seatsEl: document.getElementById('car-seats')
     });
+    attachClearButtonToFields(['car-brand', 'car-model', 'car-price', 'car-city', 'car-mileage']);
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -723,6 +724,73 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ================= HELPERS GLOBALES ================= //
 
+    function attachInputClearButton(inputEl) {
+        if (!inputEl || inputEl.dataset.clearBound) return;
+        inputEl.dataset.clearBound = '1';
+
+        let wrap = inputEl.parentNode;
+        const insideInputGroup = wrap.classList && wrap.classList.contains('input-group');
+        if (!wrap.classList || !wrap.classList.contains('rc-ac-wrap')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'rc-ac-wrap';
+            wrapper.style.cssText = insideInputGroup
+                ? 'position:relative; flex:1 1 auto; width:1%; min-width:0;'
+                : 'position:relative; width:100%;';
+            inputEl.parentNode.insertBefore(wrapper, inputEl);
+            wrapper.appendChild(inputEl);
+            if (insideInputGroup) {
+                inputEl.style.borderTopLeftRadius = '0';
+                inputEl.style.borderBottomLeftRadius = '0';
+            }
+            wrap = wrapper;
+        }
+
+        const isNum = inputEl.type === 'number';
+        inputEl.style.paddingRight = isNum ? '44px' : '32px';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rc-clear-btn';
+        btn.setAttribute('aria-label', 'Limpiar campo');
+        btn.setAttribute('title', 'Limpiar');
+        btn.innerHTML = '&times;';
+        btn.style.cssText = `position:absolute; right:${isNum ? '24px' : '8px'}; top:50%; transform:translateY(-50%); width:20px; height:20px; border:none; border-radius:50%; background:rgba(28,30,50,0.08); color:#6c757d; font-size:14px; line-height:18px; text-align:center; padding:0; cursor:pointer; display:none; z-index:5; transition:all 0.15s ease;`;
+        wrap.appendChild(btn);
+
+        const syncVisibility = () => {
+            btn.style.display = (inputEl.value && inputEl.value.length > 0) ? 'inline-block' : 'none';
+        };
+
+        btn.addEventListener('mouseenter', () => {
+            btn.style.background = '#F77D0A';
+            btn.style.color = '#fff';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.background = 'rgba(28,30,50,0.08)';
+            btn.style.color = '#6c757d';
+        });
+        btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            inputEl.value = '';
+            syncVisibility();
+            inputEl.focus();
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        inputEl.addEventListener('input', syncVisibility);
+        inputEl.addEventListener('change', syncVisibility);
+        inputEl._syncClearBtn = syncVisibility;
+        syncVisibility();
+    }
+
+    function attachClearButtonToFields(ids) {
+        (ids || []).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) attachInputClearButton(el);
+        });
+    }
+
     function attachTypeaheadAutocomplete(inputEl, getItemsFn) {
         if (!inputEl || inputEl.dataset.acBound) return;
         inputEl.dataset.acBound = '1';
@@ -1021,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 categoryEl: document.getElementById('edit-car-category'),
                 seatsEl: document.getElementById('edit-car-seats')
             });
+            attachClearButtonToFields(['edit-car-brand', 'edit-car-model', 'edit-car-price', 'edit-car-city', 'edit-car-mileage']);
 
             document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
                 const files = Array.from(evt.target.files || []);
@@ -1137,6 +1206,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('edit-car-mileage').value = car.mileage || '250 km/día';
         document.getElementById('edit-car-status').value = car.status || 'Activo';
         document.getElementById('edit-car-description').value = car.description || car.desc || '';
+        ['edit-car-brand', 'edit-car-model', 'edit-car-price', 'edit-car-city', 'edit-car-mileage'].forEach(fid => {
+            const fel = document.getElementById(fid);
+            if (fel && typeof fel._syncClearBtn === 'function') fel._syncClearBtn();
+        });
         renderEditGallery();
 
         $('#modalEditOwnerCar').modal('show');
