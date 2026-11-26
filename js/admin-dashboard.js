@@ -457,9 +457,11 @@ function renderFleetModeration(filterStatus = 'all') {
                             <i class="fa fa-times"></i>
                         </button>
                     ` : ''}
-                    <button type="button" class="btn ${car.featured ? 'btn-warning' : 'btn-outline-warning'}" title="${car.featured ? 'Quitar de destacados' : 'Destacar en portada'}" onclick="toggleFeatureCar('${car.id}')">
-                        <i class="fa fa-star"></i>
-                    </button>
+                    ${car.status === 'Activo' ? `
+                        <button type="button" class="btn ${car.featured ? 'btn-warning' : 'btn-outline-warning'}" title="${car.featured ? 'Quitar de destacados' : 'Destacar en portada'}" onclick="toggleFeatureCar('${car.id}')">
+                            <i class="fa fa-star"></i>
+                        </button>
+                    ` : ''}
                     <button type="button" class="btn btn-outline-danger" title="Eliminar definitivamente" onclick="deleteCarAdmin('${car.id}')">
                         <i class="fa fa-trash"></i>
                     </button>
