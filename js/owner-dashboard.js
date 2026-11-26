@@ -292,13 +292,13 @@ document.addEventListener('DOMContentLoaded', function () {
             expiryEl.readOnly = true;
             const st = computeSoatStatus(chosenDate);
             if (hintEl) {
-                hintEl.innerHTML = `<i class="fa fa-check-circle text-success mr-1"></i>Leído del SOAT: <strong>${st}</strong> (vence ${chosenDate})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}`;
+                hintEl.innerHTML = `<i class="fa fa-check-circle text-success mr-1"></i>Leído del SOAT: <strong>${st}</strong> (vence ${chosenDate})${foundPlate ? ` &bull; Placa <strong>${foundPlate}</strong>` : ''}${foundHolderDoc ? ` &bull; Doc. <strong>${foundHolderDoc}</strong>` : ''}`;
             }
         } else {
             if (expiryEl) expiryEl.readOnly = false;
             if (hintEl) {
                 hintEl.textContent = foundPlate
-                    ? `Placa detectada en SOAT: ${foundPlate}. Ingresa manualmente la fecha de vencimiento.`
+                    ? `Placa detectada en SOAT: ${foundPlate}${foundHolderDoc ? ` • Doc. ${foundHolderDoc}` : ''}. Ingresa manualmente la fecha de vencimiento.`
                     : 'Verifica o ingresa manualmente la fecha de vencimiento del SOAT.';
             }
         }

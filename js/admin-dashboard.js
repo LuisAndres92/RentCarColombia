@@ -768,10 +768,10 @@ window.verifyPlateInRunt = function (plate, ownerId, soatOwnerDoc) {
     const docRow = document.getElementById('runt-helper-doc-row');
     const docEl = document.getElementById('runt-helper-doc');
     if (ownerDoc) {
-        docRow.classList.remove('d-none');
+        docRow.style.setProperty('display', 'flex', 'important');
         docEl.textContent = ownerDoc;
     } else {
-        docRow.classList.add('d-none');
+        docRow.style.setProperty('display', 'none', 'important');
     }
 
     document.getElementById('runt-copy-plate-btn').onclick = function () {
