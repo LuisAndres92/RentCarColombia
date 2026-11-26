@@ -118,8 +118,7 @@ function checkAdminSession() {
     try {
         const user = JSON.parse(localStorage.getItem('renteasy_current_user'));
         if (!user || user.role !== 'admin') {
-            alert('Acceso restringido: Debes iniciar sesión con una cuenta de Administrador.');
-            window.location.replace('LOGIN.html');
+            window.location.replace('LOGIN.html?action=logged_out');
             return null;
         }
         document.querySelectorAll('.admin-display-name').forEach(el => el.innerText = user.name || 'Superadmin');
@@ -283,9 +282,7 @@ async function syncLiveDataFromSupabase() {
         // 3. Consultar perfiles registrados en Supabase
         const { data: dbProfiles, error: errProfiles } = await client.from('perfiles').select('*');
         if (!errProfiles && dbProfiles && dbProfiles.length > 0) {
-            const mappedUsers = dbProfiles
-                .filter(p => p.email !== 'propietario@ejemplo.com' && p.email !== 'conductor@ejemplo.com')
-                .map(p => ({
+            const mappedUsers = dbProfiles.map(p => ({
                     id: p.id,
                     name: p.nombre_completo || p.email.split('@')[0],
                     email: p.email,
@@ -2651,13 +2648,13 @@ function saveCars(cars) {
 function getUsers() {
     try {
         const raw = JSON.parse(localStorage.getItem('renteasy_users')) || [];
-        return raw.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+        return raw.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client');
     } catch (e) {
         return [];
     }
 }
 function saveUsers(users) {
-    const clean = (users || []).filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+    const clean = (users || []).filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client');
     localStorage.setItem('renteasy_users', JSON.stringify(clean));
 }
 
@@ -2736,7 +2733,7 @@ function initAdminData() {
     } catch (e) {
         users = [];
     }
-    users = users.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client' && u.email !== 'propietario@ejemplo.com' && u.email !== 'conductor@ejemplo.com');
+    users = users.filter(u => u && u.id !== 'usr_demo_host' && u.id !== 'usr_demo_client');
     if (!users.some(u => u.role === 'admin' || u.id === 'usr_admin')) {
         users.unshift({
             id: 'usr_admin',

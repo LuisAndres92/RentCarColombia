@@ -305,23 +305,31 @@ document.addEventListener('DOMContentLoaded', function () {
             if (typeof getSupabaseClient === 'function') {
                 const client = getSupabaseClient();
                 if (client) {
+                    let sbUserId = null;
                     if (client.auth) {
-                        client.auth.signUp({
-                            email: email,
-                            password: password,
-                            options: {
-                                data: { name: name, phone: phone, role: role, city: city, avatar_url: userAvatar }
-                            }
-                        }).catch(e => console.warn("Supabase signUp:", e));
+                        try {
+                            const signUpRes = await client.auth.signUp({
+                                email: email,
+                                password: password,
+                                options: {
+                                    data: { name: name, phone: phone, role: role, city: city, avatar_url: userAvatar }
+                                }
+                            });
+                            if (signUpRes?.data?.user?.id) sbUserId = signUpRes.data.user.id;
+                        } catch (e) { console.warn("Supabase signUp:", e); }
                     }
-                    client.from('perfiles').insert([{
-                        email: email,
-                        nombre_completo: name,
-                        telefono: phone,
-                        rol: role,
-                        ciudad: city,
-                        avatar_url: userAvatar
-                    }]).catch(e => console.warn("Supabase insert perfil:", e));
+                    try {
+                        const profilePayload = {
+                            email: email,
+                            nombre_completo: name,
+                            telefono: phone,
+                            rol: role,
+                            ciudad: city,
+                            avatar_url: userAvatar
+                        };
+                        if (sbUserId) profilePayload.id = sbUserId;
+                        await client.from('perfiles').upsert([profilePayload], { onConflict: 'email' });
+                    } catch (e) { console.warn("Supabase insert perfil:", e); }
                 }
             }
 

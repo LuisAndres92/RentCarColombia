@@ -131,6 +131,68 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function extractPdfTextWithOptionalPassword(buf, password) {
+        const opts = password ? { data: buf.slice(0), password } : { data: buf.slice(0) };
+        const pdf = await window.pdfjsLib.getDocument(opts).promise;
+        let fullText = '';
+        for (let p = 1; p <= Math.min(2, pdf.numPages); p++) {
+            const page = await pdf.getPage(p);
+            const tc = await page.getTextContent();
+            fullText += ' ' + tc.items.map(it => it.str).join(' ');
+        }
+        return fullText;
+    }
+
+    function askPdfPasswordModal(onSubmitPwd, onCancel) {
+        let mEl = document.getElementById('modalPdfPasswordPrompt');
+        if (!mEl) {
+            const w = document.createElement('div');
+            w.innerHTML = `
+                <div class="modal fade" id="modalPdfPasswordPrompt" tabindex="-1" role="dialog" aria-hidden="true" style="z-index:10080;">
+                    <div class="modal-dialog modal-dialog-centered modal-sm" role="document" style="max-width:410px;">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+                            <div class="modal-header text-white" style="background:#1C1E32;">
+                                <h6 class="modal-title font-weight-bold text-white"><i class="fa fa-lock text-primary mr-2"></i>PDF Protegido con Contraseña</h6>
+                                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                            </div>
+                            <form id="form-pdf-password-unlock">
+                                <div class="modal-body p-4">
+                                    <p class="small text-muted mb-3">Las aseguradoras suelen proteger el PDF del SOAT con tu <strong>número de cédula/NIT</strong> o la <strong>placa del vehículo</strong>. Ingrésala para leer los datos automáticamente:</p>
+                                    <input type="text" id="pdf-unlock-password-input" class="form-control mb-2" placeholder="Ej. Tu cédula o placa" required>
+                                    <small id="pdf-unlock-error" class="text-danger d-none">Contraseña incorrecta, intenta nuevamente o ingrésalo manual.</small>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-light border btn-sm" data-dismiss="modal">Ingresar fecha manual</button>
+                                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold">Desbloquear y Leer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(w.firstElementChild);
+            mEl = document.getElementById('modalPdfPasswordPrompt');
+        }
+        const inp = document.getElementById('pdf-unlock-password-input');
+        const errEl = document.getElementById('pdf-unlock-error');
+        inp.value = '';
+        errEl.classList.add('d-none');
+
+        const form = document.getElementById('form-pdf-password-unlock');
+        form.onsubmit = async function (e) {
+            e.preventDefault();
+            const ok = await onSubmitPwd(inp.value.trim());
+            if (ok) {
+                $('#modalPdfPasswordPrompt').modal('hide');
+            } else {
+                errEl.classList.remove('d-none');
+            }
+        };
+        $('#modalPdfPasswordPrompt').off('hidden.bs.modal.pdf').on('hidden.bs.modal.pdf', function () {
+            if (typeof onCancel === 'function') onCancel();
+        });
+        $('#modalPdfPasswordPrompt').modal('show');
+    }
+
     async function analyzeSoatDocument(file, dataUrl) {
         const hint = document.getElementById('car-soat-ocr-hint');
         if (hint) hint.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i>Analizando documento SOAT automáticamente...';
@@ -139,15 +201,41 @@ document.addEventListener('DOMContentLoaded', function () {
             if (isPdf && window.pdfjsLib) {
                 window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 const buf = await file.arrayBuffer();
-                const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-                let fullText = '';
-                for (let p = 1; p <= Math.min(2, pdf.numPages); p++) {
-                    const page = await pdf.getPage(p);
-                    const tc = await page.getTextContent();
-                    fullText += ' ' + tc.items.map(it => it.str).join(' ');
+                try {
+                    const fullText = await extractPdfTextWithOptionalPassword(buf, null);
+                    parseSoatTextAndFill(fullText);
+                    return;
+                } catch (pdfErr) {
+                    if (pdfErr && (pdfErr.name === 'PasswordException' || String(pdfErr.message || '').toLowerCase().includes('password'))) {
+                        // Intentar automáticamente claves comunes (placa escrita o teléfono/documento del usuario)
+                        const plateVal = (document.getElementById('car-plate')?.value || '').trim();
+                        const candidates = [plateVal.toUpperCase(), plateVal.toLowerCase(), currentUser.phone, currentUser.documentNumber].filter(Boolean);
+                        for (const cand of candidates) {
+                            try {
+                                const unlockedText = await extractPdfTextWithOptionalPassword(buf, cand);
+                                parseSoatTextAndFill(unlockedText);
+                                return;
+                            } catch (_) { }
+                        }
+                        // Si ninguna coincide, pedir la clave en un modal elegante
+                        let unlocked = false;
+                        askPdfPasswordModal(
+                            async (pwd) => {
+                                try {
+                                    const txt = await extractPdfTextWithOptionalPassword(buf, pwd);
+                                    unlocked = true;
+                                    parseSoatTextAndFill(txt);
+                                    return true;
+                                } catch (_) { return false; }
+                            },
+                            () => {
+                                if (!unlocked && hint) hint.textContent = 'PDF protegido: ingresa manualmente la placa y fecha de vencimiento.';
+                            }
+                        );
+                        return;
+                    }
+                    throw pdfErr;
                 }
-                parseSoatTextAndFill(fullText);
-                return;
             }
             // OCR para imágenes con Tesseract.js bajo demanda
             if (!isPdf) {

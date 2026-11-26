@@ -179,6 +179,7 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM public.preguntas_frecuentes);
 
 -- 12. Columnas para Enfoque A (Rentadoras Aliadas) + Bloqueo de Fechas + SOAT/Póliza/GPS/Maletas + KYC y Conductor Adicional
+ALTER TABLE public.perfiles ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS tipo_anfitrion text DEFAULT 'Rentadora Aliada';
 ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS nit_empresa text;
 
