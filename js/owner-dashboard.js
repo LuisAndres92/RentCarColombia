@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderWalletStats();
     setupWorkflowModals();
     setupMarketPriceHint();
+    attachColombiaCityAutocomplete(document.getElementById('car-city'));
 
     // 3b. Sincronizar en tiempo real con Supabase (vehículos, reservas y alertas del propietario)
     (async function syncOwnerLiveDataFromSupabase() {
@@ -715,6 +716,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ================= HELPERS GLOBALES ================= //
 
+    function attachColombiaCityAutocomplete(inputEl) {
+        if (!inputEl || inputEl.dataset.cityAcBound) return;
+        inputEl.dataset.cityAcBound = '1';
+
+        const cities = [
+            'Valledupar', 'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena',
+            'Santa Marta', 'Bucaramanga', 'Pereira', 'Manizales', 'Armenia', 'Cúcuta',
+            'Ibagué', 'Villavicencio', 'Neiva', 'Pasto', 'Montería', 'Sincelejo',
+            'Riohacha', 'Popayán', 'Tunja', 'Florencia', 'Yopal', 'Quibdó',
+            'San Andrés', 'Leticia', 'Mocoa', 'Arauca', 'San José del Guaviare',
+            'Palmira', 'Buenaventura', 'Envigado', 'Itagüí', 'Bello', 'Rionegro',
+            'Soacha', 'Chía', 'Zipaquirá', 'Floridablanca', 'Girón', 'Piedecuesta',
+            'Dosquebradas', 'Tuluá', 'Buga', 'Cartago', 'Soledad', 'Barrancabermeja',
+            'Apartadó', 'Turbo', 'Magangué', 'Lorica', 'Maicao', 'Aguachica',
+            'Codazzi', 'Bosconia', 'Ocaña', 'Sogamoso', 'Duitama', 'Fusagasugá',
+            'Girardot', 'Espinal', 'Pitalito', 'Ipiales', 'Tumaco', 'Sabanalarga'
+        ];
+
+        const parent = inputEl.parentNode;
+        if (getComputedStyle(parent).position === 'static') {
+            parent.style.position = 'relative';
+        }
+
+        const listBox = document.createElement('div');
+        listBox.className = 'list-group shadow-sm';
+        listBox.style.cssText = 'position:absolute; left:0; right:0; top:100%; z-index:10080; max-height:210px; overflow-y:auto; display:none; border-radius:0 0 8px 8px;';
+        parent.appendChild(listBox);
+
+        const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+        inputEl.addEventListener('input', function () {
+            const q = norm(this.value.trim());
+            if (!q) {
+                listBox.style.display = 'none';
+                listBox.innerHTML = '';
+                return;
+            }
+            const matches = cities.filter(c => norm(c).includes(q)).slice(0, 8);
+            if (matches.length === 0) {
+                listBox.style.display = 'none';
+                listBox.innerHTML = '';
+                return;
+            }
+            listBox.innerHTML = matches.map(c =>
+                `<button type="button" class="list-group-item list-group-item-action py-2 px-3 small text-left">${c}</button>`
+            ).join('');
+            listBox.style.display = 'block';
+        });
+
+        listBox.addEventListener('mousedown', function (e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            e.preventDefault();
+            inputEl.value = btn.textContent;
+            listBox.style.display = 'none';
+        });
+
+        inputEl.addEventListener('blur', function () {
+            setTimeout(() => { listBox.style.display = 'none'; }, 150);
+        });
+    }
+
     window.toggleCarStatus = function (carId) {
         const cars = getAllCars();
         const car = cars.find(c => c.id === carId);
@@ -800,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </div>
                                         <div class="col-md-4 form-group">
                                             <label class="small font-weight-bold">Ciudad</label>
-                                            <input type="text" id="edit-car-city" class="form-control" required>
+                                            <input type="text" id="edit-car-city" class="form-control" autocomplete="off" placeholder="Escribe la ciudad" required>
                                         </div>
                                         <div class="col-md-4 form-group">
                                             <label class="small font-weight-bold">Kilometraje Límite</label>
@@ -851,6 +914,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>`;
             document.body.appendChild(wrap.firstElementChild);
             modalEl = document.getElementById('modalEditOwnerCar');
+            attachColombiaCityAutocomplete(document.getElementById('edit-car-city'));
 
             document.getElementById('edit-car-photo-file').addEventListener('change', function (evt) {
                 const files = Array.from(evt.target.files || []);
