@@ -236,6 +236,59 @@ function initCarDetail() {
             : '<span class="badge badge-light border text-muted px-2 py-1 ml-1">Solo SOAT (Sin Todo Riesgo)</span>';
         hostBadgeEl.innerHTML = `<span class="badge ${car.hostType === 'Propietario Particular' ? 'badge-info' : 'badge-success'} px-2 py-1"><i class="fa fa-check-circle mr-1"></i>${car.hostType === 'Propietario Particular' ? 'Anfitrión Certificado' : 'Rentadora Verificada'}</span>${covBadge}`;
     }
+
+    // Enriquecer tarjeta "Conoce a tu Anfitrión" con datos reales del propietario
+    (async function populateHostCard() {
+        const usersList = typeof getUsers === 'function' ? getUsers() : [];
+        let ownerObj = usersList.find(u => String(u.id) === String(car.ownerId)) || null;
+        if (!ownerObj && car.ownerId && typeof getSupabaseClient === 'function') {
+            try {
+                const sb = getSupabaseClient();
+                if (sb) {
+                    const { data: prof } = await sb.from('perfiles').select('*').eq('id', car.ownerId).maybeSingle();
+                    if (prof) {
+                        ownerObj = {
+                            id: prof.id,
+                            name: prof.nombre_completo,
+                            phone: prof.telefono,
+                            city: prof.ciudad,
+                            avatar: prof.avatar_url,
+                            verified: prof.identidad_verificada,
+                            rating: prof.calificacion_promedio
+                        };
+                    }
+                }
+            } catch (_) { }
+        }
+        const realName = ownerObj?.name || car.ownerName || 'Anfitrión Certificado';
+        const realCity = ownerObj?.city || car.city || 'Colombia';
+        const realAvatar = ownerObj?.avatar || '';
+        const realPhone = (car.ownerPhone && car.ownerPhone !== '+57 316 235 7871') ? car.ownerPhone : (ownerObj?.phone || car.ownerPhone || '');
+        const ownerCarsCount = allCars.filter(c => String(c.ownerId) === String(car.ownerId) && c.status === 'Activo').length || 1;
+        const ratingVal = ownerObj?.rating ? Number(ownerObj.rating).toFixed(1) : '5.0';
+
+        setElemText('detail-owner-name', realName);
+        setElemText('detail-owner-city', realCity);
+        setElemText('detail-owner-cars-count', `${ownerCarsCount} ${ownerCarsCount === 1 ? 'vehículo activo' : 'vehículos activos'}`);
+        const ratingEl = document.getElementById('detail-owner-rating');
+        if (ratingEl) ratingEl.innerHTML = `<i class="fa fa-star mr-1"></i>${ratingVal}`;
+        const verEl = document.getElementById('detail-owner-verified');
+        if (verEl) verEl.textContent = (ownerObj?.verified || car.soatImage) ? 'Identidad y documentos verificados' : 'Anfitrión registrado en plataforma';
+
+        const avatarEl = document.getElementById('detail-owner-avatar');
+        if (avatarEl && realAvatar && !realAvatar.includes('team-1.jpg')) {
+            avatarEl.innerHTML = `<img src="${realAvatar}" alt="${realName}" style="width:100%;height:100%;object-fit:cover;">`;
+        } else if (avatarEl && realName) {
+            const initials = realName.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+            if (initials) avatarEl.textContent = initials;
+        }
+        const waBtn = document.getElementById('detail-owner-wa-btn');
+        const digits = String(realPhone || '').replace(/\D/g, '');
+        if (waBtn && digits.length >= 7) {
+            waBtn.href = `https://wa.me/${digits.startsWith('57') ? digits : '57' + digits}?text=${encodeURIComponent(`Hola ${realName}, me interesa alquilar tu ${car.fullName} (${car.year}) en Rent Car Colombia.`)}`;
+            waBtn.classList.remove('d-none');
+        }
+    })();
     setElemText('detail-price-day', `$${formatPrice(car.pricePerDay)} COP`);
 
     const mainImg = document.getElementById('detail-main-img');
@@ -308,6 +361,49 @@ function initCarDetail() {
     const threeDaysLater = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
     if (inputStart) inputStart.value = today;
     if (inputEnd) inputEnd.value = threeDaysLater;
+
+    if (inputStart && inputEnd && typeof window.flatpickr === 'function') {
+        const disabledRanges = [];
+        (car.blockedDates || []).forEach(d => disabledRanges.push(d));
+        try {
+            const bks = JSON.parse(localStorage.getItem('renteasy_bookings')) || [];
+            bks.forEach(b => {
+                if (String(b.carId) === String(car.id) && b.status !== 'Rechazada' && b.status !== 'Cancelada' && b.startDate && b.endDate) {
+                    disabledRanges.push({ from: b.startDate, to: b.endDate });
+                }
+            });
+        } catch (_) { }
+
+        const endFp = window.flatpickr(inputEnd, {
+            locale: 'es',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd M Y',
+            minDate: today,
+            defaultDate: threeDaysLater,
+            disable: disabledRanges,
+            onChange: () => updatePriceEstimate()
+        });
+        window.flatpickr(inputStart, {
+            locale: 'es',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd M Y',
+            minDate: 'today',
+            defaultDate: today,
+            disable: disabledRanges,
+            onChange: (sel) => {
+                if (sel && sel[0]) {
+                    const nextDay = new Date(sel[0].getTime() + 86400000).toISOString().split('T')[0];
+                    endFp.set('minDate', nextDay);
+                    if (inputEnd.value <= inputStart.value) {
+                        endFp.setDate(nextDay, true);
+                    }
+                }
+                updatePriceEstimate();
+            }
+        });
+    }
     updatePriceEstimate();
 
     // Formulario de Feedback / Reporte de Novedad

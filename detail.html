@@ -23,6 +23,18 @@
     <!-- Customized Bootstrap Stylesheet -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .flatpickr-calendar { border-radius: 14px; box-shadow: 0 12px 30px rgba(28,30,50,0.18); border: 1px solid #e9ecef; font-family: 'Rubik', sans-serif; }
+        .flatpickr-months { background: #1C1E32; border-radius: 13px 13px 0 0; padding: 6px 0; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { color: #fff !important; fill: #fff !important; }
+        .flatpickr-current-month input.cur-year { color: #fff !important; font-weight: 700; }
+        span.flatpickr-weekday { color: #1C1E32; font-weight: 700; }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected:hover { background: #F77D0A !important; border-color: #F77D0A !important; color: #fff !important; font-weight: 700; }
+        .flatpickr-day.today { border-color: #F77D0A; color: #F77D0A; font-weight: 700; }
+        .flatpickr-day:hover { background: #fff3e6; border-color: #F77D0A; }
+        .flatpickr-day.flatpickr-disabled { color: #ccc; text-decoration: line-through; }
+    </style>
 </head>
 
 <body>
@@ -155,25 +167,36 @@
                     <!-- Perfil del Anfitrión / Propietario -->
                     <div class="bg-white p-4 rounded-lg border shadow-sm">
                         <h5 class="font-weight-bold text-dark mb-3"><i class="fa fa-user-circle text-primary mr-2"></i>Conoce a tu Anfitrión</h5>
-                        <div class="d-flex align-items-center">
-                            <div class="mr-3">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center font-weight-bold" style="width: 55px; height: 55px; font-size: 22px;">
+                        <div class="d-flex align-items-start flex-wrap">
+                            <div class="mr-3 mb-2">
+                                <div id="detail-owner-avatar" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center font-weight-bold overflow-hidden border shadow-sm" style="width: 64px; height: 64px; font-size: 24px;">
                                     <i class="fa fa-user"></i>
                                 </div>
                             </div>
-                            <div>
-                                <h6 class="font-weight-bold mb-1 text-dark" id="detail-owner-name">Propietario</h6>
-                                <div id="detail-host-badge" class="mb-1"></div>
-                                <p class="small text-muted mb-0">
-                                    <span class="text-success"><i class="fa fa-check-circle"></i> Vehículo disponible en plataforma</span>
-                                </p>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                    <h6 class="font-weight-bold mb-1 text-dark h5" id="detail-owner-name">Anfitrión</h6>
+                                    <span id="detail-owner-rating" class="badge badge-warning text-dark px-2 py-1" style="font-size:12px;"><i class="fa fa-star mr-1"></i>5.0</span>
+                                </div>
+                                <div id="detail-host-badge" class="mb-2"></div>
+                                <div id="detail-host-meta" class="row small text-muted mt-2">
+                                    <div class="col-sm-6 mb-1"><i class="fa fa-map-marker-alt text-primary mr-1"></i> Ciudad: <strong id="detail-owner-city" class="text-dark">Colombia</strong></div>
+                                    <div class="col-sm-6 mb-1"><i class="fa fa-car text-primary mr-1"></i> Flota: <strong id="detail-owner-cars-count" class="text-dark">1 vehículo</strong></div>
+                                    <div class="col-sm-6 mb-1"><i class="fa fa-check-circle text-success mr-1"></i> <span id="detail-owner-verified">Identidad verificada en plataforma</span></div>
+                                    <div class="col-sm-6 mb-1"><i class="fa fa-bolt text-warning mr-1"></i> Respuesta promedio: <strong class="text-dark">&lt; 1 hora</strong></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
                             <small class="text-muted">¿Tuviste algún inconveniente o sugerencia sobre este vehículo?</small>
-                            <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" data-toggle="modal" data-target="#modalReportFeedback">
-                                <i class="fa fa-flag mr-1"></i> Reportar / Feedback
-                            </button>
+                            <div class="d-flex align-items-center" style="gap:8px;">
+                                <a href="#" id="detail-owner-wa-btn" target="_blank" class="btn btn-success btn-sm font-weight-bold d-none">
+                                    <i class="fab fa-whatsapp mr-1"></i> Contactar Anfitrión
+                                </a>
+                                <button type="button" class="btn btn-outline-danger btn-sm font-weight-bold" data-toggle="modal" data-target="#modalReportFeedback">
+                                    <i class="fa fa-flag mr-1"></i> Reportar / Feedback
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -320,9 +343,11 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 
     <!-- Template Javascript, Config & Marketplace Logic -->
-    <script src="js/main.js?v=20261125_25"></script>
-    <script src="js/config.js?v=20261125_33"></script>
-    <script src="js/marketplace.js?v=20261125_33"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="js/main.js?v=20261125_58"></script>
+    <script src="js/config.js?v=20261125_58"></script>
+    <script src="js/marketplace.js?v=20261125_58"></script>
 </body>
 
 </html>

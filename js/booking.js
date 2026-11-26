@@ -347,6 +347,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (inputStart) inputStart.addEventListener('change', recalculateTotal);
     if (inputEnd) inputEnd.addEventListener('change', recalculateTotal);
+    if (inputStart && inputEnd && typeof window.flatpickr === 'function') {
+        const disabledRanges = [];
+        if (car && Array.isArray(car.blockedDates)) car.blockedDates.forEach(d => disabledRanges.push(d));
+        try {
+            const bks = JSON.parse(localStorage.getItem('renteasy_bookings')) || [];
+            bks.forEach(b => {
+                if (car && String(b.carId) === String(car.id) && b.status !== 'Rechazada' && b.status !== 'Cancelada' && b.startDate && b.endDate) {
+                    disabledRanges.push({ from: b.startDate, to: b.endDate });
+                }
+            });
+        } catch (_) { }
+        const endBookFp = window.flatpickr(inputEnd, {
+            locale: 'es',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd M Y',
+            minDate: inputStart.value || 'today',
+            defaultDate: inputEnd.value || undefined,
+            disable: disabledRanges,
+            onChange: () => recalculateTotal()
+        });
+        window.flatpickr(inputStart, {
+            locale: 'es',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd M Y',
+            minDate: 'today',
+            defaultDate: inputStart.value || undefined,
+            disable: disabledRanges,
+            onChange: (sel) => {
+                if (sel && sel[0]) {
+                    const nextD = new Date(sel[0].getTime() + 86400000).toISOString().split('T')[0];
+                    endBookFp.set('minDate', nextD);
+                    if (inputEnd.value && inputEnd.value <= inputStart.value) {
+                        endBookFp.setDate(nextD, true);
+                    }
+                }
+                recalculateTotal();
+            }
+        });
+    }
     recalculateTotal();
 
     // Bloquear reserva si el usuario logueado es el propietario del vehículo

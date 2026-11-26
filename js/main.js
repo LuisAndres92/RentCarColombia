@@ -339,15 +339,18 @@
                 panelLinkHtml = `
                     <a class="dropdown-item py-2" href="admin.html"><i class="fa fa-tachometer-alt text-primary mr-2"></i> Panel de Administración</a>
                     <a class="dropdown-item py-2" href="dashboard-propietario.html"><i class="fa fa-car text-success mr-2"></i> Panel de Anfitrión</a>
+                    <a class="dropdown-item py-2" href="mis-reservas.html"><i class="fa fa-calendar-check text-info mr-2"></i> Mis Reservas e Historial</a>
                 `;
             } else if (u.role === 'propietario') {
                 panelLinkHtml = `
                     <a class="dropdown-item py-2 font-weight-bold" href="dashboard-propietario.html"><i class="fa fa-car text-primary mr-2"></i> Mis Autos y Ganancias</a>
+                    <a class="dropdown-item py-2" href="mis-reservas.html"><i class="fa fa-calendar-check text-info mr-2"></i> Mis Reservas e Historial</a>
                     <a class="dropdown-item py-2" href="car.html"><i class="fa fa-search text-secondary mr-2"></i> Explorar Autos</a>
                 `;
             } else {
                 panelLinkHtml = `
-                    <a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-primary mr-2"></i> Catálogo de Autos</a>
+                    <a class="dropdown-item py-2 font-weight-bold" href="mis-reservas.html"><i class="fa fa-calendar-check text-primary mr-2"></i> Mis Reservas e Historial</a>
+                    <a class="dropdown-item py-2" href="car.html"><i class="fa fa-car text-secondary mr-2"></i> Catálogo de Autos</a>
                     <a class="dropdown-item py-2 text-primary font-weight-bold" href="dashboard-propietario.html"><i class="fa fa-plus-circle text-primary mr-2"></i> Publicar mi Auto (Modo Anfitrión)</a>
                 `;
             }

@@ -22,6 +22,17 @@
     <!-- Customized Bootstrap Stylesheet -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .flatpickr-calendar { border-radius: 14px; box-shadow: 0 12px 30px rgba(28,30,50,0.18); border: 1px solid #e9ecef; font-family: 'Rubik', sans-serif; }
+        .flatpickr-months { background: #1C1E32; border-radius: 13px 13px 0 0; padding: 6px 0; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { color: #fff !important; fill: #fff !important; }
+        .flatpickr-current-month input.cur-year { color: #fff !important; font-weight: 700; }
+        span.flatpickr-weekday { color: #1C1E32; font-weight: 700; }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected:hover { background: #F77D0A !important; border-color: #F77D0A !important; color: #fff !important; font-weight: 700; }
+        .flatpickr-day.today { border-color: #F77D0A; color: #F77D0A; font-weight: 700; }
+        .flatpickr-day:hover { background: #fff3e6; border-color: #F77D0A; }
+    </style>
 
     <!-- Verificación Inmediata de Sesión para Alquiler -->
     <script>
@@ -459,7 +470,9 @@
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <script src="js/main.js?v=20261125_25"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="js/main.js?v=20261125_58"></script>
     <script src="js/config.js?v=20261125_57"></script>
     <script src="js/booking.js?v=20261125_57"></script>
 </body>
