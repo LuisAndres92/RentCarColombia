@@ -446,31 +446,26 @@
                             <div class="row align-items-start">
                                 <div class="col-md-4 mb-3">
                                     <div class="preview-img-box" id="preview-container">
-                                        <img id="car-img-preview" src="img/car-rent-1.png" alt="Vista previa principal">
+                                        <div id="car-img-empty-placeholder" class="text-center text-muted p-3">
+                                            <i class="fa fa-camera fa-2x mb-2 text-primary"></i>
+                                            <div class="small font-weight-semi-bold">Sin foto principal</div>
+                                            <div style="font-size: 11px;">Sube tus fotos y elige la portada</div>
+                                        </div>
+                                        <img id="car-img-preview" src="" alt="Vista previa principal" style="display: none;">
                                     </div>
                                     <small class="text-muted d-block text-center mt-1 font-weight-bold">Foto Principal (Portada)</small>
                                 </div>
                                 <div class="col-md-8 mb-3">
-                                    <label class="font-weight-semi-bold d-block"><i class="fa fa-images text-primary mr-1"></i> Subir Varias Fotos desde tu Dispositivo (Máx. 6)</label>
+                                    <label class="font-weight-semi-bold d-block"><i class="fa fa-images text-primary mr-1"></i> Subir Fotos de tu Vehículo desde tu Dispositivo (Máx. 6)</label>
                                     <div class="custom-file mb-2">
                                         <input type="file" class="custom-file-input" id="car-photo-file" accept="image/*" multiple>
                                         <label class="custom-file-label small" for="car-photo-file" id="car-photo-label">Elegir una o varias fotos de tu vehículo...</label>
                                     </div>
-                                    <small class="text-muted d-block mb-3">La primera foto será la principal y las demás rotarán automáticamente cada 2 segundos en el catálogo.</small>
+                                    <small class="text-muted d-block mb-3">La primera foto será la portada y podrás cambiarla haciendo clic en <strong>"Hacer principal"</strong> sobre cualquiera de las fotos que subas.</small>
 
-                                    <label class="font-weight-semi-bold small text-muted">O agregar imagen de muestra / enlace URL a la galería:</label>
+                                    <label class="font-weight-semi-bold small text-muted">O agregar foto mediante enlace URL:</label>
                                     <div class="input-group mb-2">
-                                        <select id="car-template-img" class="custom-select">
-                                            <option value="img/car-rent-1.png">Auto Sedán Deportivo (img/car-rent-1.png)</option>
-                                            <option value="img/car-rent-2.png">Sedán Ejecutivo Negro (img/car-rent-2.png)</option>
-                                            <option value="img/car-rent-3.png">Sedán Blanco Moderno (img/car-rent-3.png)</option>
-                                            <option value="img/car-rent-4.png">Camioneta SUV Gris (img/car-rent-4.png)</option>
-                                            <option value="img/car-rent-5.png">SUV Negra Familiar (img/car-rent-5.png)</option>
-                                            <option value="img/car-rent-6.png">Camioneta Compacta (img/car-rent-6.png)</option>
-                                        </select>
-                                    </div>
-                                    <div class="input-group mb-2">
-                                        <input type="url" id="car-custom-url" class="form-control" placeholder="O pega el enlace URL de una foto (opcional)">
+                                        <input type="url" id="car-custom-url" class="form-control" placeholder="https://... pega el enlace URL de una foto">
                                         <div class="input-group-append">
                                             <button type="button" id="btn-add-gallery-url" class="btn btn-outline-primary font-weight-bold">+ Añadir a galería</button>
                                         </div>
@@ -776,7 +771,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js?v=20261125_13"></script>
     <script src="js/config.js?v=20261125_15"></script>
-    <script src="js/owner-dashboard.js?v=20261125_15"></script>
+    <script src="js/owner-dashboard.js?v=20261125_16"></script>
 </body>
 
 </html>

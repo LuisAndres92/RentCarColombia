@@ -47,9 +47,9 @@ document.addEventListener('DOMContentLoaded', function () {
     })();
 
     // 4. Manejo de cambio de imagen en tiempo real
-    const selectImg = document.getElementById('car-template-img');
     const customUrl = document.getElementById('car-custom-url');
     const imgPreview = document.getElementById('car-img-preview');
+    const imgEmptyPlaceholder = document.getElementById('car-img-empty-placeholder');
     const carFileInput = document.getElementById('car-photo-file');
     const carFileLabel = document.getElementById('car-photo-label');
     const carRealData = document.getElementById('car-real-photo-data');
@@ -59,8 +59,17 @@ document.addEventListener('DOMContentLoaded', function () {
     let ownerGalleryImages = [];
 
     function renderOwnerGalleryPreview() {
+        const primarySrc = ownerGalleryImages[0] || (customUrl && customUrl.value.trim()) || '';
         if (imgPreview) {
-            imgPreview.src = ownerGalleryImages[0] || (customUrl && customUrl.value.trim()) || (selectImg ? selectImg.value : 'img/car-rent-1.png');
+            if (primarySrc) {
+                imgPreview.src = primarySrc;
+                imgPreview.style.display = 'block';
+                if (imgEmptyPlaceholder) imgEmptyPlaceholder.style.display = 'none';
+            } else {
+                imgPreview.removeAttribute('src');
+                imgPreview.style.display = 'none';
+                if (imgEmptyPlaceholder) imgEmptyPlaceholder.style.display = 'block';
+            }
         }
         if (carRealData) {
             carRealData.value = ownerGalleryImages[0] || '';
@@ -155,20 +164,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (selectImg && imgPreview) {
-        selectImg.addEventListener('change', function () {
-            if (ownerGalleryImages.length === 0 && (!customUrl || !customUrl.value.trim())) {
-                imgPreview.src = this.value;
-            }
-        });
-    }
-
     if (customUrl && imgPreview) {
         customUrl.addEventListener('input', function () {
-            if (this.value.trim() && ownerGalleryImages.length === 0) {
-                imgPreview.src = this.value.trim();
-            } else if (ownerGalleryImages.length === 0 && selectImg) {
-                imgPreview.src = selectImg.value;
+            if (ownerGalleryImages.length === 0) {
+                renderOwnerGalleryPreview();
             }
         });
     }
@@ -178,6 +177,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (publishForm) {
         publishForm.addEventListener('submit', function (e) {
             e.preventDefault();
+
+            const typedUrl = customUrl ? customUrl.value.trim() : '';
+            if (ownerGalleryImages.length === 0 && !typedUrl) {
+                alert('Por favor sube al menos una fotografía de tu vehículo (o agrega un enlace URL) para elegir la imagen principal.');
+                return;
+            }
 
             const brand = document.getElementById('car-brand').value.trim();
             const model = document.getElementById('car-model').value.trim();
@@ -191,8 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const mileage = document.getElementById('car-mileage').value.trim();
             const description = document.getElementById('car-description').value.trim();
 
-            const fallbackImg = (customUrl && customUrl.value.trim()) ? customUrl.value.trim() : (selectImg ? selectImg.value : 'img/car-rent-1.png');
-            const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [fallbackImg];
+            const finalGallery = ownerGalleryImages.length > 0 ? ownerGalleryImages.slice() : [typedUrl];
             const image = finalGallery[0];
 
             const newCar = {
